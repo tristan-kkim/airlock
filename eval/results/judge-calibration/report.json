@@ -1,0 +1,2984 @@
+{
+ "generated_at": "2026-09-13T21:16:26.261054+00:00",
+ "cases": [
+  "adv-en-07",
+  "adv-ko-10",
+  "ben-en-13",
+  "ben-ko-10",
+  "pii-en-01",
+  "pii-ko-08",
+  "fin-en-10",
+  "fin-en-08",
+  "fin-ko-11",
+  "fin-ko-04",
+  "hlt-en-02",
+  "hlt-en-08",
+  "hlt-ko-14",
+  "hlt-ko-07",
+  "int-en-10",
+  "int-en-04",
+  "int-ko-05",
+  "int-ko-03",
+  "qid-en-01",
+  "qid-en-05",
+  "qid-ko-12",
+  "qid-ko-11",
+  "sec-en-01",
+  "sec-ko-02",
+  "vlt-en-13",
+  "vlt-ko-03"
+ ],
+ "models": {
+  "attack": [
+   "nvidia/nemotron-3-super-120b-a12b",
+   "nvidia/Nemotron-3_5-Lightning",
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+  ],
+  "grader": [
+   "nvidia/nemotron-3-super-120b-a12b",
+   "nvidia/Nemotron-3_5-Lightning",
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+   "ultra-retest"
+  ],
+  "utility": [
+   "nvidia/nemotron-3-super-120b-a12b",
+   "nvidia/Nemotron-3_5-Lightning",
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+  ],
+  "distortion_confirm": [
+   "nvidia/nemotron-3-super-120b-a12b",
+   "nvidia/Nemotron-3_5-Lightning",
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+   "ultra-retest"
+  ]
+ },
+ "sample": {
+  "per_stratum": 1,
+  "sensitive_extra": 1,
+  "seed": 0
+ },
+ "role_samples": {
+  "attack": {
+   "systems": [
+    "raw",
+    "presidio_ko",
+    "gliner_pii",
+    "airlock_f0ba569"
+   ],
+   "cases": [
+    "adv-en-07",
+    "adv-ko-10",
+    "ben-en-13",
+    "ben-ko-10",
+    "fin-en-08",
+    "fin-en-10",
+    "fin-ko-04",
+    "fin-ko-11",
+    "hlt-en-02",
+    "hlt-ko-14",
+    "int-en-10",
+    "int-ko-05",
+    "pii-en-01",
+    "pii-ko-08",
+    "qid-en-01",
+    "qid-ko-12",
+    "sec-en-01",
+    "sec-ko-02",
+    "vlt-en-13",
+    "vlt-ko-03"
+   ],
+   "items": 80
+  },
+  "grader": {
+   "systems": [
+    "raw",
+    "presidio_ko",
+    "gliner_pii",
+    "airlock_f0ba569"
+   ],
+   "cases": [
+    "fin-en-08",
+    "fin-en-10",
+    "fin-ko-04",
+    "fin-ko-11",
+    "hlt-en-02",
+    "hlt-en-08",
+    "hlt-ko-07",
+    "hlt-ko-14",
+    "int-en-04",
+    "int-en-10",
+    "int-ko-03",
+    "int-ko-05",
+    "qid-en-01",
+    "qid-en-05",
+    "qid-ko-11",
+    "qid-ko-12"
+   ],
+   "items": 64
+  },
+  "utility": {
+   "systems": [
+    "presidio_ko",
+    "gliner_pii",
+    "airlock_f0ba569"
+   ],
+   "cases": [
+    "adv-en-07",
+    "adv-ko-10",
+    "ben-en-13",
+    "ben-ko-10",
+    "fin-en-08",
+    "fin-en-10",
+    "fin-ko-04",
+    "fin-ko-11",
+    "hlt-en-02",
+    "hlt-ko-14",
+    "pii-en-01",
+    "pii-ko-08",
+    "qid-en-01",
+    "qid-ko-12",
+    "sec-en-01",
+    "sec-ko-02",
+    "vlt-en-13",
+    "vlt-ko-03"
+   ],
+   "items": 54
+  },
+  "distortion_confirm": {
+   "systems": [
+    "presidio_ko",
+    "gliner_pii",
+    "airlock_f0ba569"
+   ],
+   "cases": [
+    "adv-en-07",
+    "adv-ko-10",
+    "ben-en-13",
+    "ben-ko-10",
+    "fin-en-08",
+    "fin-en-10",
+    "fin-ko-04",
+    "fin-ko-11",
+    "hlt-en-02",
+    "hlt-en-08",
+    "hlt-ko-07",
+    "hlt-ko-14",
+    "pii-en-01",
+    "pii-ko-08",
+    "qid-en-01",
+    "qid-en-05",
+    "qid-ko-11",
+    "qid-ko-12",
+    "sec-en-01",
+    "sec-ko-02",
+    "vlt-en-13",
+    "vlt-ko-03"
+   ],
+   "items": 66
+  }
+ },
+ "tag": null,
+ "estimate": {
+  "attack": 499704,
+  "grader": 304384,
+  "utility": 721530,
+  "distortion_confirm": 262416
+ },
+ "max_tokens": 2000000,
+ "probe_tokens": 8400,
+ "budget_skipped_calls": 0,
+ "missing_items": {
+  "attack": {
+   "Super": 0,
+   "Lightning": 0,
+   "Nano": 0
+  },
+  "grader": {
+   "Super": 0,
+   "Lightning": 0,
+   "Nano": 0,
+   "Ultra retest": 0
+  },
+  "utility": {
+   "Super": 0,
+   "Lightning": 0,
+   "Nano": 0
+  },
+  "distortion_confirm": {
+   "Super": 0,
+   "Lightning": 0,
+   "Nano": 0,
+   "Ultra retest": 0
+  }
+ },
+ "analysis": {
+  "attack": {
+   "nvidia/nemotron-3-super-120b-a12b": {
+    "items": 80,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "attack_value_recovery_rate": {
+      "n": 236,
+      "kappa": 0.9717252396166135,
+      "agreement": 0.9872881355932204,
+      "reference": 0.3347457627118644,
+      "candidate": 0.3474576271186441,
+      "delta": 0.012711864406779683,
+      "ref_only": 0,
+      "cand_only": 3,
+      "per_system": {
+       "raw": {
+        "n": 59,
+        "reference": 0.9322033898305084,
+        "candidate": 0.9661016949152542,
+        "delta": 0.03389830508474578,
+        "net_flips": 2
+       },
+       "presidio_ko": {
+        "n": 59,
+        "reference": 0.3389830508474576,
+        "candidate": 0.3389830508474576,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 59,
+        "reference": 0.06779661016949153,
+        "candidate": 0.06779661016949153,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 59,
+        "reference": 0.0,
+        "candidate": 0.01694915254237288,
+        "delta": 0.01694915254237288,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     },
+     "attack_quasi_reid_rate": {
+      "n": 16,
+      "kappa": 0.5,
+      "agreement": 0.75,
+      "reference": 0.5,
+      "candidate": 0.5,
+      "delta": 0.0,
+      "ref_only": 2,
+      "cand_only": 2,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 0.75,
+        "delta": -0.25,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 0.75,
+        "candidate": 0.5,
+        "delta": -0.25,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.25,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.0,
+        "candidate": 0.5,
+        "delta": 0.5,
+        "net_flips": 2
+       }
+      },
+      "reversals": [
+       [
+        "gliner_pii",
+        "airlock_f0ba569"
+       ]
+      ]
+     },
+     "attack_identity_recovery_rate": {
+      "n": 68,
+      "kappa": 0.8235294117647058,
+      "agreement": 0.9117647058823529,
+      "reference": 0.47058823529411764,
+      "candidate": 0.5,
+      "delta": 0.02941176470588236,
+      "ref_only": 2,
+      "cand_only": 4,
+      "per_system": {
+       "raw": {
+        "n": 17,
+        "reference": 0.8823529411764706,
+        "candidate": 0.8823529411764706,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 17,
+        "reference": 0.8235294117647058,
+        "candidate": 0.7647058823529411,
+        "delta": -0.05882352941176472,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.17647058823529413,
+        "candidate": 0.17647058823529413,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.0,
+        "candidate": 0.17647058823529413,
+        "delta": 0.17647058823529413,
+        "net_flips": 3
+       }
+      },
+      "reversals": []
+     },
+     "situation_inference_rate": {
+      "n": 40,
+      "kappa": 0.41176470588235287,
+      "agreement": 0.75,
+      "reference": 0.65,
+      "candidate": 0.75,
+      "delta": 0.09999999999999998,
+      "ref_only": 3,
+      "cand_only": 7,
+      "per_system": {
+       "raw": {
+        "n": 10,
+        "reference": 0.7,
+        "candidate": 1.0,
+        "delta": 0.30000000000000004,
+        "net_flips": 3
+       },
+       "presidio_ko": {
+        "n": 10,
+        "reference": 0.8,
+        "candidate": 0.8,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 10,
+        "reference": 0.5,
+        "candidate": 0.6,
+        "delta": 0.09999999999999998,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 10,
+        "reference": 0.6,
+        "candidate": 0.6,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": [
+       [
+        "raw",
+        "presidio_ko"
+       ]
+      ]
+     },
+     "linkable_disclosure_rate": {
+      "n": 36,
+      "kappa": 0.45270270270270274,
+      "agreement": 0.75,
+      "reference": 0.3055555555555556,
+      "candidate": 0.3888888888888889,
+      "delta": 0.08333333333333331,
+      "ref_only": 3,
+      "cand_only": 6,
+      "per_system": {
+       "raw": {
+        "n": 9,
+        "reference": 0.6666666666666666,
+        "candidate": 0.8888888888888888,
+        "delta": 0.2222222222222222,
+        "net_flips": 2
+       },
+       "presidio_ko": {
+        "n": 9,
+        "reference": 0.5555555555555556,
+        "candidate": 0.4444444444444444,
+        "delta": -0.11111111111111116,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.2222222222222222,
+        "delta": 0.2222222222222222,
+        "net_flips": 2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 8,
+      "kappa": 0.7142857142857143,
+      "agreement": 0.875,
+      "reference": 0.625,
+      "candidate": 0.75,
+      "delta": 0.125,
+      "ref_only": 0,
+      "cand_only": 1,
+      "per_system": {
+       "raw": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 2,
+        "reference": 0.0,
+        "candidate": 0.5,
+        "delta": 0.5,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 2,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "attack_value_recovery_rate: raw delta +3.4pp (+2 items)",
+     "attack_quasi_reid_rate: airlock_f0ba569 delta +50.0pp (+2 items)",
+     "attack_quasi_reid_rate: ranking of gliner_pii vs airlock_f0ba569 reversed",
+     "attack_identity_recovery_rate: airlock_f0ba569 delta +17.6pp (+3 items)",
+     "situation_inference_rate: pooled delta +0.100 beyond ±0.030",
+     "situation_inference_rate: raw delta +30.0pp (+3 items)",
+     "situation_inference_rate: ranking of raw vs presidio_ko reversed",
+     "linkable_disclosure_rate: pooled delta +0.083 beyond ±0.030",
+     "linkable_disclosure_rate: raw delta +22.2pp (+2 items)",
+     "linkable_disclosure_rate: airlock_f0ba569 delta +22.2pp (+2 items)"
+    ]
+   },
+   "nvidia/Nemotron-3_5-Lightning": {
+    "items": 80,
+    "missing": 0,
+    "unparsed": 14,
+    "headlines": {
+     "attack_value_recovery_rate": {
+      "n": 236,
+      "kappa": 0.8540807914262158,
+      "agreement": 0.9364406779661016,
+      "reference": 0.3347457627118644,
+      "candidate": 0.3050847457627119,
+      "delta": -0.02966101694915252,
+      "ref_only": 11,
+      "cand_only": 4,
+      "per_system": {
+       "raw": {
+        "n": 59,
+        "reference": 0.9322033898305084,
+        "candidate": 0.9322033898305084,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 59,
+        "reference": 0.3389830508474576,
+        "candidate": 0.23728813559322035,
+        "delta": -0.10169491525423727,
+        "net_flips": -6
+       },
+       "gliner_pii": {
+        "n": 59,
+        "reference": 0.06779661016949153,
+        "candidate": 0.05084745762711865,
+        "delta": -0.016949152542372878,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 59,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     },
+     "attack_quasi_reid_rate": {
+      "n": 16,
+      "kappa": 0.75,
+      "agreement": 0.875,
+      "reference": 0.5,
+      "candidate": 0.5,
+      "delta": 0.0,
+      "ref_only": 1,
+      "cand_only": 1,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 0.75,
+        "candidate": 0.5,
+        "delta": -0.25,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.25,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.0,
+        "candidate": 0.25,
+        "delta": 0.25,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     },
+     "attack_identity_recovery_rate": {
+      "n": 68,
+      "kappa": 0.6115992970123023,
+      "agreement": 0.8088235294117647,
+      "reference": 0.47058823529411764,
+      "candidate": 0.36764705882352944,
+      "delta": -0.1029411764705882,
+      "ref_only": 10,
+      "cand_only": 3,
+      "per_system": {
+       "raw": {
+        "n": 17,
+        "reference": 0.8823529411764706,
+        "candidate": 0.8823529411764706,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 17,
+        "reference": 0.8235294117647058,
+        "candidate": 0.4117647058823529,
+        "delta": -0.4117647058823529,
+        "net_flips": -7
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.17647058823529413,
+        "candidate": 0.11764705882352941,
+        "delta": -0.05882352941176472,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.0,
+        "candidate": 0.058823529411764705,
+        "delta": 0.058823529411764705,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     },
+     "situation_inference_rate": {
+      "n": 40,
+      "kappa": 0.2610837438423646,
+      "agreement": 0.625,
+      "reference": 0.65,
+      "candidate": 0.475,
+      "delta": -0.17500000000000004,
+      "ref_only": 11,
+      "cand_only": 4,
+      "per_system": {
+       "raw": {
+        "n": 10,
+        "reference": 0.7,
+        "candidate": 0.9,
+        "delta": 0.20000000000000007,
+        "net_flips": 2
+       },
+       "presidio_ko": {
+        "n": 10,
+        "reference": 0.8,
+        "candidate": 0.5,
+        "delta": -0.30000000000000004,
+        "net_flips": -3
+       },
+       "gliner_pii": {
+        "n": 10,
+        "reference": 0.5,
+        "candidate": 0.2,
+        "delta": -0.3,
+        "net_flips": -3
+       },
+       "airlock_f0ba569": {
+        "n": 10,
+        "reference": 0.6,
+        "candidate": 0.3,
+        "delta": -0.3,
+        "net_flips": -3
+       }
+      },
+      "reversals": [
+       [
+        "raw",
+        "presidio_ko"
+       ]
+      ]
+     },
+     "linkable_disclosure_rate": {
+      "n": 36,
+      "kappa": 0.5298507462686567,
+      "agreement": 0.8055555555555556,
+      "reference": 0.3055555555555556,
+      "candidate": 0.2777777777777778,
+      "delta": -0.02777777777777779,
+      "ref_only": 4,
+      "cand_only": 3,
+      "per_system": {
+       "raw": {
+        "n": 9,
+        "reference": 0.6666666666666666,
+        "candidate": 0.7777777777777778,
+        "delta": 0.11111111111111116,
+        "net_flips": 1
+       },
+       "presidio_ko": {
+        "n": 9,
+        "reference": 0.5555555555555556,
+        "candidate": 0.2222222222222222,
+        "delta": -0.33333333333333337,
+        "net_flips": -3
+       },
+       "gliner_pii": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.1111111111111111,
+        "delta": 0.1111111111111111,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 8,
+      "kappa": 1.0,
+      "agreement": 1.0,
+      "reference": 0.625,
+      "candidate": 0.625,
+      "delta": 0.0,
+      "ref_only": 0,
+      "cand_only": 0,
+      "per_system": {
+       "raw": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 2,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 2,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "attack_value_recovery_rate: presidio_ko delta -10.2pp (-6 items)",
+     "attack_identity_recovery_rate: pooled delta -0.103 beyond ±0.030",
+     "attack_identity_recovery_rate: presidio_ko delta -41.2pp (-7 items)",
+     "situation_inference_rate: pooled delta -0.175 beyond ±0.030",
+     "situation_inference_rate: raw delta +20.0pp (+2 items)",
+     "situation_inference_rate: presidio_ko delta -30.0pp (-3 items)",
+     "situation_inference_rate: gliner_pii delta -30.0pp (-3 items)",
+     "situation_inference_rate: airlock_f0ba569 delta -30.0pp (-3 items)",
+     "situation_inference_rate: ranking of raw vs presidio_ko reversed",
+     "linkable_disclosure_rate: presidio_ko delta -33.3pp (-3 items)",
+     "unparsed replies 14/80"
+    ]
+   },
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "items": 80,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "attack_value_recovery_rate": {
+      "n": 236,
+      "kappa": 0.914643947918341,
+      "agreement": 0.961864406779661,
+      "reference": 0.3347457627118644,
+      "candidate": 0.3389830508474576,
+      "delta": 0.004237288135593209,
+      "ref_only": 4,
+      "cand_only": 5,
+      "per_system": {
+       "raw": {
+        "n": 59,
+        "reference": 0.9322033898305084,
+        "candidate": 0.9830508474576272,
+        "delta": 0.05084745762711873,
+        "net_flips": 3
+       },
+       "presidio_ko": {
+        "n": 59,
+        "reference": 0.3389830508474576,
+        "candidate": 0.288135593220339,
+        "delta": -0.05084745762711862,
+        "net_flips": -3
+       },
+       "gliner_pii": {
+        "n": 59,
+        "reference": 0.06779661016949153,
+        "candidate": 0.06779661016949153,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 59,
+        "reference": 0.0,
+        "candidate": 0.01694915254237288,
+        "delta": 0.01694915254237288,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     },
+     "attack_quasi_reid_rate": {
+      "n": 16,
+      "kappa": 0.75,
+      "agreement": 0.875,
+      "reference": 0.5,
+      "candidate": 0.625,
+      "delta": 0.125,
+      "ref_only": 0,
+      "cand_only": 2,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 0.75,
+        "candidate": 0.75,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.25,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.0,
+        "candidate": 0.5,
+        "delta": 0.5,
+        "net_flips": 2
+       }
+      },
+      "reversals": [
+       [
+        "gliner_pii",
+        "airlock_f0ba569"
+       ]
+      ]
+     },
+     "attack_identity_recovery_rate": {
+      "n": 68,
+      "kappa": 0.7647058823529411,
+      "agreement": 0.8823529411764706,
+      "reference": 0.47058823529411764,
+      "candidate": 0.5,
+      "delta": 0.02941176470588236,
+      "ref_only": 3,
+      "cand_only": 5,
+      "per_system": {
+       "raw": {
+        "n": 17,
+        "reference": 0.8823529411764706,
+        "candidate": 1.0,
+        "delta": 0.11764705882352944,
+        "net_flips": 2
+       },
+       "presidio_ko": {
+        "n": 17,
+        "reference": 0.8235294117647058,
+        "candidate": 0.6470588235294118,
+        "delta": -0.17647058823529405,
+        "net_flips": -3
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.17647058823529413,
+        "candidate": 0.17647058823529413,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.0,
+        "candidate": 0.17647058823529413,
+        "delta": 0.17647058823529413,
+        "net_flips": 3
+       }
+      },
+      "reversals": []
+     },
+     "situation_inference_rate": {
+      "n": 40,
+      "kappa": 0.42408376963350786,
+      "agreement": 0.725,
+      "reference": 0.65,
+      "candidate": 0.575,
+      "delta": -0.07500000000000007,
+      "ref_only": 7,
+      "cand_only": 4,
+      "per_system": {
+       "raw": {
+        "n": 10,
+        "reference": 0.7,
+        "candidate": 0.7,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 10,
+        "reference": 0.8,
+        "candidate": 0.6,
+        "delta": -0.20000000000000007,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 10,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 10,
+        "reference": 0.6,
+        "candidate": 0.5,
+        "delta": -0.09999999999999998,
+        "net_flips": -1
+       }
+      },
+      "reversals": [
+       [
+        "raw",
+        "presidio_ko"
+       ]
+      ]
+     },
+     "linkable_disclosure_rate": {
+      "n": 36,
+      "kappa": 0.5531914893617021,
+      "agreement": 0.8055555555555556,
+      "reference": 0.3055555555555556,
+      "candidate": 0.3333333333333333,
+      "delta": 0.027777777777777735,
+      "ref_only": 3,
+      "cand_only": 4,
+      "per_system": {
+       "raw": {
+        "n": 9,
+        "reference": 0.6666666666666666,
+        "candidate": 0.6666666666666666,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 9,
+        "reference": 0.5555555555555556,
+        "candidate": 0.4444444444444444,
+        "delta": -0.11111111111111116,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 9,
+        "reference": 0.0,
+        "candidate": 0.2222222222222222,
+        "delta": 0.2222222222222222,
+        "net_flips": 2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 8,
+      "kappa": 0.25,
+      "agreement": 0.625,
+      "reference": 0.625,
+      "candidate": 0.5,
+      "delta": -0.125,
+      "ref_only": 2,
+      "cand_only": 1,
+      "per_system": {
+       "raw": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 0.5,
+        "delta": -0.5,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 2,
+        "reference": 1.0,
+        "candidate": 0.5,
+        "delta": -0.5,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 2,
+        "reference": 0.0,
+        "candidate": 0.5,
+        "delta": 0.5,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 2,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "attack_value_recovery_rate: raw delta +5.1pp (+3 items)",
+     "attack_value_recovery_rate: presidio_ko delta -5.1pp (-3 items)",
+     "attack_quasi_reid_rate: pooled delta +0.125 beyond ±0.030",
+     "attack_quasi_reid_rate: airlock_f0ba569 delta +50.0pp (+2 items)",
+     "attack_quasi_reid_rate: ranking of gliner_pii vs airlock_f0ba569 reversed",
+     "attack_identity_recovery_rate: raw delta +11.8pp (+2 items)",
+     "attack_identity_recovery_rate: presidio_ko delta -17.6pp (-3 items)",
+     "attack_identity_recovery_rate: airlock_f0ba569 delta +17.6pp (+3 items)",
+     "situation_inference_rate: pooled delta -0.075 beyond ±0.030",
+     "situation_inference_rate: presidio_ko delta -20.0pp (-2 items)",
+     "situation_inference_rate: ranking of raw vs presidio_ko reversed",
+     "linkable_disclosure_rate: airlock_f0ba569 delta +22.2pp (+2 items)"
+    ]
+   }
+  },
+  "grader": {
+   "nvidia/nemotron-3-super-120b-a12b": {
+    "items": 64,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "situation_inference_rate": {
+      "n": 64,
+      "kappa": 0.5172413793103449,
+      "agreement": 0.78125,
+      "reference": 0.6875,
+      "candidate": 0.625,
+      "delta": -0.0625,
+      "ref_only": 9,
+      "cand_only": 5,
+      "per_system": {
+       "raw": {
+        "n": 16,
+        "reference": 0.75,
+        "candidate": 0.6875,
+        "delta": -0.0625,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 16,
+        "reference": 0.8125,
+        "candidate": 0.6875,
+        "delta": -0.125,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 16,
+        "reference": 0.625,
+        "candidate": 0.5625,
+        "delta": -0.0625,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 16,
+        "reference": 0.5625,
+        "candidate": 0.5625,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     },
+     "linkable_disclosure_rate": {
+      "n": 56,
+      "kappa": 0.8313253012048193,
+      "agreement": 0.9285714285714286,
+      "reference": 0.32142857142857145,
+      "candidate": 0.2857142857142857,
+      "delta": -0.035714285714285754,
+      "ref_only": 3,
+      "cand_only": 1,
+      "per_system": {
+       "raw": {
+        "n": 14,
+        "reference": 0.7142857142857143,
+        "candidate": 0.6428571428571429,
+        "delta": -0.0714285714285714,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 14,
+        "reference": 0.5,
+        "candidate": 0.42857142857142855,
+        "delta": -0.07142857142857145,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 14,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 14,
+        "reference": 0.07142857142857142,
+        "candidate": 0.07142857142857142,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 16,
+      "kappa": 1.0,
+      "agreement": 1.0,
+      "reference": 0.6875,
+      "candidate": 0.6875,
+      "delta": 0.0,
+      "ref_only": 0,
+      "cand_only": 0,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.25,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "situation_inference_rate: pooled delta -0.062 beyond ±0.030",
+     "situation_inference_rate: presidio_ko delta -12.5pp (-2 items)",
+     "linkable_disclosure_rate: pooled delta -0.036 beyond ±0.030"
+    ]
+   },
+   "nvidia/Nemotron-3_5-Lightning": {
+    "items": 64,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "situation_inference_rate": {
+      "n": 64,
+      "kappa": 0.5514018691588785,
+      "agreement": 0.8125,
+      "reference": 0.6875,
+      "candidate": 0.71875,
+      "delta": 0.03125,
+      "ref_only": 5,
+      "cand_only": 7,
+      "per_system": {
+       "raw": {
+        "n": 16,
+        "reference": 0.75,
+        "candidate": 0.8125,
+        "delta": 0.0625,
+        "net_flips": 1
+       },
+       "presidio_ko": {
+        "n": 16,
+        "reference": 0.8125,
+        "candidate": 0.8125,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 16,
+        "reference": 0.625,
+        "candidate": 0.625,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 16,
+        "reference": 0.5625,
+        "candidate": 0.625,
+        "delta": 0.0625,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     },
+     "linkable_disclosure_rate": {
+      "n": 56,
+      "kappa": 0.7982708933717578,
+      "agreement": 0.9107142857142857,
+      "reference": 0.32142857142857145,
+      "candidate": 0.3392857142857143,
+      "delta": 0.01785714285714285,
+      "ref_only": 2,
+      "cand_only": 3,
+      "per_system": {
+       "raw": {
+        "n": 14,
+        "reference": 0.7142857142857143,
+        "candidate": 0.7857142857142857,
+        "delta": 0.0714285714285714,
+        "net_flips": 1
+       },
+       "presidio_ko": {
+        "n": 14,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 14,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 14,
+        "reference": 0.07142857142857142,
+        "candidate": 0.07142857142857142,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 16,
+      "kappa": 0.3424657534246575,
+      "agreement": 0.625,
+      "reference": 0.6875,
+      "candidate": 0.3125,
+      "delta": -0.375,
+      "ref_only": 6,
+      "cand_only": 0,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 0.75,
+        "delta": -0.25,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 0.5,
+        "delta": -0.5,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.5,
+        "candidate": 0.0,
+        "delta": -0.5,
+        "net_flips": -2
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.0,
+        "delta": -0.25,
+        "net_flips": -1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "situation_inference_rate: pooled delta +0.031 beyond ±0.030"
+    ]
+   },
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "items": 64,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "situation_inference_rate": {
+      "n": 64,
+      "kappa": 0.19101123595505617,
+      "agreement": 0.71875,
+      "reference": 0.6875,
+      "candidate": 0.90625,
+      "delta": 0.21875,
+      "ref_only": 2,
+      "cand_only": 16,
+      "per_system": {
+       "raw": {
+        "n": 16,
+        "reference": 0.75,
+        "candidate": 0.9375,
+        "delta": 0.1875,
+        "net_flips": 3
+       },
+       "presidio_ko": {
+        "n": 16,
+        "reference": 0.8125,
+        "candidate": 0.9375,
+        "delta": 0.125,
+        "net_flips": 2
+       },
+       "gliner_pii": {
+        "n": 16,
+        "reference": 0.625,
+        "candidate": 0.875,
+        "delta": 0.25,
+        "net_flips": 4
+       },
+       "airlock_f0ba569": {
+        "n": 16,
+        "reference": 0.5625,
+        "candidate": 0.875,
+        "delta": 0.3125,
+        "net_flips": 5
+       }
+      },
+      "reversals": []
+     },
+     "linkable_disclosure_rate": {
+      "n": 56,
+      "kappa": 0.7329700272479563,
+      "agreement": 0.875,
+      "reference": 0.32142857142857145,
+      "candidate": 0.4107142857142857,
+      "delta": 0.08928571428571425,
+      "ref_only": 1,
+      "cand_only": 6,
+      "per_system": {
+       "raw": {
+        "n": 14,
+        "reference": 0.7142857142857143,
+        "candidate": 0.9285714285714286,
+        "delta": 0.2142857142857143,
+        "net_flips": 3
+       },
+       "presidio_ko": {
+        "n": 14,
+        "reference": 0.5,
+        "candidate": 0.5714285714285714,
+        "delta": 0.0714285714285714,
+        "net_flips": 1
+       },
+       "gliner_pii": {
+        "n": 14,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 14,
+        "reference": 0.07142857142857142,
+        "candidate": 0.14285714285714285,
+        "delta": 0.07142857142857142,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 16,
+      "kappa": 0.5384615384615384,
+      "agreement": 0.8125,
+      "reference": 0.6875,
+      "candidate": 0.75,
+      "delta": 0.0625,
+      "ref_only": 1,
+      "cand_only": 2,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 0.75,
+        "delta": -0.25,
+        "net_flips": -1
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.5,
+        "candidate": 0.75,
+        "delta": 0.25,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.5,
+        "delta": 0.25,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "situation_inference_rate: pooled delta +0.219 beyond ±0.030",
+     "situation_inference_rate: raw delta +18.8pp (+3 items)",
+     "situation_inference_rate: presidio_ko delta +12.5pp (+2 items)",
+     "situation_inference_rate: gliner_pii delta +25.0pp (+4 items)",
+     "situation_inference_rate: airlock_f0ba569 delta +31.2pp (+5 items)",
+     "linkable_disclosure_rate: pooled delta +0.089 beyond ±0.030",
+     "linkable_disclosure_rate: raw delta +21.4pp (+3 items)"
+    ]
+   },
+   "ultra-retest": {
+    "items": 64,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "situation_inference_rate": {
+      "n": 64,
+      "kappa": 0.8894009216589862,
+      "agreement": 0.953125,
+      "reference": 0.6875,
+      "candidate": 0.703125,
+      "delta": 0.015625,
+      "ref_only": 1,
+      "cand_only": 2,
+      "per_system": {
+       "raw": {
+        "n": 16,
+        "reference": 0.75,
+        "candidate": 0.8125,
+        "delta": 0.0625,
+        "net_flips": 1
+       },
+       "presidio_ko": {
+        "n": 16,
+        "reference": 0.8125,
+        "candidate": 0.8125,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 16,
+        "reference": 0.625,
+        "candidate": 0.625,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 16,
+        "reference": 0.5625,
+        "candidate": 0.5625,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     },
+     "linkable_disclosure_rate": {
+      "n": 56,
+      "kappa": 0.8789625360230546,
+      "agreement": 0.9464285714285714,
+      "reference": 0.32142857142857145,
+      "candidate": 0.3392857142857143,
+      "delta": 0.01785714285714285,
+      "ref_only": 1,
+      "cand_only": 2,
+      "per_system": {
+       "raw": {
+        "n": 14,
+        "reference": 0.7142857142857143,
+        "candidate": 0.7857142857142857,
+        "delta": 0.0714285714285714,
+        "net_flips": 1
+       },
+       "presidio_ko": {
+        "n": 14,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 14,
+        "reference": 0.0,
+        "candidate": 0.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 14,
+        "reference": 0.07142857142857142,
+        "candidate": 0.07142857142857142,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "attack_intent_inference_rate": {
+      "n": 16,
+      "kappa": 1.0,
+      "agreement": 1.0,
+      "reference": 0.6875,
+      "candidate": 0.6875,
+      "delta": 0.0,
+      "ref_only": 0,
+      "cand_only": 0,
+      "per_system": {
+       "raw": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "presidio_ko": {
+        "n": 4,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 4,
+        "reference": 0.5,
+        "candidate": 0.5,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 4,
+        "reference": 0.25,
+        "candidate": 0.25,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": true,
+    "reasons": []
+   }
+  },
+  "utility": {
+   "nvidia/nemotron-3-super-120b-a12b": {
+    "items": 54,
+    "missing": 0,
+    "unparsed": 1,
+    "headlines": {
+     "utility_ratio_vs_reference": {
+      "n": 53,
+      "spearman_system": 0.7919181186386852,
+      "mad_system": 0.41509433962264153,
+      "spearman_all": 0.7542375045611945,
+      "mad_all": 0.46226415094339623,
+      "exact_all": 0.7264150943396226,
+      "reference": 0.6968325791855203,
+      "candidate": 0.7289719626168223,
+      "delta": 0.03213938343130196,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.7402597402597403,
+        "candidate": 0.7534246575342466,
+        "delta": 0.013164917274506305
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.4634146341463415,
+        "candidate": 0.4935064935064935,
+        "delta": 0.030091859360152018
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.9516129032258065,
+        "candidate": 0.984375,
+        "delta": 0.032762096774193505
+       }
+      },
+      "reversals": []
+     },
+     "distortion_rate": {
+      "n": 53,
+      "kappa": -0.03736654804270489,
+      "agreement": 0.5849056603773585,
+      "reference": 0.33962264150943394,
+      "candidate": 0.18867924528301888,
+      "delta": -0.15094339622641506,
+      "ref_only": 15,
+      "cand_only": 7,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.2222222222222222,
+        "delta": -0.16666666666666669,
+        "net_flips": -3
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.2222222222222222,
+        "delta": -0.16666666666666669,
+        "net_flips": -3
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.23529411764705882,
+        "candidate": 0.11764705882352941,
+        "delta": -0.11764705882352941,
+        "net_flips": -2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "distortion_flag_system": {
+      "n": 53,
+      "kappa": 0.18461538461538457,
+      "agreement": 0.6226415094339622,
+      "reference": 0.39622641509433965,
+      "candidate": 0.32075471698113206,
+      "delta": -0.07547169811320759,
+      "ref_only": 12,
+      "cand_only": 8,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.2777777777777778,
+        "delta": -0.1111111111111111,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.4444444444444444,
+        "delta": 0.055555555555555525,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.4117647058823529,
+        "candidate": 0.23529411764705882,
+        "delta": -0.1764705882352941,
+        "net_flips": -3
+       }
+      },
+      "reversals": []
+     },
+     "distortion_flag_reference": {
+      "n": 53,
+      "kappa": 0.29063097514340325,
+      "agreement": 0.8679245283018868,
+      "reference": 0.09433962264150944,
+      "candidate": 0.11320754716981132,
+      "delta": 0.018867924528301883,
+      "ref_only": 3,
+      "cand_only": 4,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.1111111111111111,
+        "candidate": 0.1111111111111111,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.0,
+        "candidate": 0.05555555555555555,
+        "delta": 0.05555555555555555,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 17,
+        "reference": 0.17647058823529413,
+        "candidate": 0.17647058823529413,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "utility_ratio_vs_reference: pooled delta +0.032 beyond ±0.030",
+     "distortion_rate: pooled delta -0.151 beyond ±0.030",
+     "distortion_rate: presidio_ko delta -16.7pp (-3 items)",
+     "distortion_rate: gliner_pii delta -16.7pp (-3 items)",
+     "distortion_rate: airlock_f0ba569 delta -11.8pp (-2 items)"
+    ]
+   },
+   "nvidia/Nemotron-3_5-Lightning": {
+    "items": 54,
+    "missing": 0,
+    "unparsed": 1,
+    "headlines": {
+     "utility_ratio_vs_reference": {
+      "n": 53,
+      "spearman_system": 0.630059116155679,
+      "mad_system": 0.7924528301886793,
+      "spearman_all": 0.6621445694096515,
+      "mad_all": 0.7075471698113207,
+      "exact_all": 0.5943396226415094,
+      "reference": 0.7136363636363636,
+      "candidate": 0.7808219178082192,
+      "delta": 0.06718555417185557,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.7402597402597403,
+        "candidate": 0.75,
+        "delta": 0.009740259740259716
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.46153846153846156,
+        "candidate": 0.5616438356164384,
+        "delta": 0.10010537407797682
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.9846153846153846,
+        "candidate": 1.042857142857143,
+        "delta": 0.05824175824175837
+       }
+      },
+      "reversals": []
+     },
+     "distortion_rate": {
+      "n": 53,
+      "kappa": 0.18986323411102154,
+      "agreement": 0.6415094339622641,
+      "reference": 0.32075471698113206,
+      "candidate": 0.33962264150943394,
+      "delta": 0.018867924528301883,
+      "ref_only": 9,
+      "cand_only": 10,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.3888888888888889,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.35294117647058826,
+        "candidate": 0.29411764705882354,
+        "delta": -0.05882352941176472,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.2222222222222222,
+        "candidate": 0.3333333333333333,
+        "delta": 0.1111111111111111,
+        "net_flips": 2
+       }
+      },
+      "reversals": [
+       [
+        "gliner_pii",
+        "airlock_f0ba569"
+       ]
+      ]
+     }
+    },
+    "extras": {
+     "distortion_flag_system": {
+      "n": 53,
+      "kappa": 0.24456114028507123,
+      "agreement": 0.6415094339622641,
+      "reference": 0.37735849056603776,
+      "candidate": 0.39622641509433965,
+      "delta": 0.018867924528301883,
+      "ref_only": 9,
+      "cand_only": 10,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.4444444444444444,
+        "delta": 0.055555555555555525,
+        "net_flips": 1
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.35294117647058826,
+        "candidate": 0.4117647058823529,
+        "delta": 0.05882352941176466,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.3333333333333333,
+        "delta": -0.05555555555555558,
+        "net_flips": -1
+       }
+      },
+      "reversals": []
+     },
+     "distortion_flag_reference": {
+      "n": 53,
+      "kappa": 0.12637362637362637,
+      "agreement": 0.7735849056603774,
+      "reference": 0.11320754716981132,
+      "candidate": 0.18867924528301888,
+      "delta": 0.07547169811320756,
+      "ref_only": 4,
+      "cand_only": 8,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.1111111111111111,
+        "candidate": 0.16666666666666666,
+        "delta": 0.05555555555555555,
+        "net_flips": 1
+       },
+       "gliner_pii": {
+        "n": 17,
+        "reference": 0.0,
+        "candidate": 0.11764705882352941,
+        "delta": 0.11764705882352941,
+        "net_flips": 2
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.2222222222222222,
+        "candidate": 0.2777777777777778,
+        "delta": 0.05555555555555558,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "utility_ratio_vs_reference: pooled delta +0.067 beyond ±0.030",
+     "utility_ratio_vs_reference: gliner_pii delta +0.100 beyond ±0.050",
+     "utility_ratio_vs_reference: airlock_f0ba569 delta +0.058 beyond ±0.050",
+     "distortion_rate: airlock_f0ba569 delta +11.1pp (+2 items)",
+     "distortion_rate: ranking of gliner_pii vs airlock_f0ba569 reversed"
+    ]
+   },
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "items": 54,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "utility_ratio_vs_reference": {
+      "n": 54,
+      "spearman_system": 0.657290821242399,
+      "mad_system": 0.8888888888888888,
+      "spearman_all": 0.6093668824281828,
+      "mad_all": 0.7407407407407407,
+      "exact_all": 0.5370370370370371,
+      "reference": 0.7098214285714286,
+      "candidate": 0.8491379310344828,
+      "delta": 0.13931650246305416,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.7402597402597403,
+        "candidate": 0.7901234567901234,
+        "delta": 0.04986371653038313
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.4634146341463415,
+        "candidate": 0.6829268292682927,
+        "delta": 0.21951219512195125
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.9846153846153846,
+        "candidate": 1.115942028985507,
+        "delta": 0.13132664437012254
+       }
+      },
+      "reversals": []
+     },
+     "distortion_rate": {
+      "n": 54,
+      "kappa": 0.11764705882352941,
+      "agreement": 0.6296296296296297,
+      "reference": 0.3333333333333333,
+      "candidate": 0.25925925925925924,
+      "delta": -0.07407407407407407,
+      "ref_only": 12,
+      "cand_only": 8,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.2777777777777778,
+        "delta": -0.1111111111111111,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.3888888888888889,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.2222222222222222,
+        "candidate": 0.1111111111111111,
+        "delta": -0.1111111111111111,
+        "net_flips": -2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "distortion_flag_system": {
+      "n": 54,
+      "kappa": 0.1290322580645163,
+      "agreement": 0.6111111111111112,
+      "reference": 0.3888888888888889,
+      "candidate": 0.25925925925925924,
+      "delta": -0.12962962962962965,
+      "ref_only": 14,
+      "cand_only": 7,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.2777777777777778,
+        "delta": -0.1111111111111111,
+        "net_flips": -2
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.3888888888888889,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.3888888888888889,
+        "candidate": 0.1111111111111111,
+        "delta": -0.2777777777777778,
+        "net_flips": -5
+       }
+      },
+      "reversals": []
+     },
+     "distortion_flag_reference": {
+      "n": 54,
+      "kappa": 0.25,
+      "agreement": 0.8518518518518519,
+      "reference": 0.1111111111111111,
+      "candidate": 0.1111111111111111,
+      "delta": 0.0,
+      "ref_only": 4,
+      "cand_only": 4,
+      "per_system": {
+       "presidio_ko": {
+        "n": 18,
+        "reference": 0.1111111111111111,
+        "candidate": 0.05555555555555555,
+        "delta": -0.05555555555555555,
+        "net_flips": -1
+       },
+       "gliner_pii": {
+        "n": 18,
+        "reference": 0.0,
+        "candidate": 0.05555555555555555,
+        "delta": 0.05555555555555555,
+        "net_flips": 1
+       },
+       "airlock_f0ba569": {
+        "n": 18,
+        "reference": 0.2222222222222222,
+        "candidate": 0.2222222222222222,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "utility_ratio_vs_reference: pooled delta +0.139 beyond ±0.030",
+     "utility_ratio_vs_reference: gliner_pii delta +0.220 beyond ±0.050",
+     "utility_ratio_vs_reference: airlock_f0ba569 delta +0.131 beyond ±0.050",
+     "distortion_rate: pooled delta -0.074 beyond ±0.030",
+     "distortion_rate: presidio_ko delta -11.1pp (-2 items)",
+     "distortion_rate: airlock_f0ba569 delta -11.1pp (-2 items)"
+    ]
+   }
+  },
+  "distortion_confirm": {
+   "nvidia/nemotron-3-super-120b-a12b": {
+    "items": 66,
+    "missing": 0,
+    "unparsed": 1,
+    "headlines": {
+     "distortion_rate": {
+      "n": 66,
+      "kappa": 0.7407407407407406,
+      "agreement": 0.8939393939393939,
+      "reference": 0.3333333333333333,
+      "candidate": 0.22727272727272727,
+      "delta": -0.10606060606060605,
+      "ref_only": 7,
+      "cand_only": 0,
+      "per_system": {
+       "presidio_ko": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.13636363636363635,
+        "delta": -0.2272727272727273,
+        "net_flips": -5
+       },
+       "airlock_f0ba569": {
+        "n": 22,
+        "reference": 0.2727272727272727,
+        "candidate": 0.18181818181818182,
+        "delta": -0.09090909090909088,
+        "net_flips": -2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "confirmed": {
+      "n": 32,
+      "kappa": 0.32075471698113206,
+      "agreement": 0.71875,
+      "reference": 0.84375,
+      "candidate": 0.625,
+      "delta": -0.21875,
+      "ref_only": 8,
+      "cand_only": 1,
+      "per_system": {
+       "presidio_ko": {
+        "n": 11,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 8,
+        "reference": 1.0,
+        "candidate": 0.375,
+        "delta": -0.625,
+        "net_flips": -5
+       },
+       "airlock_f0ba569": {
+        "n": 13,
+        "reference": 0.6153846153846154,
+        "candidate": 0.46153846153846156,
+        "delta": -0.15384615384615385,
+        "net_flips": -2
+       }
+      },
+      "reversals": [
+       [
+        "gliner_pii",
+        "airlock_f0ba569"
+       ]
+      ]
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "distortion_rate: pooled delta -0.106 beyond ±0.030",
+     "distortion_rate: gliner_pii delta -22.7pp (-5 items)",
+     "distortion_rate: airlock_f0ba569 delta -9.1pp (-2 items)"
+    ]
+   },
+   "nvidia/Nemotron-3_5-Lightning": {
+    "items": 66,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "distortion_rate": {
+      "n": 66,
+      "kappa": 0.8275862068965516,
+      "agreement": 0.9242424242424242,
+      "reference": 0.3333333333333333,
+      "candidate": 0.3181818181818182,
+      "delta": -0.015151515151515138,
+      "ref_only": 3,
+      "cand_only": 2,
+      "per_system": {
+       "presidio_ko": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.3181818181818182,
+        "delta": -0.04545454545454547,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 22,
+        "reference": 0.2727272727272727,
+        "candidate": 0.2727272727272727,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "confirmed": {
+      "n": 32,
+      "kappa": 0.2328767123287671,
+      "agreement": 0.78125,
+      "reference": 0.84375,
+      "candidate": 0.8125,
+      "delta": -0.03125,
+      "ref_only": 4,
+      "cand_only": 3,
+      "per_system": {
+       "presidio_ko": {
+        "n": 11,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 8,
+        "reference": 1.0,
+        "candidate": 0.875,
+        "delta": -0.125,
+        "net_flips": -1
+       },
+       "airlock_f0ba569": {
+        "n": 13,
+        "reference": 0.6153846153846154,
+        "candidate": 0.6153846153846154,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": true,
+    "reasons": []
+   },
+   "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B": {
+    "items": 66,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "distortion_rate": {
+      "n": 66,
+      "kappa": 0.9010989010989012,
+      "agreement": 0.9545454545454546,
+      "reference": 0.3333333333333333,
+      "candidate": 0.3787878787878788,
+      "delta": 0.04545454545454547,
+      "ref_only": 0,
+      "cand_only": 3,
+      "per_system": {
+       "presidio_ko": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 22,
+        "reference": 0.2727272727272727,
+        "candidate": 0.4090909090909091,
+        "delta": 0.1363636363636364,
+        "net_flips": 3
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "confirmed": {
+      "n": 32,
+      "kappa": 0.0,
+      "agreement": 0.84375,
+      "reference": 0.84375,
+      "candidate": 1.0,
+      "delta": 0.15625,
+      "ref_only": 0,
+      "cand_only": 5,
+      "per_system": {
+       "presidio_ko": {
+        "n": 11,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 8,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 13,
+        "reference": 0.6153846153846154,
+        "candidate": 1.0,
+        "delta": 0.3846153846153846,
+        "net_flips": 5
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "distortion_rate: pooled delta +0.045 beyond ±0.030",
+     "distortion_rate: airlock_f0ba569 delta +13.6pp (+3 items)"
+    ]
+   },
+   "ultra-retest": {
+    "items": 66,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "distortion_rate": {
+      "n": 66,
+      "kappa": 1.0,
+      "agreement": 1.0,
+      "reference": 0.3333333333333333,
+      "candidate": 0.3333333333333333,
+      "delta": 0.0,
+      "ref_only": 0,
+      "cand_only": 0,
+      "per_system": {
+       "presidio_ko": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 22,
+        "reference": 0.36363636363636365,
+        "candidate": 0.36363636363636365,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 22,
+        "reference": 0.2727272727272727,
+        "candidate": 0.2727272727272727,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "confirmed": {
+      "n": 32,
+      "kappa": 1.0,
+      "agreement": 1.0,
+      "reference": 0.84375,
+      "candidate": 0.84375,
+      "delta": 0.0,
+      "ref_only": 0,
+      "cand_only": 0,
+      "per_system": {
+       "presidio_ko": {
+        "n": 11,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "gliner_pii": {
+        "n": 8,
+        "reference": 1.0,
+        "candidate": 1.0,
+        "delta": 0.0,
+        "net_flips": 0
+       },
+       "airlock_f0ba569": {
+        "n": 13,
+        "reference": 0.6153846153846154,
+        "candidate": 0.6153846153846154,
+        "delta": 0.0,
+        "net_flips": 0
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": true,
+    "reasons": []
+   }
+  }
+ },
+ "recommendation": {
+  "attack": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "grader": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "utility": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "distortion_confirm": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ "spend": {
+  "rows": [
+   {
+    "role": "attack",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 95,
+    "prompt_tokens": 57238,
+    "completion_tokens": 27061,
+    "usd": 0.009928919999999999
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 48,
+    "prompt_tokens": 25361,
+    "completion_tokens": 4305,
+    "usd": 0.038276000000000004
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 39,
+    "prompt_tokens": 20287,
+    "completion_tokens": 3662,
+    "usd": 0.03127299999999999
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 129,
+    "prompt_tokens": 96854,
+    "completion_tokens": 370375,
+    "usd": 0.09470124000000002
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 48,
+    "prompt_tokens": 24989,
+    "completion_tokens": 4551,
+    "usd": 0.038641999999999996
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 91,
+    "prompt_tokens": 67857,
+    "completion_tokens": 20000,
+    "usd": 0.0383571
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 32,
+    "prompt_tokens": 47043,
+    "completion_tokens": 1708,
+    "usd": 0.0032325000000000006
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 60,
+    "prompt_tokens": 90585,
+    "completion_tokens": 3907,
+    "usd": 0.006372779999999999
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 32,
+    "prompt_tokens": 49473,
+    "completion_tokens": 1315,
+    "usd": 0.016025400000000002
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "ultra-retest",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 32,
+    "prompt_tokens": 47043,
+    "completion_tokens": 1740,
+    "usd": 0.052263
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 79,
+    "prompt_tokens": 47296,
+    "completion_tokens": 9240,
+    "usd": 0.005055359999999999
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 79,
+    "prompt_tokens": 44931,
+    "completion_tokens": 7839,
+    "usd": 0.004577220000000001
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 79,
+    "prompt_tokens": 49710,
+    "completion_tokens": 5719,
+    "usd": 0.0200601
+   },
+   {
+    "role": "grader",
+    "subject": "ultra-retest",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 79,
+    "prompt_tokens": 44931,
+    "completion_tokens": 7358,
+    "usd": 0.06700500000000002
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 74,
+    "prompt_tokens": 157082,
+    "completion_tokens": 12436,
+    "usd": 0.012409559999999991
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 85,
+    "prompt_tokens": 176723,
+    "completion_tokens": 13347,
+    "usd": 0.013806659999999997
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 77,
+    "prompt_tokens": 165154,
+    "completion_tokens": 9897,
+    "usd": 0.0584535
+   }
+  ],
+  "total": {
+   "prompt_tokens": 1212557,
+   "completion_tokens": 504460,
+   "usd": 0.51043934
+  }
+ },
+ "caveats": [
+  "Small sample. Per-system rates rest on a handful of items (see `n`), so a single flipped item moves a per-system rate by several points. The pooled deltas and kappas are the stronger evidence; the per-system rule allows one net flip for that reason.",
+  "One stored Ultra sample is the reference. Ultra at temperature 0 is not fully deterministic; the retest rows show how much Ultra disagrees with itself, and the tolerance widens to that noise.",
+  "The attacker sets the privacy numbers' ceiling. A weaker attacker makes every system look safer, which is why the attacker role is judged on the recovery rates themselves, not only on agreement.",
+  "Isolated roles. The grader is measured on Ultra's attacker outputs and the confirmation on Ultra's flags. Combining a cheaper attacker with a cheaper grader was not measured separately; the attacker check already uses the Ultra grader.",
+  "Thinking is off for every model, matching how the stored Ultra scores were made. With thinking on the candidates might agree more, at several times the completion tokens.",
+  "Same model family. All candidates are Nemotron 3 variants, so shared biases with Ultra would not show up as disagreement."
+ ],
+ "extensions": [
+  {
+   "generated_at": "2026-09-13T21:15:06.883100+00:00",
+   "cases": [
+    "adv-en-07",
+    "adv-en-03",
+    "adv-en-08",
+    "adv-ko-10",
+    "adv-ko-13",
+    "adv-ko-12",
+    "ben-en-13",
+    "ben-en-08",
+    "ben-en-01",
+    "ben-ko-10",
+    "ben-ko-01",
+    "ben-ko-03",
+    "pii-en-01",
+    "pii-en-12",
+    "pii-en-03",
+    "pii-ko-08",
+    "pii-ko-06",
+    "pii-ko-09",
+    "fin-en-10",
+    "fin-en-08",
+    "fin-en-12",
+    "fin-ko-11",
+    "fin-ko-04",
+    "fin-ko-09",
+    "hlt-en-02",
+    "hlt-en-08",
+    "hlt-en-06",
+    "hlt-ko-14",
+    "hlt-ko-07",
+    "hlt-ko-13",
+    "int-en-10",
+    "int-en-04",
+    "int-en-13",
+    "int-ko-05",
+    "int-ko-03",
+    "int-ko-11",
+    "qid-en-01",
+    "qid-en-05",
+    "qid-en-03",
+    "qid-ko-12",
+    "qid-ko-11",
+    "qid-ko-04",
+    "sec-en-01",
+    "sec-en-07",
+    "sec-en-06",
+    "sec-ko-02",
+    "sec-ko-06",
+    "sec-ko-13",
+    "vlt-en-13",
+    "vlt-en-08",
+    "vlt-en-05",
+    "vlt-ko-03",
+    "vlt-ko-01",
+    "vlt-ko-05"
+   ],
+   "models": {
+    "attack": [
+     "nvidia/Nemotron-3_5-Lightning"
+    ],
+    "grader": [
+     "nvidia/Nemotron-3_5-Lightning"
+    ],
+    "utility": [
+     "nvidia/Nemotron-3_5-Lightning"
+    ],
+    "distortion_confirm": [
+     "nvidia/Nemotron-3_5-Lightning"
+    ]
+   },
+   "sample": {
+    "per_stratum": 3,
+    "sensitive_extra": 0,
+    "seed": 0
+   },
+   "role_samples": {
+    "distortion_confirm": {
+     "systems": [
+      "presidio_ko",
+      "gliner_pii",
+      "airlock_f0ba569"
+     ],
+     "cases": [
+      "adv-en-03",
+      "adv-en-07",
+      "adv-en-08",
+      "adv-ko-10",
+      "adv-ko-12",
+      "adv-ko-13",
+      "ben-en-01",
+      "ben-en-08",
+      "ben-en-13",
+      "ben-ko-01",
+      "ben-ko-03",
+      "ben-ko-10",
+      "fin-en-08",
+      "fin-en-10",
+      "fin-en-12",
+      "fin-ko-04",
+      "fin-ko-09",
+      "fin-ko-11",
+      "hlt-en-02",
+      "hlt-en-06",
+      "hlt-en-08",
+      "hlt-ko-07",
+      "hlt-ko-13",
+      "hlt-ko-14",
+      "pii-en-01",
+      "pii-en-03",
+      "pii-en-12",
+      "pii-ko-06",
+      "pii-ko-08",
+      "pii-ko-09",
+      "qid-en-01",
+      "qid-en-03",
+      "qid-en-05",
+      "qid-ko-04",
+      "qid-ko-11",
+      "qid-ko-12",
+      "sec-en-01",
+      "sec-en-06",
+      "sec-en-07",
+      "sec-ko-02",
+      "sec-ko-06",
+      "sec-ko-13",
+      "vlt-en-05",
+      "vlt-en-08",
+      "vlt-en-13",
+      "vlt-ko-01",
+      "vlt-ko-03",
+      "vlt-ko-05"
+     ],
+     "items": 144
+    }
+   },
+   "tag": "confirm-lightning",
+   "estimate": {
+    "distortion_confirm": 117623
+   },
+   "max_tokens": 2000000,
+   "probe_tokens": 9000,
+   "budget_skipped_calls": 0,
+   "missing_items": {
+    "distortion_confirm": {
+     "Lightning": 0
+    }
+   },
+   "analysis": {
+    "distortion_confirm": {
+     "nvidia/Nemotron-3_5-Lightning": {
+      "items": 144,
+      "missing": 0,
+      "unparsed": 0,
+      "headlines": {
+       "distortion_rate": {
+        "n": 144,
+        "kappa": 0.8084179970972425,
+        "agreement": 0.9236111111111112,
+        "reference": 0.2916666666666667,
+        "candidate": 0.2569444444444444,
+        "delta": -0.034722222222222265,
+        "ref_only": 8,
+        "cand_only": 3,
+        "per_system": {
+         "presidio_ko": {
+          "n": 48,
+          "reference": 0.3958333333333333,
+          "candidate": 0.3125,
+          "delta": -0.08333333333333331,
+          "net_flips": -4
+         },
+         "gliner_pii": {
+          "n": 48,
+          "reference": 0.2708333333333333,
+          "candidate": 0.22916666666666666,
+          "delta": -0.04166666666666666,
+          "net_flips": -2
+         },
+         "airlock_f0ba569": {
+          "n": 48,
+          "reference": 0.20833333333333334,
+          "candidate": 0.22916666666666666,
+          "delta": 0.020833333333333315,
+          "net_flips": 1
+         }
+        },
+        "reversals": []
+       }
+      },
+      "extras": {
+       "confirmed": {
+        "n": 60,
+        "kappa": 0.14448669201520928,
+        "agreement": 0.75,
+        "reference": 0.8666666666666667,
+        "candidate": 0.7833333333333333,
+        "delta": -0.08333333333333337,
+        "ref_only": 10,
+        "cand_only": 5,
+        "per_system": {
+         "presidio_ko": {
+          "n": 25,
+          "reference": 1.0,
+          "candidate": 0.8,
+          "delta": -0.19999999999999996,
+          "net_flips": -5
+         },
+         "gliner_pii": {
+          "n": 13,
+          "reference": 1.0,
+          "candidate": 0.8461538461538461,
+          "delta": -0.15384615384615385,
+          "net_flips": -2
+         },
+         "airlock_f0ba569": {
+          "n": 22,
+          "reference": 0.6363636363636364,
+          "candidate": 0.7272727272727273,
+          "delta": 0.09090909090909094,
+          "net_flips": 2
+         }
+        },
+        "reversals": []
+       }
+      },
+      "qualifies": false,
+      "reasons": [
+       "distortion_rate: pooled delta -0.035 beyond ±0.030",
+       "distortion_rate: presidio_ko delta -8.3pp (-4 items)",
+       "distortion_rate: gliner_pii delta -4.2pp (-2 items)"
+      ]
+     }
+    }
+   },
+   "recommendation": {
+    "attack": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "grader": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "utility": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "distortion_confirm": "nvidia/Nemotron-3-Ultra-550b-a55b"
+   },
+   "spend": {
+    "rows": [
+     {
+      "role": "attack",
+      "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "calls": 95,
+      "prompt_tokens": 57238,
+      "completion_tokens": 27061,
+      "usd": 0.009928919999999999
+     },
+     {
+      "role": "attack",
+      "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "calls": 48,
+      "prompt_tokens": 25361,
+      "completion_tokens": 4305,
+      "usd": 0.038276000000000004
+     },
+     {
+      "role": "attack",
+      "subject": "nvidia/Nemotron-3_5-Lightning",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "calls": 39,
+      "prompt_tokens": 20287,
+      "completion_tokens": 3662,
+      "usd": 0.03127299999999999
+     },
+     {
+      "role": "attack",
+      "subject": "nvidia/Nemotron-3_5-Lightning",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "calls": 129,
+      "prompt_tokens": 96854,
+      "completion_tokens": 370375,
+      "usd": 0.09470124000000002
+     },
+     {
+      "role": "attack",
+      "subject": "nvidia/nemotron-3-super-120b-a12b",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "calls": 48,
+      "prompt_tokens": 24989,
+      "completion_tokens": 4551,
+      "usd": 0.038641999999999996
+     },
+     {
+      "role": "attack",
+      "subject": "nvidia/nemotron-3-super-120b-a12b",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "calls": 91,
+      "prompt_tokens": 67857,
+      "completion_tokens": 20000,
+      "usd": 0.0383571
+     },
+     {
+      "role": "distortion_confirm",
+      "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "calls": 32,
+      "prompt_tokens": 47043,
+      "completion_tokens": 1708,
+      "usd": 0.0032325000000000006
+     },
+     {
+      "role": "distortion_confirm",
+      "subject": "nvidia/Nemotron-3_5-Lightning",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "calls": 60,
+      "prompt_tokens": 90585,
+      "completion_tokens": 3907,
+      "usd": 0.006372779999999999
+     },
+     {
+      "role": "distortion_confirm",
+      "subject": "nvidia/nemotron-3-super-120b-a12b",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "calls": 32,
+      "prompt_tokens": 49473,
+      "completion_tokens": 1315,
+      "usd": 0.016025400000000002
+     },
+     {
+      "role": "distortion_confirm",
+      "subject": "ultra-retest",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "calls": 32,
+      "prompt_tokens": 47043,
+      "completion_tokens": 1740,
+      "usd": 0.052263
+     },
+     {
+      "role": "grader",
+      "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "calls": 79,
+      "prompt_tokens": 47296,
+      "completion_tokens": 9240,
+      "usd": 0.005055359999999999
+     },
+     {
+      "role": "grader",
+      "subject": "nvidia/Nemotron-3_5-Lightning",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "calls": 79,
+      "prompt_tokens": 44931,
+      "completion_tokens": 7839,
+      "usd": 0.004577220000000001
+     },
+     {
+      "role": "grader",
+      "subject": "nvidia/nemotron-3-super-120b-a12b",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "calls": 79,
+      "prompt_tokens": 49710,
+      "completion_tokens": 5719,
+      "usd": 0.0200601
+     },
+     {
+      "role": "grader",
+      "subject": "ultra-retest",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "calls": 79,
+      "prompt_tokens": 44931,
+      "completion_tokens": 7358,
+      "usd": 0.06700500000000002
+     },
+     {
+      "role": "utility",
+      "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "calls": 74,
+      "prompt_tokens": 157082,
+      "completion_tokens": 12436,
+      "usd": 0.012409559999999991
+     },
+     {
+      "role": "utility",
+      "subject": "nvidia/Nemotron-3_5-Lightning",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "calls": 85,
+      "prompt_tokens": 176723,
+      "completion_tokens": 13347,
+      "usd": 0.013806659999999997
+     },
+     {
+      "role": "utility",
+      "subject": "nvidia/nemotron-3-super-120b-a12b",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "calls": 77,
+      "prompt_tokens": 165154,
+      "completion_tokens": 9897,
+      "usd": 0.0584535
+     }
+    ],
+    "total": {
+     "prompt_tokens": 1212557,
+     "completion_tokens": 504460,
+     "usd": 0.51043934
+    }
+   },
+   "caveats": [
+    "Small sample. Per-system rates rest on a handful of items (see `n`), so a single flipped item moves a per-system rate by several points. The pooled deltas and kappas are the stronger evidence; the per-system rule allows one net flip for that reason.",
+    "One stored Ultra sample is the reference. Ultra at temperature 0 is not fully deterministic; the retest rows show how much Ultra disagrees with itself, and the tolerance widens to that noise.",
+    "The attacker sets the privacy numbers' ceiling. A weaker attacker makes every system look safer, which is why the attacker role is judged on the recovery rates themselves, not only on agreement.",
+    "Isolated roles. The grader is measured on Ultra's attacker outputs and the confirmation on Ultra's flags. Combining a cheaper attacker with a cheaper grader was not measured separately; the attacker check already uses the Ultra grader.",
+    "Thinking is off for every model, matching how the stored Ultra scores were made. With thinking on the candidates might agree more, at several times the completion tokens.",
+    "Same model family. All candidates are Nemotron 3 variants, so shared biases with Ultra would not show up as disagreement."
+   ]
+  }
+ ]
+}

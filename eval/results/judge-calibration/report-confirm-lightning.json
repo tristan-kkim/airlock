@@ -1,0 +1,413 @@
+{
+ "generated_at": "2026-09-13T21:15:06.883100+00:00",
+ "cases": [
+  "adv-en-07",
+  "adv-en-03",
+  "adv-en-08",
+  "adv-ko-10",
+  "adv-ko-13",
+  "adv-ko-12",
+  "ben-en-13",
+  "ben-en-08",
+  "ben-en-01",
+  "ben-ko-10",
+  "ben-ko-01",
+  "ben-ko-03",
+  "pii-en-01",
+  "pii-en-12",
+  "pii-en-03",
+  "pii-ko-08",
+  "pii-ko-06",
+  "pii-ko-09",
+  "fin-en-10",
+  "fin-en-08",
+  "fin-en-12",
+  "fin-ko-11",
+  "fin-ko-04",
+  "fin-ko-09",
+  "hlt-en-02",
+  "hlt-en-08",
+  "hlt-en-06",
+  "hlt-ko-14",
+  "hlt-ko-07",
+  "hlt-ko-13",
+  "int-en-10",
+  "int-en-04",
+  "int-en-13",
+  "int-ko-05",
+  "int-ko-03",
+  "int-ko-11",
+  "qid-en-01",
+  "qid-en-05",
+  "qid-en-03",
+  "qid-ko-12",
+  "qid-ko-11",
+  "qid-ko-04",
+  "sec-en-01",
+  "sec-en-07",
+  "sec-en-06",
+  "sec-ko-02",
+  "sec-ko-06",
+  "sec-ko-13",
+  "vlt-en-13",
+  "vlt-en-08",
+  "vlt-en-05",
+  "vlt-ko-03",
+  "vlt-ko-01",
+  "vlt-ko-05"
+ ],
+ "models": {
+  "attack": [
+   "nvidia/Nemotron-3_5-Lightning"
+  ],
+  "grader": [
+   "nvidia/Nemotron-3_5-Lightning"
+  ],
+  "utility": [
+   "nvidia/Nemotron-3_5-Lightning"
+  ],
+  "distortion_confirm": [
+   "nvidia/Nemotron-3_5-Lightning"
+  ]
+ },
+ "sample": {
+  "per_stratum": 3,
+  "sensitive_extra": 0,
+  "seed": 0
+ },
+ "role_samples": {
+  "distortion_confirm": {
+   "systems": [
+    "presidio_ko",
+    "gliner_pii",
+    "airlock_f0ba569"
+   ],
+   "cases": [
+    "adv-en-03",
+    "adv-en-07",
+    "adv-en-08",
+    "adv-ko-10",
+    "adv-ko-12",
+    "adv-ko-13",
+    "ben-en-01",
+    "ben-en-08",
+    "ben-en-13",
+    "ben-ko-01",
+    "ben-ko-03",
+    "ben-ko-10",
+    "fin-en-08",
+    "fin-en-10",
+    "fin-en-12",
+    "fin-ko-04",
+    "fin-ko-09",
+    "fin-ko-11",
+    "hlt-en-02",
+    "hlt-en-06",
+    "hlt-en-08",
+    "hlt-ko-07",
+    "hlt-ko-13",
+    "hlt-ko-14",
+    "pii-en-01",
+    "pii-en-03",
+    "pii-en-12",
+    "pii-ko-06",
+    "pii-ko-08",
+    "pii-ko-09",
+    "qid-en-01",
+    "qid-en-03",
+    "qid-en-05",
+    "qid-ko-04",
+    "qid-ko-11",
+    "qid-ko-12",
+    "sec-en-01",
+    "sec-en-06",
+    "sec-en-07",
+    "sec-ko-02",
+    "sec-ko-06",
+    "sec-ko-13",
+    "vlt-en-05",
+    "vlt-en-08",
+    "vlt-en-13",
+    "vlt-ko-01",
+    "vlt-ko-03",
+    "vlt-ko-05"
+   ],
+   "items": 144
+  }
+ },
+ "tag": "confirm-lightning",
+ "estimate": {
+  "distortion_confirm": 117623
+ },
+ "max_tokens": 2000000,
+ "probe_tokens": 9000,
+ "budget_skipped_calls": 0,
+ "missing_items": {
+  "distortion_confirm": {
+   "Lightning": 0
+  }
+ },
+ "analysis": {
+  "distortion_confirm": {
+   "nvidia/Nemotron-3_5-Lightning": {
+    "items": 144,
+    "missing": 0,
+    "unparsed": 0,
+    "headlines": {
+     "distortion_rate": {
+      "n": 144,
+      "kappa": 0.8084179970972425,
+      "agreement": 0.9236111111111112,
+      "reference": 0.2916666666666667,
+      "candidate": 0.2569444444444444,
+      "delta": -0.034722222222222265,
+      "ref_only": 8,
+      "cand_only": 3,
+      "per_system": {
+       "presidio_ko": {
+        "n": 48,
+        "reference": 0.3958333333333333,
+        "candidate": 0.3125,
+        "delta": -0.08333333333333331,
+        "net_flips": -4
+       },
+       "gliner_pii": {
+        "n": 48,
+        "reference": 0.2708333333333333,
+        "candidate": 0.22916666666666666,
+        "delta": -0.04166666666666666,
+        "net_flips": -2
+       },
+       "airlock_f0ba569": {
+        "n": 48,
+        "reference": 0.20833333333333334,
+        "candidate": 0.22916666666666666,
+        "delta": 0.020833333333333315,
+        "net_flips": 1
+       }
+      },
+      "reversals": []
+     }
+    },
+    "extras": {
+     "confirmed": {
+      "n": 60,
+      "kappa": 0.14448669201520928,
+      "agreement": 0.75,
+      "reference": 0.8666666666666667,
+      "candidate": 0.7833333333333333,
+      "delta": -0.08333333333333337,
+      "ref_only": 10,
+      "cand_only": 5,
+      "per_system": {
+       "presidio_ko": {
+        "n": 25,
+        "reference": 1.0,
+        "candidate": 0.8,
+        "delta": -0.19999999999999996,
+        "net_flips": -5
+       },
+       "gliner_pii": {
+        "n": 13,
+        "reference": 1.0,
+        "candidate": 0.8461538461538461,
+        "delta": -0.15384615384615385,
+        "net_flips": -2
+       },
+       "airlock_f0ba569": {
+        "n": 22,
+        "reference": 0.6363636363636364,
+        "candidate": 0.7272727272727273,
+        "delta": 0.09090909090909094,
+        "net_flips": 2
+       }
+      },
+      "reversals": []
+     }
+    },
+    "qualifies": false,
+    "reasons": [
+     "distortion_rate: pooled delta -0.035 beyond ±0.030",
+     "distortion_rate: presidio_ko delta -8.3pp (-4 items)",
+     "distortion_rate: gliner_pii delta -4.2pp (-2 items)"
+    ]
+   }
+  }
+ },
+ "recommendation": {
+  "attack": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "grader": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "utility": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "distortion_confirm": "nvidia/Nemotron-3-Ultra-550b-a55b"
+ },
+ "spend": {
+  "rows": [
+   {
+    "role": "attack",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 95,
+    "prompt_tokens": 57238,
+    "completion_tokens": 27061,
+    "usd": 0.009928919999999999
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 48,
+    "prompt_tokens": 25361,
+    "completion_tokens": 4305,
+    "usd": 0.038276000000000004
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 39,
+    "prompt_tokens": 20287,
+    "completion_tokens": 3662,
+    "usd": 0.03127299999999999
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 129,
+    "prompt_tokens": 96854,
+    "completion_tokens": 370375,
+    "usd": 0.09470124000000002
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 48,
+    "prompt_tokens": 24989,
+    "completion_tokens": 4551,
+    "usd": 0.038641999999999996
+   },
+   {
+    "role": "attack",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 91,
+    "prompt_tokens": 67857,
+    "completion_tokens": 20000,
+    "usd": 0.0383571
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 32,
+    "prompt_tokens": 47043,
+    "completion_tokens": 1708,
+    "usd": 0.0032325000000000006
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 60,
+    "prompt_tokens": 90585,
+    "completion_tokens": 3907,
+    "usd": 0.006372779999999999
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 32,
+    "prompt_tokens": 49473,
+    "completion_tokens": 1315,
+    "usd": 0.016025400000000002
+   },
+   {
+    "role": "distortion_confirm",
+    "subject": "ultra-retest",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 32,
+    "prompt_tokens": 47043,
+    "completion_tokens": 1740,
+    "usd": 0.052263
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 79,
+    "prompt_tokens": 47296,
+    "completion_tokens": 9240,
+    "usd": 0.005055359999999999
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 79,
+    "prompt_tokens": 44931,
+    "completion_tokens": 7839,
+    "usd": 0.004577220000000001
+   },
+   {
+    "role": "grader",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 79,
+    "prompt_tokens": 49710,
+    "completion_tokens": 5719,
+    "usd": 0.0200601
+   },
+   {
+    "role": "grader",
+    "subject": "ultra-retest",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "calls": 79,
+    "prompt_tokens": 44931,
+    "completion_tokens": 7358,
+    "usd": 0.06700500000000002
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "calls": 74,
+    "prompt_tokens": 157082,
+    "completion_tokens": 12436,
+    "usd": 0.012409559999999991
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/Nemotron-3_5-Lightning",
+    "model": "nvidia/Nemotron-3_5-Lightning",
+    "calls": 85,
+    "prompt_tokens": 176723,
+    "completion_tokens": 13347,
+    "usd": 0.013806659999999997
+   },
+   {
+    "role": "utility",
+    "subject": "nvidia/nemotron-3-super-120b-a12b",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "calls": 77,
+    "prompt_tokens": 165154,
+    "completion_tokens": 9897,
+    "usd": 0.0584535
+   }
+  ],
+  "total": {
+   "prompt_tokens": 1212557,
+   "completion_tokens": 504460,
+   "usd": 0.51043934
+  }
+ },
+ "caveats": [
+  "Small sample. Per-system rates rest on a handful of items (see `n`), so a single flipped item moves a per-system rate by several points. The pooled deltas and kappas are the stronger evidence; the per-system rule allows one net flip for that reason.",
+  "One stored Ultra sample is the reference. Ultra at temperature 0 is not fully deterministic; the retest rows show how much Ultra disagrees with itself, and the tolerance widens to that noise.",
+  "The attacker sets the privacy numbers' ceiling. A weaker attacker makes every system look safer, which is why the attacker role is judged on the recovery rates themselves, not only on agreement.",
+  "Isolated roles. The grader is measured on Ultra's attacker outputs and the confirmation on Ultra's flags. Combining a cheaper attacker with a cheaper grader was not measured separately; the attacker check already uses the Ultra grader.",
+  "Thinking is off for every model, matching how the stored Ultra scores were made. With thinking on the candidates might agree more, at several times the completion tokens.",
+  "Same model family. All candidates are Nemotron 3 variants, so shared biases with Ultra would not show up as disagreement."
+ ]
+}
