@@ -120,6 +120,8 @@ Search queries are short, so the risk is rarely a string the gate already knows.
    - `nano` (default): the same local Nano-4B, yes/no JSON at temperature 0.
    - `safety`: NVIDIA Nemotron 3.5 Content Safety in custom-policy mode (`chat_template_kwargs.custom_policy`, temperature 0.01, categories on, thinking off). Placeholders are swapped for `[REDACTED]` in the judge input, because the model reads `<PHONE_1>` as a phone number.
    - `both`: block if either one flags the query.
+
+   In a live spot check of 5 queries through `both`, the two judges agreed on 4. On `Tessellate Health AI acquisition by Corvane Analytics due diligence`, Nano answered "no" and Content Safety flagged it (`Naming a specific non-public person or organization`). The evaluation below used `nano` only.
 5. **Retry, then block.** A rejected rewrite is retried once, with the rejected query as feedback. If that also fails, only this search is blocked: the agent is told the search was withheld and continues. A judge that errors, times out or answers off-schema counts as a flag (fail closed).
 
 The audit hop records `original_query_hmac`, the `outbound_query` actually sent (or `null`), the judge verdict and model, and each attempt's gate reasons and verdict. Rejected candidates are stored only as HMACs.
