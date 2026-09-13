@@ -184,12 +184,14 @@ def test_attack_one_pipeline_with_fake_llm():
     }
     opts = argparse.Namespace(attacker_reasoning="none", grader_reasoning="none")
     row = asyncio.run(attack.attack_one(CASE_I, record, fake_llm, opts))
-    assert [c[0] for c in calls] == ["attack", "grade"]
+    assert [c[0] for c in calls] == ["attack", "grade", "situation"]
     attacker_prompt = calls[0][2][1]["content"]
     assert "다올빛화학 설계팀 희망퇴직" in attacker_prompt and "명단" not in attacker_prompt
     assert "명단" in calls[1][2][1]["content"]  # the grader sees the private context
+    assert "regardless of WHO" in calls[2][2][0]["content"]  # situation grader, no anchor needed
     assert row["attacker"]["parsed_ok"] and row["intent_match"] is True
     assert row["score"]["quasi"]["reidentified"] and row["score"]["intent_inferred"] is True
+    assert row["situation_match"] is True and row["score"]["situation_inferred"] is True
     assert attack.rescore_row(CASE_I, row) == row["score"]
 
     calls.clear()
@@ -203,6 +205,7 @@ def test_estimate_run_skips_blocked_and_counts_grader():
     blocked = {"audit": {"outbound": []}}
     est = attack.estimate_run([(CASE_I, ok), (CASE_Q, ok), (CASE_Q, blocked)])
     assert est["attacker_calls"] == 2 and est["grader_calls"] == 1
+    assert est["situation_grader_calls"] == 2  # both sensitive cases that sent something
     assert est["prompt_tokens_est"] > 2 * 100
     assert attack.estimate_tokens("abcd") == 1 and attack.estimate_tokens("가나") == 2
 
@@ -286,7 +289,7 @@ def test_empty_attack_is_retried_once_with_low_reasoning():
     }
     opts = argparse.Namespace(attacker_reasoning="none", grader_reasoning="none")
     row = asyncio.run(attack.attack_one(CASE_Q, record, fake_llm, opts))
-    assert seen == [("attack", "none", 1500), ("attack", "low", 6000)]
+    assert seen == [("attack", "none", 1500), ("attack", "low", 6000), ("situation", "none", 200)]
     assert row["attacker"]["reasoning"] == "low" and row["attacker"]["empty_first_attempt"]
     assert row["score"]["quasi"]["attributes"][1] == "exact"
-    assert list(attack.iter_usage(row)) == [{"prompt_tokens": 5, "completion_tokens": 7}]
+    assert list(attack.iter_usage(row))[0] == {"prompt_tokens": 5, "completion_tokens": 7}
