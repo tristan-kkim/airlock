@@ -1078,34 +1078,36 @@ def render_outcome(report: dict[str, Any]) -> list[str]:
 
 
 def render_projection(recommendation: dict[str, str]) -> list[str]:
-    """Projected final-protocol tokens and dollars (eval/protocol_estimate.py)."""
+    """Projected final-protocol tokens and dollars (eval/protocol_estimate.py variants)."""
     import protocol_estimate as pe
 
-    n_cases = len(pe.load_cases())
-    rows = [
-        ("5 systems x 3 passes (4 baselines + 1 Airlock variant)", 3, 1.0),
-        ("5 systems x 2 passes", 2, 1.0),
-        (f"5 systems x 3 passes, stratified 120 of {n_cases} cases", 3, 120 / n_cases),
-        (f"5 systems x 2 passes, stratified 120 of {n_cases} cases", 2, 120 / n_cases),
-    ]
     lines = [
         "### Projected final protocol cost",
         "",
-        "From `eval/protocol_estimate.py` (typical completion lengths measured on the stored "
-        "runs; list prices). Answers (Airlock upstream, reference and baseline answers) are "
-        "always Ultra: they are what the systems are measured on. The 120-case rows are "
-        "projections: the scripts have no stratified-subset option yet (`--limit` takes the "
-        "first N cases).",
+        "From `eval/protocol_estimate.py --variants` (typical completion lengths measured on the "
+        "stored runs; list prices). Airlock upstream answers are Ultra calls and are included. "
+        "Airlock passes are assumed to differ (the local detector samples at temperature 0.6); "
+        "the four deterministic baselines are scored once, their identical passes reused by "
+        "payload hash (`eval/reuse.py`), or reused entirely from the committed runs.",
         "",
-        "| Variant | Tokens | USD, recommended roles | USD, all roles Ultra |",
-        "|---|---:|---:|---:|",
+        "| Variant | Airlock upstream | Airlock scoring | Total, baselines scored once | "
+        "Total, baselines reused from committed runs | Total without reuse |",
+        "|---|---:|---:|---:|---:|---:|",
     ]
-    for title, passes, share in rows:
-        est = pe.estimate(passes, passes, pe.BASELINES, 1, recommendation, share)
-        t = est["total"]
+
+    def cell(tokens: float, usd: float) -> str:
+        return f"{tokens / 1e6:.1f}M, ${usd:.2f}"
+
+    for r in pe.variant_rows(recommendation):
+        up = r["airlock_upstream"]
+        up_tokens = up["prompt"] + up["completion_typical"]
+        a = r["airlock"]
         lines.append(
-            f"| {title} | {t['prompt'] + t['completion_typical']:,} | {t['usd']:.2f} | "
-            f"{t['usd_all_ultra']:.2f} |"
+            f"| {r['variant']} | {cell(up_tokens, up['usd'])} | "
+            f"{cell(a['tokens'] - up_tokens, a['usd'] - up['usd'])} | "
+            f"{cell(r['total_once']['tokens'], r['total_once']['usd'])} | "
+            f"{cell(r['total_reused']['tokens'], r['total_reused']['usd'])} | "
+            f"{cell(r['total_no_reuse']['tokens'], r['total_no_reuse']['usd'])} |"
         )
     lines.append("")
     return lines

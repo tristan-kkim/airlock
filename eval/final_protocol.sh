@@ -21,6 +21,11 @@
 #   --ultra             every scoring role on Nemotron 3 Ultra, overriding the environment
 #   --yes               confirm cloud calls (Airlock upstream + Tavily, attacker, judge)
 #   --publish           also write eval/results/COMPARISON.md from this run
+#   --subset SPEC       stratified:N (category x language) or ids:PATH, for every system
+#   --seed S            seed for --subset stratified:N (default 0)
+#   --no-reuse          score every baseline pass (default: reuse identical passes by payload hash)
+#   --reuse-committed   also reuse pass 1 of the committed eval/results/baseline-<name> scores for
+#                       baseline cases whose payload hash is unchanged
 #
 # Scoring role defaults come from eval/results/JUDGE_CALIBRATION.md (eval/attack.py
 # DEFAULT_ROLE_MODELS). The plan prints projected tokens and dollars at list prices before running.
@@ -44,6 +49,10 @@ OUT=""
 MODEL_PATH="${AIRLOCK_LOCAL_MODEL_PATH:-$HOME/.cache/airlock/models/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf}"
 YES=0
 PUBLISH=0
+SUBSET=""
+SEED=0
+REUSE=1
+REUSE_COMMITTED=0
 LLAMA_PORT="${LLAMA_PORT:-8181}"
 AIRLOCK_EVAL_PORT="${AIRLOCK_EVAL_PORT:-8887}"
 READY_TIMEOUT="${READY_TIMEOUT:-1800}"
@@ -67,7 +76,11 @@ while [ $# -gt 0 ]; do
       shift ;;
     --yes) YES=1; shift ;;
     --publish) PUBLISH=1; shift ;;
-    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+    --subset) SUBSET="$2"; shift 2 ;;
+    --seed) SEED="$2"; shift 2 ;;
+    --no-reuse) REUSE=0; shift ;;
+    --reuse-committed) REUSE_COMMITTED=1; shift ;;
+    -h|--help) sed -n '2,37p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -100,11 +113,22 @@ echo "   results:   $OUT"
 echo "   baselines: ${BASELINE_LIST[*]:-none}"
 echo "   airlock:   ${COMMIT:-not measured} variants: ${VARIANTS[*]:-none}"
 echo "   passes:    $PASSES harness, $SCORING_PASSES attacked and judged"
+echo "   cases:     ${SUBSET:-all} (seed $SEED)"
+SUBSET_ARGS=()
+[ -n "$SUBSET" ] && SUBSET_ARGS=(--subset "$SUBSET" --seed "$SEED")
+if [ "$REUSE" != 1 ]; then
+  BASELINE_SCORED="$SCORING_PASSES"; echo "   reuse:     off (every baseline pass is scored)"
+elif [ "$REUSE_COMMITTED" = 1 ]; then
+  BASELINE_SCORED=0; echo "   reuse:     baselines reuse identical passes and committed pass-1 scores"
+else
+  BASELINE_SCORED=1; echo "   reuse:     baselines reuse identical passes (verified by payload hash)"
+fi
 echo
 # Role models reach every script through the AIRLOCK_*_MODEL variables exported above.
 uv run --quiet eval/protocol_estimate.py --passes "$PASSES" --judge-passes "$SCORING_PASSES" \
+  --baseline-judge-passes "$BASELINE_SCORED" ${SUBSET_ARGS[@]+"${SUBSET_ARGS[@]}"} \
   --systems ${BASELINE_LIST[@]+"${BASELINE_LIST[@]}"} --airlock-variants "${#VARIANTS[@]}" \
-  --projections
+  --variants
 echo
 echo "   Every value in the dataset is synthetic. The raw baseline, the reference answers and the"
 echo "   attacker send those synthetic prompts to Token Factory."
@@ -176,7 +200,7 @@ wait_http() {  # url pid log
 run_harness() {  # base_url out label [extra args]
   local base="$1" out="$2" label="$3"; shift 3
   uv run eval/run.py --base-url "$base" --passes "$PASSES" --out "$out" --label "$label" \
-    --reset-vault --timeout 600 "$@"
+    --reset-vault --timeout 600 ${SUBSET_ARGS[@]+"${SUBSET_ARGS[@]}"} "$@"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -248,8 +272,25 @@ fi
 for dir in "$OUT"/baseline-*/; do
   dir="${dir%/}"
   echo "== scoring $(basename "$dir")"
-  uv run eval/attack.py --rescore "$dir" --passes "$SCORING_PASSES"
-  uv run eval/utility.py --results "$dir" --passes "$SCORING_PASSES" --yes
+  REUSE_ARGS=()
+  name="$(basename "$dir")"; name="${name#baseline-}"
+  case "$name" in
+    raw|regex|presidio_ko|gliner_pii)
+      # Deterministic baselines: identical passes are reused by payload hash; any case whose
+      # hash differs is scored normally. Airlock variants are always scored in full.
+      if [ "$REUSE" = 1 ]; then
+        REUSE_ARGS=(--reuse-identical-passes)
+        committed="eval/results/baseline-$name"
+        if [ "$REUSE_COMMITTED" = 1 ] && [ -d "$committed/attack" ] \
+          && [ "$(cd "$committed" && pwd)" != "$(cd "$dir" && pwd)" ]; then
+          REUSE_ARGS+=(--reuse-from "$committed")
+        fi
+      fi ;;
+  esac
+  uv run eval/attack.py --rescore "$dir" --passes "$SCORING_PASSES" \
+    ${SUBSET_ARGS[@]+"${SUBSET_ARGS[@]}"} ${REUSE_ARGS[@]+"${REUSE_ARGS[@]}"}
+  uv run eval/utility.py --results "$dir" --passes "$SCORING_PASSES" --yes \
+    ${SUBSET_ARGS[@]+"${SUBSET_ARGS[@]}"} ${REUSE_ARGS[@]+"${REUSE_ARGS[@]}"}
 done
 uv run eval/reframe.py results "$OUT"/baseline-*/
 uv run eval/compare.py --results "$OUT" --out "$OUT/COMPARISON.md"

@@ -24,14 +24,13 @@ Every candidate moves at least one headline number of its role beyond the tolera
 
 ### Projected final protocol cost
 
-From `eval/protocol_estimate.py` (typical completion lengths measured on the stored runs; list prices). Answers (Airlock upstream, reference and baseline answers) are always Ultra: they are what the systems are measured on. The 120-case rows are projections: the scripts have no stratified-subset option yet (`--limit` takes the first N cases).
+From `eval/protocol_estimate.py --variants` (typical completion lengths measured on the stored runs; list prices). Airlock upstream answers are Ultra calls and are included. Airlock passes are assumed to differ (the local detector samples at temperature 0.6); the four deterministic baselines are scored once, their identical passes reused by payload hash (`eval/reuse.py`), or reused entirely from the committed runs.
 
-| Variant | Tokens | USD, recommended roles | USD, all roles Ultra |
-|---|---:|---:|---:|
-| 5 systems x 3 passes (4 baselines + 1 Airlock variant) | 18,632,205 | 28.42 | 28.42 |
-| 5 systems x 2 passes | 12,421,470 | 18.94 | 18.94 |
-| 5 systems x 3 passes, stratified 120 of 243 cases | 9,201,089 | 14.03 | 14.03 |
-| 5 systems x 2 passes, stratified 120 of 243 cases | 6,134,059 | 9.36 | 9.36 |
+| Variant | Airlock upstream | Airlock scoring | Total, baselines scored once | Total, baselines reused from committed runs | Total without reuse |
+|---|---:|---:|---:|---:|---:|
+| (a) 243 cases, Airlock 3 passes x 1 config | 0.9M, $2.02 | 3.1M, $3.97 | 8.8M, $13.47 | 3.9M, $5.99 | 18.6M, $28.42 |
+| (b) 243 cases, Airlock 3 passes x 2 configs | 1.7M, $4.04 | 6.1M, $7.95 | 12.7M, $19.46 | 7.8M, $11.98 | 22.5M, $34.41 |
+| (c) stratified 120, Airlock 3 passes x 2 configs | 0.9M, $2.01 | 3.0M, $3.87 | 6.2M, $9.52 | 3.8M, $5.88 | 11.0M, $16.80 |
 
 ## Sample
 

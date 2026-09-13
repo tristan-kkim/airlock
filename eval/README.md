@@ -98,6 +98,7 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 | `--conversation-scope` | `pass` | `pass` sends a fresh `x-airlock-conversation-id` for every case in every pass. Without it, Airlock would reuse a pass-1 vault session in pass 2, and the passes would not be independent. |
 | `--concurrency` | 1 | parallel requests (raise with care; it changes latency numbers) |
 | `--seed`, `--no-shuffle` | 0, shuffled | case order is shuffled per pass with a seeded RNG |
+| `--subset` | all | `stratified:N` (proportional per category x language, seeded by `--seed`) or `ids:PATH` (a results directory or `config.json` with `subset.case_ids`, or a text file of ids). The chosen ids go to `config.json` `subset`; `attack.py`, `utility.py` and `final_protocol.sh` take the same option (`eval/subset.py`). |
 | `--category`, `--limit` | all | restrict for smoke tests |
 | `--register-canaries` | off | also declares canaries to the vault. Off by default because it hands the gate the answer. |
 | `--reset-vault` | off | `POST /vault/reset` before the first case: clears declared terms, canaries and conversation mappings |
@@ -124,7 +125,8 @@ without `--yes`: it first prints the plan and a cloud call, token and dollar est
 5 systems at 3 passes, at 2 passes and on a stratified 120-case subset. The scoring roles use the
 models chosen in *Judge models* (`--attack-model`, `--grader-model`, `--judge-model`,
 `--confirm-model` or the `AIRLOCK_*_MODEL` variables override them; `--ultra` puts every role on
-Nemotron 3 Ultra).
+Nemotron 3 Ultra). `--subset stratified:N --seed S` runs every system on the same stratified
+cases.
 
 ```bash
 eval/final_protocol.sh --commit <sha> --gliner both            # plan and estimate only
@@ -147,6 +149,18 @@ eval/final_protocol.sh --commit <sha> --systems "airlock" --gliner on --passes 3
    (attacker, intent and situation graders), `utility.py` (reference answers, baseline answers,
    blind judge, distortion verifier), then `reframe.py results` and `compare.py`, which writes
    `COMPARISON.md` in the results directory (and `eval/results/COMPARISON.md` with `--publish`).
+5. **Score reuse for the deterministic baselines** (`eval/reuse.py`). `raw`, `regex`,
+   `presidio_ko` and `gliner_pii` send the same payloads on every pass. The scripts hash each
+   case's outbound payloads (plus the recorded answer when that is what the judge reads) and,
+   with `--reuse-identical-passes`, reuse the pass-1 attack and utility rows by reference for
+   every later pass whose hash matches; a case whose hash differs is scored normally. Rows carry
+   `payload_sha256` and `reused_from`, `config.json` a `reuse` block with counts per pass, and
+   `COMPARISON.md` marks the pass count with `*`: "scored once; outputs identical across passes,
+   verified by payload hash". `--reuse-committed` also reuses pass 1 of the committed
+   `eval/results/baseline-<name>` scores (`--reuse-from`) when the payload hash and the scoring
+   models are unchanged. `--no-reuse` scores every pass. Airlock variants are always scored in
+   full. Reuse means the attacker's and the judge's own sampling noise is measured once for the
+   baselines, not per pass.
 
 Columns of the resulting table: identity leak, linkable disclosure, identity recovered, situation
 inferred, utility ratio, distortion, over-redaction, benign masked, local overhead p50/p95, and
@@ -499,9 +513,10 @@ uv run eval/attack.py --rescore eval/results/<run> --grade-situation     # add s
 
 Options: `--passes N` (default 1), `--limit N`, `--category` (repeatable), `--out-name` (another
 subdirectory, for ablations), `--attacker-reasoning` / `--grader-reasoning` (default `none`),
-`--concurrency` (6), `--base-url`, `--attack-model` (`AIRLOCK_ATTACK_MODEL`), `--grader-model`
-(`AIRLOCK_GRADER_MODEL`), `--model` (one model for both). Defaults and per-model request
-handling: *Judge models*. `config.json` records `attack_model`, `grader_model`, token usage per
+`--concurrency` (6), `--base-url`, `--subset`/`--seed`, `--reuse-identical-passes`,
+`--reuse-from DIR` (see *Final measurement protocol*), `--attack-model`
+(`AIRLOCK_ATTACK_MODEL`), `--grader-model` (`AIRLOCK_GRADER_MODEL`), `--model` (one model for
+both). Defaults and per-model request handling: *Judge models*. `config.json` records `attack_model`, `grader_model`, token usage per
 role and the list-price cost. The key is `NEBIUS_API_KEY` from the environment or the repository
 `.env`; it is never printed or stored.
 
@@ -634,7 +649,9 @@ For every chat case in the first N passes:
    the contradicting sentence; the flag stands only if confirmed (the judge's flag is kept as
    `distortion_judge`). The confirmation model is its own role (`--confirm-model`,
    `AIRLOCK_DISTORTION_CONFIRM_MODEL`). Stored judgments are reused only if the same judge and
-   confirmation models made them; `config.json` records both and the cost per part. `reasoning_effort: low` fixed the same pilot cases but cost about 5,500
+   confirmation models made them; `config.json` records both and the cost per part.
+   `--subset`, `--reuse-identical-passes` and `--reuse-from` work as in `attack.py`; for recorded
+   answers the hash includes the answer, so Airlock rows are reused only if the answer repeats. `reasoning_effort: low` fixed the same pilot cases but cost about 5,500
    completion tokens per judgment, so it is not the default.
 
 | Metric | Definition |
