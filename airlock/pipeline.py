@@ -90,6 +90,32 @@ PLACEHOLDER_NOTE = (
     "Tokens like <PERSON_1> are placeholders for private values; copy them exactly. "
     "Do not guess or invent the hidden values."
 )
+# The S6 test runs showed the cloud model mishandling bare placeholders: it told the user that
+# the number they typed "is a placeholder", base64-encoded `<SECRET_1>` into a "fixed" config,
+# and wrote about "two people" behind two organization tokens. The note now says that each
+# token stands for a real value the user gave and what kind of value it is. The kinds are the
+# placeholder types already visible in the payload, so the legend reveals nothing new.
+PLACEHOLDER_NOTE_DETAIL = (
+    "Each token stands for a real value the user gave, and the user sees your reply with the "
+    "real values restored. Treat a token as that value: use it where the value belongs and never "
+    "tell the user that a value is a placeholder, hidden or missing. Do not compute anything "
+    "from a token (encodings, checksums, arithmetic, digits); show the steps or the command "
+    "instead."
+)
+TYPE_LEGEND = {
+    "PERSON": "a person's name",
+    "ORG": "an organization's name",
+    "PROJECT": "a project or product codename",
+    "TERM": "a private name the user declared",
+    "CONTACT": "a phone number, e-mail address or handle",
+    "ID_NUMBER": "an ID, account or reference number",
+    "FINANCIAL": "a card number, bank account or money value",
+    "SECRET": "a password, key, token or connection string, exactly as the user wrote it",
+    "LOCATION": "an address or place",
+    "HEALTH": "a health detail",
+    "QUASI_IDENTIFIER": "an identifying personal detail",
+    "CANARY": "a private marker",
+}
 
 _HIGH_CONFIDENCE_NAMES = frozenset(r.name for r in HIGH_CONFIDENCE_RULES)
 
@@ -463,7 +489,9 @@ class Sanitizer:
             "PERSON", "ORG", "CONTACT", "SECRET", "LOCATION"
         ):  # fmt: skip
             return False
-        if span.type == "HEALTH" and generalize.common_health_term(span.text):
+        if span.type == "HEALTH" and (
+            generalize.common_health_term(span.text) or generalize.diagnosis_term(span.text)
+        ):
             return not generalize.SMALL_GROUP_CUE.search(text)
         return generalize.situation_value(span.text, span.type) and not generalize.is_birth_date(
             text, span.start, span.end, span.text
@@ -486,10 +514,24 @@ class Sanitizer:
                 if trimmed is not span:
                     d.stats.spans_trimmed += 1
                 span = trimmed
-                if span.type in ("SECRET", "ORG", "ID_NUMBER") and _IDENTIFIER.fullmatch(span.text):
+                if _code_identifier(span, text):
                     d.stats.llm_dropped_shape += 1
-                    continue  # doc_id, max_tokens: a code identifier, not a private value
-                if span.source == "llm":
+                    continue  # doc_id, orders_rw, PAYMENTS_API_KEY: code, not a private value
+                if span.source in ("llm", "gliner") and generalize.arithmetic_number(
+                    text, span.start, span.end, span.text
+                ):
+                    d.stats.llm_dropped_shape += 1
+                    continue  # the number the task computes with, not an account
+                if span.type == "QUASI_IDENTIFIER" and generalize.diagnosis_term(span.text):
+                    # "HER2-positive", "요추 추간판탈출증": a diagnosis, handled as HEALTH (kept
+                    # at balanced, category-level otherwise) instead of an invented phrase.
+                    span = replace(span, type="HEALTH")
+                    d.stats.llm_retyped += 1
+                if span.source == "llm" or (
+                    span.source == "gliner" and span.type in ("ID_NUMBER", "FINANCIAL", "SECRET")
+                ):
+                    # GLiNER spans that agreed with another source skipped GLiNER's own shape
+                    # check: "직함 선임연구원" went out as an ID number.
                     checked, outcome = check_llm_span(span, text)
                     if checked is None:
                         d.stats.llm_dropped_shape += 1
@@ -507,7 +549,7 @@ class Sanitizer:
                         span = replace(span, replacement=better, rule="entailed")
                         d.stats.generalization_fixed += 1
                 kept.append(span)
-            d.spans = kept
+            d.spans = _drop_wider_than_declared(text, kept, d.stats)
 
         # Employer + unit/site + role/age: link into generalizations (the organization stays
         # masked). An organization masked earlier in the conversation or run counts.
@@ -711,11 +753,15 @@ class Sanitizer:
             before = text[cursor : p.start]
             out.append(before)
             out_len += len(before)
-            out.append(mapping.outbound)
+            outbound = mapping.outbound
+            if mapping.action == "generalize" and _DETERMINER_BEFORE.search(text[: p.start]):
+                # "the tenure-track professor" -> "the senior professor", not "the a senior ..."
+                outbound = _ARTICLE_HEAD.sub("", outbound) or outbound
+            out.append(outbound)
             end = p.end
             if mapping.action != "mask":
                 # "마흔다섯이야" -> "40대야": the particle follows the new last syllable.
-                fix = surrogate.fix_particle(mapping.outbound, text[end : end + 4])
+                fix = surrogate.fix_particle(outbound, text[end : end + 4])
                 if fix is not None and text[end : end + fix[0]] != fix[1]:
                     out.append(fix[1])
                     out_len += len(fix[1])
@@ -725,13 +771,13 @@ class Sanitizer:
                     p.start,
                     p.end,
                     out_len,
-                    out_len + len(mapping.outbound),
+                    out_len + len(outbound),
                     original,
                     span,
                     mapping,
                 )
             )
-            out_len += len(mapping.outbound)
+            out_len += len(outbound)
             cursor = end
             detections.append(
                 Detection(mapping.original, mapping.type, mapping.action, span.source)
@@ -860,7 +906,7 @@ class Sanitizer:
             if key in body:
                 payload[key] = messages if key == "messages" else copy.deepcopy(body[key])
         if any(m.action == "mask" for m in session.mappings()):
-            _add_placeholder_note(payload["messages"])
+            _add_placeholder_note(payload["messages"], [c[k] for c, k, _ in slots])
 
         stats.surrogates += sum(1 for m in session.mappings() if m.action == "surrogate") - before
         protected += [Protected(m.original, m.type, "vault_original") for m in session.mappings()]
@@ -929,7 +975,62 @@ class Sanitizer:
 
 
 _IDENTIFIER = re.compile(r"[a-z]+(?:_[a-z]+)+")
+# snake_case or UPPER_SNAKE with at most two digits: service accounts, env variable names.
+_SNAKE = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+")
+_ACCOUNT_NAME_CUE = re.compile(
+    r"(?:user(?:name)?|role|account|login|owner|db_user)\s*[\"'`=:]*\s*$|for user\s*[\"'`]?$",
+    re.IGNORECASE,
+)
+
+
+def _code_identifier(span: Span, text: str) -> bool:
+    """A code identifier the local models took for a value (`orders_rw` as a PERSON)."""
+    t = span.text.strip()
+    if span.type in ("SECRET", "ORG", "ID_NUMBER") and _IDENTIFIER.fullmatch(t):
+        return True
+    if not _SNAKE.fullmatch(t) or sum(ch.isdigit() for ch in t) > 2:
+        return False
+    if span.type in ("SECRET", "ORG", "ID_NUMBER", "PERSON"):
+        return True
+    if span.type == "CONTACT":
+        # A messenger handle can be a snake_case name; a database or service account is code.
+        idx = text.find(t) if span.start is None else span.start
+        return idx >= 0 and bool(_ACCOUNT_NAME_CUE.search(text[max(0, idx - 24) : idx]))
+    return False
+
+
+def _drop_wider_than_declared(text: str, spans: list[Span], stats: DetectStats) -> list[Span]:
+    """Drop a model span that strictly contains a declared term.
+
+    The declared term is masked on its own. The wider span swallowed the words around it into
+    one placeholder: "데이터 이관은 선우다온 담당" went out as "데이터 <PERSON_4> 담당", and two
+    names with the period between them became one CONTACT.
+    """
+    declared = locate(text, [s for s in spans if s.source == "vault"])
+    if not declared:
+        return spans
+    out = []
+    for span in spans:
+        if span.source in DETERMINISTIC_SOURCES or span.action == "keep":
+            out.append(span)
+            continue
+        wider = any(
+            p.start <= d.start and d.end <= p.end and (p.end - p.start) > (d.end - d.start)
+            for p in locate(text, [span])
+            for d in declared
+        )
+        if wider:
+            stats.spans_trimmed += 1
+            continue
+        out.append(span)
+    return out
+
+
 _JSON_KEY_AFTER = re.compile(r'"\s*:')
+_DETERMINER_BEFORE = re.compile(
+    r"(?:\b(?:the|our|my|their|his|her|its|your|this|that)|['’]s)\s+$", re.IGNORECASE
+)
+_ARTICLE_HEAD = re.compile(r"^(?:a|an)\s+(?=\S)", re.IGNORECASE)
 
 
 def _is_json_key(text: str, start: int, end: int) -> bool:
@@ -976,13 +1077,26 @@ def _confidence(span: Span, sources: set[str]) -> float:
     return round(score, 2)
 
 
-def _add_placeholder_note(messages: list[dict[str, Any]]) -> None:
+def placeholder_note(texts: Iterable[str] = ()) -> str:
+    """The system note: the base rule, what tokens stand for, and a legend of the types in use."""
+    types: dict[str, None] = {}
+    for text in texts:
+        for m in placeholders.STRICT_RE.finditer(text):
+            key = m.group(1) or m.group(2)
+            types.setdefault(key.rsplit("_", 1)[0], None)
+    legend = [f"<{t}_n> is {TYPE_LEGEND.get(t, 'a private value')}" for t in sorted(types)]
+    note = f"{PLACEHOLDER_NOTE} {PLACEHOLDER_NOTE_DETAIL}"
+    return f"{note} In this conversation: {'; '.join(legend)}." if legend else note
+
+
+def _add_placeholder_note(messages: list[dict[str, Any]], texts: Iterable[str] = ()) -> None:
+    note = placeholder_note(texts)
     first = messages[0] if messages else None
     if (
         first
         and first.get("role") in ("system", "developer")
         and isinstance(first.get("content"), str)
     ):
-        first["content"] = f"{PLACEHOLDER_NOTE}\n\n{first['content']}"
+        first["content"] = f"{note}\n\n{first['content']}"
     else:
-        messages.insert(0, {"role": "system", "content": PLACEHOLDER_NOTE})
+        messages.insert(0, {"role": "system", "content": note})

@@ -173,7 +173,7 @@ def test_vault_reset_and_delete_terms(client, harness) -> None:
     h = {"x-airlock-conversation-id": "c"}
     client.post("/v1/chat/completions", json=body, headers=h)
     sent = harness.upstream_requests[-1]["messages"][-1]["content"]
-    assert sent == "<PERSON_1> works at <PERSON_2>"  # terms default to type PERSON
+    assert sent == "<PERSON_1> works at <ORG_1>"  # an untyped term's type is inferred
 
     r = client.post("/vault/reset", json={})
     assert r.json() == {"reset": True, "terms_removed": 2, "mappings_removed": 2}

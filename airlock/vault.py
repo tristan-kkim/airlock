@@ -17,6 +17,7 @@ from typing import Literal
 
 from airlock import placeholders
 from airlock.detect.spans import normalize
+from airlock.detect.term_type import infer_term_type
 
 TermKind = Literal["sensitive", "canary"]
 
@@ -105,17 +106,23 @@ class Vault:
 
     # ---- user-declared terms -------------------------------------------------
     def add_terms(
-        self, terms: list[str], type_: str = "PERSON", kind: TermKind = "sensitive"
+        self, terms: list[str], type_: str | None = None, kind: TermKind = "sensitive"
     ) -> int:
+        """Declare terms. Without `type_`, each term's type is inferred from its surface and the
+        other declared terms (`airlock.detect.term_type`)."""
         added = 0
+        others = []
+        if type_ is None:
+            others = [t.strip() for t in terms] + [t.text for t in self.terms()]
         with self._lock, self._conn:
             for raw in terms:
                 text = raw.strip()
                 if len(text) < 2:
                     continue
+                typ = type_ or infer_term_type(text, others)
                 cur = self._conn.execute(
                     "INSERT OR IGNORE INTO terms VALUES (?, ?, ?, ?, ?)",
-                    (normalize(text), kind, text, type_, time.time()),
+                    (normalize(text), kind, text, typ, time.time()),
                 )
                 added += cur.rowcount
         return added

@@ -178,11 +178,19 @@ _MONEY = re.compile(
     re.IGNORECASE,
 )
 _MEASURE = re.compile(
-    r"^(?:[A-Za-z가-힣][\w가-힣()/\-]{0,15}[\s:]+)?[<>≤≥~]?\s*\d+(?:[.,]\d+)?\s*"
+    r"^(?:[A-Za-z가-힣][\w가-힣()/\-]{0,15}[\s:]+){0,3}[<>≤≥~]?\s*\d+(?:[.,]\d+)?\s*"
     r"(?:%|퍼센트|mg|㎎|g|kg|mcg|μg|ug|ml|mL|㎖|l|L|IU|units?|mmHg|mmol/L|mg/dL|g/dL|bpm|회|정|알|"
     r"cm|mm|km|kcal|도|℃|°C|°F|pt|포인트|점|배)(?:/(?:일|day|d|회|kg|L|dL))?\s*$",
     re.IGNORECASE,
 )
+# Lab values usually written without a unit ("eGFR 88", "HbA1c 7.9").
+_LAB_NO_UNIT = re.compile(
+    r"^(?:eGFR|GFR|HbA1c|A1c|LDL|HDL|BMI|PSA|TSH|INR|CRP|AST|ALT|ESR|WBC|RBC|PLT|Hb|Hgb|"
+    r"공복\s*혈당|혈당|당화혈색소|혈압)\s*[:=]?\s*[<>≤≥~]?\s*\d+(?:[.,/]\d+)?\s*%?$",
+    re.IGNORECASE,
+)
+# An amount with a short label: "월 소득 290만원", "annual salary $84,300".
+_LABELED_MONEY = re.compile(r"^(?:[A-Za-z가-힣]{1,10}\s*){1,3}[:=]?\s*(?P<amount>.+)$")
 _DURATION = re.compile(
     r"^(?:약\s*)?\d+(?:\.\d+)?\s*(?:주|개월|달|년|일|시간|분|weeks?|months?|years?|days?|hours?)(?:\s*(?:간|째|차|분))?$"
     r"|^(?:one|two|three|four|five|six|seven|eight|nine|ten|twelve)\s+(?:weeks?|months?|years?|days?)$",
@@ -214,11 +222,75 @@ def situation_value(span_text: str, span_type: str | None = None) -> bool:
     only when it is really a date, a FINANCIAL span only when it is an amount.
     """
     t = span_text.strip().strip(".,;:()")
+    if _SCHEDULE.match(t):
+        return True  # "7시, 11시, 15시, 19시", "8:30 a.m.": a schedule, never an account number
     if span_type == "ID_NUMBER":
         return bool(_PLAIN_DATE.match(t))
     if span_type == "FINANCIAL":
-        return bool(_MONEY.match(t))
-    return bool(_MONEY.match(t) or _MEASURE.match(t) or _DURATION.match(t) or _PLAIN_DATE.match(t))
+        return _money(t)
+    return bool(
+        _money(t)
+        or _MEASURE.match(t)
+        or _LAB_NO_UNIT.match(t)
+        or _DURATION.match(t)
+        or _PLAIN_DATE.match(t)
+    )
+
+
+_MONEY_INNER = re.compile(
+    r"[$€£₩¥]\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:[kKmMbB]\b|million|billion|thousand))?"
+    r"|\d[\d,]*(?:\.\d+)?\s*(?:만|억|천)?\s*(?:원|달러|dollars?|usd|krw|eur|won)",
+    re.IGNORECASE,
+)
+_DURATION_INNER = re.compile(
+    r"\d+\s*(?:일|주|개월|달|년|시간|days?|weeks?|months?|years?|hours?)", re.IGNORECASE
+)
+
+
+def _money(t: str) -> bool:
+    if _MONEY.match(t):
+        return True
+    m = _LABELED_MONEY.match(t)
+    if m and _MONEY.match(m.group("amount").strip()):
+        return True
+    # "90 days overdue, $46,500", "90일째 안 주고 있어(4,650만원)": an amount inside a short
+    # phrase, with no other number that could be an account.
+    if len(t) > 48 or not _MONEY_INNER.search(t):
+        return False
+    rest = _DURATION_INNER.sub(" ", _MONEY_INNER.sub(" ", t))
+    return not re.search(r"\d", rest)
+
+
+_CLOCK = (
+    r"(?:(?:오전|오후|새벽|저녁|밤|아침)\s*)?\d{1,2}\s*시(?:\s*\d{1,2}\s*분|\s*반)?"
+    r"|\d{1,2}:\d{2}(?:\s*[ap]\.?m\.?)?|\d{1,2}\s*[ap]\.?m\.?"
+)
+_SCHEDULE = re.compile(
+    rf"^(?:{_CLOCK})(?:\s*(?:,|/|·|~|-|–|to|and|및|와|과|\s)\s*(?:{_CLOCK}))*$", re.IGNORECASE
+)
+
+# A bare number the request computes with ("Is 479001600 equal to 12 factorial?").
+_MATH_CUE = re.compile(
+    r"factorial|팩토리얼|\bequal(?:s)?\b|\bprime\b|소수|\bdivisible\b|약수|배수|제곱|"
+    r"\bsquare root\b|\bsum of\b|곱하기|나누기|더하기|빼기|계산|\bcalculate\b|\bcompute\b|[×÷=^]",
+    re.IGNORECASE,
+)
+_ACCOUNT_CUE = re.compile(
+    r"account|acct|card|routing|iban|계좌|카드|번호|\bID\b|number|#|no\.", re.IGNORECASE
+)
+
+
+def arithmetic_number(text: str, start: int | None, end: int | None, span_text: str) -> bool:
+    """A plain digit run in a sentence that computes with it, with no account or ID label."""
+    t = span_text.strip()
+    if not re.fullmatch(r"\d{4,}", t):
+        return False
+    if start is None:
+        idx = text.find(t)
+        start, end = (idx, idx + len(t)) if idx >= 0 else (0, 0)
+    before = text[max(0, start - 30) : start]
+    window = text[max(0, start - 60) : (end or start) + 60]
+    return bool(_MATH_CUE.search(window)) and not _ACCOUNT_CUE.search(before)
 
 
 # Small-group markers: a diagnosis next to them narrows the person down ("3학년 2반 쌍둥이").
@@ -286,6 +358,36 @@ def health_category(text: str, lang: str) -> str | None:
         if pattern.search(text):
             return ko if lang == "ko" else en
     return None
+
+
+_DIAGNOSIS_SHAPE = re.compile(
+    r"^[\w\s\-'’+/]{0,30}?(?:증후군|탈출증|증|병|염|암|장애|질환|종양|감염|결핍|양성|음성)$"
+    r"|^[\w\s\-'’+/]{0,30}?(?:disease|syndrome|disorder|deficiency|infection|herniation|itis|"
+    r"carcinoma|lymphoma|melanoma|sarcoma|glaucoma|myeloma|blastoma|glioma|"
+    r"[-\s]positive|[-\s]negative)$",
+    re.IGNORECASE,
+)
+# Documents and cards that end like a diagnosis ("자격증", "신분증").
+_NOT_A_DIAGNOSIS_TAIL = re.compile(
+    r"(?:자격|영수|신분|학생|사원|면허|등록|수료|보|인|확인|허가|합격|졸업|출입|공무원|회원|이용|증명)증$"
+)
+# Words that turn a diagnosis into a description of one person ("the only ... with X").
+_NOT_JUST_A_DIAGNOSIS = re.compile(
+    r"\b(?:only|sole|first|youngest|oldest|with|at|in|of|my|her|his|their|who)\b|유일|최초|하나뿐|"
+    r"에서|의\s",
+    re.IGNORECASE,
+)
+
+
+def diagnosis_term(span_text: str) -> bool:
+    """The span is only a diagnosis or a finding ("HER2-positive", "요추 추간판탈출증", "Fabry
+    disease"), not a phrase that describes a person through one."""
+    t = span_text.strip().strip(".,;:()")
+    if not t or len(t) > 48 or len(t.split()) > 6 or re.search(r"\d{3,}", t):
+        return False
+    if _NOT_JUST_A_DIAGNOSIS.search(t) or _NOT_A_DIAGNOSIS_TAIL.search(t):
+        return False
+    return common_health_term(t) or bool(_DIAGNOSIS_SHAPE.match(t))
 
 
 def common_health_term(span_text: str) -> bool:

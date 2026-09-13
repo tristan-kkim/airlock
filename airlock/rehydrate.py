@@ -16,9 +16,11 @@ from airlock import placeholders, surrogate
 from airlock.vault import VaultSession
 
 
-def rehydrate_text(text: str, session: VaultSession, *, json_escape: bool = False) -> str:
+def rehydrate_text(
+    text: str, session: VaultSession, *, json_escape: bool = False, before: str = ""
+) -> str:
     transform = (lambda s: json.dumps(s, ensure_ascii=False)[1:-1]) if json_escape else str
-    out = placeholders.rehydrate(text, session.original_for, transform)
+    out = placeholders.rehydrate(text, session.original_for, transform, before=before)
     pairs = session.surrogate_pairs()
     return surrogate.rehydrate(out, pairs, transform) if pairs else out
 
@@ -80,6 +82,7 @@ class StreamRehydrator:
         self.session = session
         self.max_hold = max_hold
         self.buffer = ""
+        self.released = ""  # tail of the rehydrated text, context for "last 4 digits"
 
     def feed(self, text: str) -> str:
         self.buffer += text
@@ -94,11 +97,16 @@ class StreamRehydrator:
             # A surrogate split across chunks, or one whose particle has not arrived yet.
             cut = min(cut, len(buf) - surrogate.pending_tail(buf, surrogates))
         ready, self.buffer = buf[:cut], buf[cut:]
-        return rehydrate_text(ready, self.session)
+        return self._release(ready)
 
     def flush(self) -> str:
         ready, self.buffer = self.buffer, ""
-        return rehydrate_text(ready, self.session)
+        return self._release(ready)
+
+    def _release(self, ready: str) -> str:
+        out = rehydrate_text(ready, self.session, before=self.released)
+        self.released = (self.released + out)[-64:]
+        return out
 
 
 def rehydrate_response(
