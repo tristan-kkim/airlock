@@ -84,12 +84,12 @@ def subset_metrics(rows: list[dict[str, Any]], ids: set[str] | None) -> dict[str
     scored = [r["score"] for r in rows if ids is None or r["score"]["case_id"] in ids]
     out = scoring.compute_metrics(scored)
     for lang in ("ko", "en"):
-        out[f"leak_{lang}"] = scoring.compute_metrics(
-            [s for s in scored if s["lang"] == lang]
-        )["leak_rate"]
-        out[f"benign_{lang}"] = scoring.compute_metrics(
-            [s for s in scored if s["lang"] == lang]
-        )["benign_false_positive_rate"]
+        out[f"leak_{lang}"] = scoring.compute_metrics([s for s in scored if s["lang"] == lang])[
+            "leak_rate"
+        ]
+        out[f"benign_{lang}"] = scoring.compute_metrics([s for s in scored if s["lang"] == lang])[
+            "benign_false_positive_rate"
+        ]
     return out
 
 
