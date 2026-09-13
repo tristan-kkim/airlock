@@ -321,7 +321,8 @@ _EN_ORG_SUFFIX = (
     r"Hospital|Clinic|Health|Energy|Foods|Motors|Manufacturing|Studios|Media|Software|Robotics|"
     r"Biotech|Insurance|Networks|Dynamics|Devices|Therapeutics|Outfitters|Brewing|Realty|Legal|LLP|"
     r"Semiconductors?|Electronics|Retail|Dental|Pharmacy|Aerospace|Automotive|Chemicals|Textiles|"
-    r"Publishing|Airlines|Shipping|Construction|Engineering|Bakery|Brewery"
+    r"Publishing|Airlines|Shipping|Construction|Engineering|Bakery|Brewery|University|College|"
+    r"Academy|Institute"
 )
 _EN_ORG = re.compile(
     rf"(?<![A-Za-z])(?P<name>(?:{_CAP}\s+){{1,3}}(?:{_EN_ORG_SUFFIX}))(?![A-Za-z])"
@@ -499,8 +500,80 @@ def en_orgs(text: str) -> list[Span]:
     return spans
 
 
+_KO_SMALL_PLACE = re.compile(
+    r"(?<![가-힣])(?:(?P<top>서울|부산|대구|인천|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|"
+    r"제주)(?:특별시|광역시|특별자치시|특별자치도|도)?\s+)?"
+    r"(?P<place>[가-힣]{2,6}(?:군|읍|면|리|마을))(?=에서|에|의|은|는|이|가|로|으로|\s|$|[,.])"
+)
+_KO_SMALL_PLACE_GENERIC = frozenset(
+    [
+        "시골마을",
+        "우리마을",
+        "이마을",
+        "저마을",
+        "그마을",
+        "옆마을",
+        "한마을",
+        "작은마을",
+        "산골마을",
+        "어촌마을",
+        "농촌마을",
+        "외딴마을",
+        "전원마을",
+        "민속마을",
+        "한옥마을",
+        "시군",
+        "해당군",
+        "인근군",
+        "이웃마을",
+        "동네마을",
+    ]
+)
+_EN_ONLY_IN_PLACE = re.compile(
+    r"\b(?:the|our|my) only (?P<what>(?:[a-z\-]+\s+){0,3}(?:center|centre|hospital|clinic|school|"
+    r"firm|store|shop|restaurant|church|mosque|temple|pharmacy|bakery|bar|gym|practice|office|"
+    r"company|plant|factory|farm|library|station))\s+in\s+(?P<place>(?:[A-Z][\w'’\-]*\s?){1,3})"
+)
+
+
+def place_candidates(text: str) -> list[Candidate]:
+    """A small place a person lives or works in: `경북 새내군`, `the only X in Port Aldine`."""
+    from airlock.detect.ko_rules import _KO_PERSON_CUE
+
+    out: list[Candidate] = []
+    for m in _KO_SMALL_PLACE.finditer(text):
+        place = m.group("place")
+        if place in _KO_SMALL_PLACE_GENERIC or place[:-1] in ("시", "군", "도"):
+            continue
+        s0, s1 = _sentence_of(text, m.start())
+        if not _KO_PERSON_CUE.search(text[s0:s1]):
+            continue
+        phrase = text[m.start() : m.end()]
+        ko = generalize.place_generalization(phrase, "ko")
+        if ko is None:
+            suffix = "마을" if place.endswith("마을") else place[-1]
+            noun = {
+                "군": "군 지역",
+                "읍": "읍 지역",
+                "면": "면 지역",
+                "리": "마을",
+                "마을": "마을",
+            }[suffix]
+            top = regions.ko_container(m.group("top") or "")
+            ko = f"{top}의 한 {noun}" if top else f"한 {noun}"
+        out.append(Candidate(m.start(), m.end(), "place", ko, "a small town", "ko_small_place"))
+    for m in _EN_ONLY_IN_PLACE.finditer(text):
+        place = m.group("place").strip()
+        top = regions.en_container(place)
+        what = m.group("what")
+        en = f"a {what} in {top}" if top else f"a local {what}"
+        out.append(Candidate(m.start(), m.end("place") - (len(m.group("place")) - len(place)),
+                             "place", "한 지역", en, "en_only_in_place"))  # fmt: skip
+    return out
+
+
 def candidates(text: str) -> list[Candidate]:
-    found = ko_candidates(text) + en_candidates(text)
+    found = ko_candidates(text) + en_candidates(text) + place_candidates(text)
     # longest first, drop candidates inside a longer one of the same kind
     found.sort(key=lambda c: (-(c.end - c.start), c.start))
     chosen: list[Candidate] = []
@@ -537,6 +610,7 @@ def link(
             for p in re.finditer(re.escape(s.text), text)
         ]  # fmt: skip
         roles = [c for c in cands if c.kind == "role"]
+        places = [c for c in cands if c.kind == "place"]
         ages = [c for c in cands if c.kind == "age"]
 
         def same_sentence(a: Candidate, b_start: int, text: str = text) -> bool:
@@ -552,7 +626,7 @@ def link(
             )
             if has_org or combined:
                 active.append(a)
-        chosen: list[Candidate] = list(active)
+        chosen: list[Candidate] = list(active) + places
         for c in roles:
             near_unit = any(0 <= c.start - a.end <= 12 for a in active)
             titled = c.rule == "en_role" and c.en != "an employee"

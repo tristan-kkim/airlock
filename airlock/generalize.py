@@ -178,7 +178,7 @@ _MONEY = re.compile(
     re.IGNORECASE,
 )
 _MEASURE = re.compile(
-    r"^[A-Za-z가-힣0-9 ()/\-]{0,20}?[<>≤≥~]?\s*\d+(?:[.,]\d+)?\s*"
+    r"^(?:[A-Za-z가-힣][\w가-힣()/\-]{0,15}[\s:]+)?[<>≤≥~]?\s*\d+(?:[.,]\d+)?\s*"
     r"(?:%|퍼센트|mg|㎎|g|kg|mcg|μg|ug|ml|mL|㎖|l|L|IU|units?|mmHg|mmol/L|mg/dL|g/dL|bpm|회|정|알|"
     r"cm|mm|km|kcal|도|℃|°C|°F|pt|포인트|점|배)(?:/(?:일|day|d|회|kg|L|dL))?\s*$",
     re.IGNORECASE,
@@ -207,10 +207,26 @@ def is_birth_date(text: str, start: int | None, end: int | None, span_text: str)
     return bool(DOB_CUE.search(window))
 
 
-def situation_value(span_text: str) -> bool:
-    """An amount, measurement, dosage, duration or (non-birth) date."""
+def situation_value(span_text: str, span_type: str | None = None) -> bool:
+    """An amount, measurement, dosage, duration or (non-birth) date.
+
+    With a type, only the shapes that type can legitimately hold count: an ID_NUMBER is kept
+    only when it is really a date, a FINANCIAL span only when it is an amount.
+    """
     t = span_text.strip().strip(".,;:()")
+    if span_type == "ID_NUMBER":
+        return bool(_PLAIN_DATE.match(t))
+    if span_type == "FINANCIAL":
+        return bool(_MONEY.match(t))
     return bool(_MONEY.match(t) or _MEASURE.match(t) or _DURATION.match(t) or _PLAIN_DATE.match(t))
+
+
+# Small-group markers: a diagnosis next to them narrows the person down ("3학년 2반 쌍둥이").
+SMALL_GROUP_CUE = re.compile(
+    r"\d+\s*학년\s*\d+\s*반|쌍둥이|유일|하나뿐|단\s*한\s*명|혼자만|\bonly\b|\bsole\b|\btwins?\b|"
+    r"\bclass of \d+|\b\d+-(?:person|member|employee|student)\b|\bour (?:class|ward|unit|floor)\b",
+    re.IGNORECASE,
+)
 
 
 # ---- health --------------------------------------------------------------------------------------
@@ -249,6 +265,20 @@ _HEALTH_CATEGORIES: tuple[tuple[re.Pattern[str], str, str], ...] = tuple(
         (r"섭식|거식|폭식|anorexia|bulimia|eating disorder", "섭식장애", "an eating disorder"),
     )
 )
+
+
+VAGUE_HEALTH = frozenset({"건강 문제", "질병", "a health condition", "a medical condition"})
+
+
+def category_replacement(original: str, replacement: str | None, lang: str) -> str | None:
+    """The category-level term instead of a vague one ("ADHD 진단" -> "신경발달장애 진단")."""
+    if replacement not in VAGUE_HEALTH and replacement:
+        return None
+    category = health_category(original, lang)
+    if category is None:
+        return None
+    care = re.search(r"(진단|수술|처방|치료)$", original.strip())
+    return f"{category} {care.group(1)}" if care and lang == "ko" else category
 
 
 def health_category(text: str, lang: str) -> str | None:
@@ -290,7 +320,7 @@ def place_generalization(span_text: str, lang: str) -> str | None:
         if top and top == smallest.name:
             return None  # already a top-level region: nothing coarser to say
         if top:
-            return f"{top}의 {noun.removeprefix('한 ')}" if noun.startswith("한 ") else top
+            return f"{top}의 {noun}" if noun.startswith("한 ") else top
         return noun
     places = regions.en_places(t)
     if not places:

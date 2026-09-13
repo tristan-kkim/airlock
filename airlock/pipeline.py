@@ -464,8 +464,8 @@ class Sanitizer:
         ):  # fmt: skip
             return False
         if span.type == "HEALTH" and generalize.common_health_term(span.text):
-            return True
-        return generalize.situation_value(span.text) and not generalize.is_birth_date(
+            return not generalize.SMALL_GROUP_CUE.search(text)
+        return generalize.situation_value(span.text, span.type) and not generalize.is_birth_date(
             text, span.start, span.end, span.text
         )
 
@@ -497,6 +497,12 @@ class Sanitizer:
                 if span.action != "keep" and self._keeps_situation(span, text):
                     span = replace(span, action="keep", replacement=None)
                     d.stats.kept_situation += 1
+                elif span.type == "HEALTH" and span.action == "generalize":
+                    lang = generalize.text_lang(text)
+                    better = generalize.category_replacement(span.text, span.replacement, lang)
+                    if better:
+                        span = replace(span, replacement=better, rule="entailed")
+                        d.stats.generalization_fixed += 1
                 kept.append(span)
             d.spans = kept
 

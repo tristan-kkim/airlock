@@ -73,8 +73,10 @@ def generalization_ok(
     if json_safe and any(c in repl for c in '"\\'):
         return False
     norm_repl = normalize(repl)
-    if norm_repl in normalize(original):
+    if check_tokens and norm_repl in normalize(original):
         return False  # a crop of the original is not a generalization
+    if norm_repl == normalize(original):
+        return False
     for other in [original, *others]:
         norm = normalize(other)
         if norm and norm in norm_repl:

@@ -415,8 +415,9 @@ def test_korean_rules_merge_with_llm_and_audit_counts(client, harness) -> None:
     sent = harness.upstream_requests[0]["messages"][-1]["content"]
     for leaked in ("새론다움물류", "문태오", "유일한 여성 부사장", "010-4821-7753"):
         assert leaked not in sent
-    # balanced keeps a common diagnosis once the identifiers around it are masked
-    assert "갑상선암" in sent and "특정 역할의 구성원" in sent
+    # A common diagnosis is kept at balanced, except next to a small-group cue ("유일한"): then
+    # it becomes its category-level term.
+    assert "갑상선암" not in sent and "암 수술" in sent and "특정 역할의 구성원" in sent
 
     audit = client.get(f"/audit/{r.headers['x-airlock-request-id']}").json()
     meta = audit["meta"]["detector"]

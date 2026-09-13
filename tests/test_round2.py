@@ -439,8 +439,8 @@ def test_age_from_birth_date_is_computed_relative_to_today() -> None:
 @pytest.mark.parametrize(
     ("original", "replacement", "want"),
     [
-        ("성남시", "서울의 한 구", "경기도의 도시"),
-        ("분당구", "a district in Seoul", "경기도의 자치구"),
+        ("성남시", "서울의 한 구", "경기도의 한 도시"),
+        ("분당구", "a district in Seoul", "경기도의 한 자치구"),
         ("Tulsa", "a city in Texas", "a city in Oklahoma"),
         ("새내군", "North Korea", "한 군 지역"),
     ],
