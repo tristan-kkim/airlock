@@ -42,6 +42,7 @@ import httpx
 EVAL_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EVAL_DIR))
 import scoring  # noqa: E402
+import subset  # noqa: E402
 
 DEFAULT_CASES = str(EVAL_DIR / "cases" / "*.jsonl")
 
@@ -359,7 +360,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--concurrency", type=int, default=1)
     ap.add_argument("--timeout", type=float, default=180.0)
     ap.add_argument("--audit-retries", type=int, default=3)
-    ap.add_argument("--seed", type=int, default=0, help="seed for per-pass case order shuffling")
+    ap.add_argument(
+        "--seed", type=int, default=0, help="seed for per-pass case order and --subset stratified:N"
+    )
+    ap.add_argument(
+        "--subset",
+        default=None,
+        help="stratified:N (by category x language, seeded) or ids:PATH (a results dir or "
+        "config.json with subset.case_ids, or a text file of ids); ids go to config.json",
+    )
     ap.add_argument("--no-shuffle", dest="shuffle", action="store_false")
     ap.add_argument("--limit", type=int, default=None, help="only the first N cases (smoke tests)")
     ap.add_argument(
@@ -409,6 +418,10 @@ async def main_async(opts: argparse.Namespace) -> Path:
     cases, dataset_sha = load_cases(opts.cases)
     if opts.category:
         cases = [c for c in cases if c["category"] in set(opts.category)]
+    try:
+        cases, subset_info = subset.select(cases, opts.subset, opts.seed)
+    except (ValueError, OSError) as exc:
+        raise SystemExit(f"--subset: {exc}") from exc
     if opts.limit:
         cases = cases[: opts.limit]
     started = datetime.now(UTC)
@@ -455,6 +468,7 @@ async def main_async(opts: argparse.Namespace) -> Path:
             "shuffle": opts.shuffle,
             "conversation_scope": opts.conversation_scope,
             "seed": opts.seed,
+            "subset": subset_info,
             "register_canaries": opts.register_canaries,
             "auto_approve_review": opts.auto_approve_review,
             "reset_vault": opts.reset_vault,

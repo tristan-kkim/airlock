@@ -121,6 +121,39 @@ def discover(results: Path, extra: list[Path] | None = None) -> list[tuple[str, 
     return ordered + sorted(found.items())
 
 
+REUSE_NOTE = "scored once; outputs identical across passes, verified by payload hash"
+
+
+def reuse_info(path: Path) -> dict[str, dict[str, Any]]:
+    """Attack and utility `reuse` blocks (eval/reuse.py) that actually reused rows."""
+    found = {}
+    attack_cfg = (load_json(path / "attack" / "summary.json") or {}).get("config") or {}
+    utility_cfg = load_json(path / "utility" / "config.json") or {}
+    for part, cfg in (("attack", attack_cfg), ("utility", utility_cfg)):
+        info = cfg.get("reuse") or {}
+        if info.get("rows_reused"):
+            found[part] = info
+    return found
+
+
+def reuse_mark(path: Path, part: str) -> str:
+    return "*" if part in reuse_info(path) else ""
+
+
+def reuse_notes(runs: list[tuple[str, Path]]) -> list[str]:
+    """One footnote naming, per system, how many attack and utility rows were reused."""
+    parts = []
+    for name, path in runs:
+        for part, info in reuse_info(path).items():
+            origin = f", pass 1 from `{info['from']}`" if info.get("from") else ""
+            parts.append(
+                f"{label_for(name)} {part} {info['rows_reused']} of {info['rows']} rows{origin}"
+            )
+    if not parts:
+        return []
+    return ["", f"\\* {REUSE_NOTE}: " + "; ".join(parts) + ". Other rows were scored normally."]
+
+
 def label_for(name: str) -> str:
     if name in LABELS:
         return LABELS[name]
@@ -155,8 +188,9 @@ def headline_section(runs: list[tuple[str, Path]], has_airlock: bool) -> list[st
             # no reframe.json yet: fill what summary.json has
             o = {k: so.get(k) for k in ("over_redaction_rate", "benign_false_positive_rate")}
         passes = (
-            f"{s.get('passes', '?')} / {(r or {}).get('attacked_passes', 0)} / "
-            f"{(r or {}).get('judged_passes', 0)}"
+            f"{s.get('passes', '?')} / {(r or {}).get('attacked_passes', 0)}"
+            f"{reuse_mark(path, 'attack')} / {(r or {}).get('judged_passes', 0)}"
+            f"{reuse_mark(path, 'utility')}"
         )
         cells = [label_for(name), passes, *(fmt(o.get(k), kind) for k, _, kind in HEADLINE)]
         cells.append(f"{ms(so.get('overhead_ms_p50'))} / {ms(so.get('overhead_ms_p95'))}")
@@ -165,6 +199,7 @@ def headline_section(runs: list[tuple[str, Path]], has_airlock: bool) -> list[st
         lines.append(
             f"| airlock (live, {AIRLOCK_PLACEHOLDER}) | pending |" + " |" * (len(HEADLINE) + 1)
         )
+    lines += reuse_notes(runs)
     lines += [
         "",
         "### By language",
@@ -324,13 +359,15 @@ def build(results: Path, extra: list[Path] | None = None, agent: Path | None = N
             o, by_lang, cfg = a.get("overall", {}), a.get("by_lang", {}), a.get("config", {})
             cells = [
                 label_for(name),
-                str(a.get("passes", "?")),
+                str(a.get("passes", "?"))
+                + ("*" if (cfg.get("reuse") or {}).get("rows_reused") else ""),
                 *(pct(o.get(key)) for key, _ in ATTACK_COLUMNS),
                 pct(by_lang.get("ko", {}).get("attack_value_recovery_rate")),
                 pct(by_lang.get("en", {}).get("attack_value_recovery_rate")),
                 f"`{cfg.get('model', '?')}` reasoning `{cfg.get('attacker_reasoning', '?')}`",
             ]
             lines.append("| " + " | ".join(cells) + " |")
+        lines += reuse_notes([(n, p) for n, p in runs if "attack" in reuse_info(p)])
     else:
         lines.append("No attack results yet. Run `uv run eval/attack.py --rescore <results dir>`.")
 

@@ -66,7 +66,9 @@ import httpx
 EVAL_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EVAL_DIR))
 import attack  # noqa: E402
+import reuse  # noqa: E402
 import scoring  # noqa: E402
+import subset  # noqa: E402
 
 UTILITY_VERSION = "1.1.0"
 REFERENCE_DIR = EVAL_DIR / "results" / "_reference_answers"
@@ -570,6 +572,7 @@ def add_usage(total: dict[str, int], usage: dict[str, Any] | None) -> None:
 
 
 def load_jobs(opts: argparse.Namespace) -> tuple[dict[str, Any], list[list[tuple[dict, dict]]]]:
+    """(run config, jobs per pass). The --subset record lands in config["subset"]."""
     run_dir: Path = opts.results
     cases = {c["id"]: c for c in read_jsonl(run_dir / "cases_snapshot.jsonl")}
     config = {}
@@ -578,6 +581,10 @@ def load_jobs(opts: argparse.Namespace) -> tuple[dict[str, Any], list[list[tuple
     pass_files = sorted(run_dir.glob("pass_*.jsonl"))[: opts.passes]
     if not pass_files:
         raise SystemExit(f"no pass_*.jsonl in {run_dir}")
+    chosen, subset_info = subset.select(list(cases.values()), opts.subset, opts.seed)
+    if subset_info:
+        config["subset"] = subset_info
+    keep = {c["id"] for c in chosen}
     wanted = set(opts.category or [])
     jobs = []
     for p in pass_files:
@@ -586,6 +593,7 @@ def load_jobs(opts: argparse.Namespace) -> tuple[dict[str, Any], list[list[tuple
             (cases[r["case_id"]], r)
             for r in rows
             if cases[r["case_id"]]["task"] == "chat"
+            and r["case_id"] in keep
             and r.get("status") != "error"
             and (not wanted or cases[r["case_id"]]["category"] in wanted)
         ]
@@ -605,9 +613,26 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
         for a in read_jsonl(p)
         if not a.get("error")
     }
-    est = estimate([j for pj in jobs for j in pj], source, opts.model, opts.reference_dir,
-                   cached_answers)  # fmt: skip
+    prior_rows, prior_hashes, prior_name = prior_utility_rows(opts, source)
+    first_hashes = {c["id"]: reuse.judged_sha256(r, source) for c, r in jobs[0]} if jobs else {}
+
+    def planned_ref(pass_index: int, case: dict, record: dict) -> dict[str, Any] | None:
+        if record.get("status") != "ok":
+            return None
+        digest = reuse.judged_sha256(record, source)
+        if pass_index and opts.reuse_identical_passes and first_hashes.get(case["id"]) == digest:
+            return reuse.reference(1, digest)
+        if prior_hashes.get(case["id"]) == digest:
+            return reuse.reference(1, digest, prior_name)
+        return None
+
+    to_judge = [(c, r) for i, pj in enumerate(jobs) for c, r in pj if not planned_ref(i, c, r)]
+    est = estimate(to_judge, source, opts.model, opts.reference_dir, cached_answers)
+    est["rows"] = sum(len(pj) for pj in jobs)
+    est["rows_reused_planned"] = est["rows"] - len(to_judge)
     print_estimate(run_dir.name, est)
+    print(f"  {est['rows_reused_planned']} of {est['rows']} rows reused by payload hash",
+          file=sys.stderr)  # fmt: skip
     print(f"  answer source: {source}; judge {opts.judge_model}, distortion confirmation "
           f"{opts.confirm_model}", file=sys.stderr)  # fmt: skip
     if opts.dry_run:
@@ -649,8 +674,10 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                 add_usage(usage["reference"], result.get("usage"))
                 return store_reference(opts.reference_dir, case["id"], ref_model, body, result)
 
+        rows_by_pass: list[list[dict[str, Any]]] = []
         for pass_no, pj in enumerate(jobs, start=1):
             t0 = time.perf_counter()
+            first_rows = {r["case_id"]: r for r in rows_by_pass[0]} if rows_by_pass else {}
             answers_path = out / f"answers_pass_{pass_no:02d}.jsonl"
             answers = {a["case_id"]: a for a in read_jsonl(answers_path) if not a.get("error")}
             judged_path = out / f"pass_{pass_no:02d}.jsonl"
@@ -686,7 +713,9 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                 answers[case["id"]] = entry
                 return entry
 
-            async def one(case: dict, record: dict, pass_no=pass_no, previous=previous) -> dict:
+            async def one(
+                case: dict, record: dict, pass_no=pass_no, previous=previous, first_rows=first_rows
+            ) -> dict:
                 row: dict[str, Any] = {
                     "case_id": case["id"],
                     "category": case["category"],
@@ -700,6 +729,15 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                     return prev
                 if record.get("status") != "ok":
                     return row  # blocked: nothing was sent, no answer to judge
+                ref = planned_ref(pass_no - 1, case, record)
+                if ref:
+                    src = (
+                        prior_rows.get(case["id"])
+                        if "results_dir" in ref
+                        else first_rows.get(case["id"])
+                    )
+                    if src and src.get("system") and src.get("reference"):
+                        return reused_utility_row(src, pass_no, ref)
                 payload = upstream_payload(record)
                 ref_model = (payload or {}).get("model") or opts.model
                 reference, answer = await asyncio.gather(
@@ -764,6 +802,7 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                 return row
 
             rows = await asyncio.gather(*(one(c, r) for c, r in pj))
+            rows_by_pass.append(rows)
             write_jsonl(answers_path, sorted(answers.values(), key=lambda a: a["case_id"]))
             write_jsonl(judged_path, rows)
             m = utility_metrics(rows)
@@ -791,6 +830,10 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
             "limit": opts.limit,
             "categories": sorted(opts.category or []) or None,
             "reference_dir": scoring_display(opts.reference_dir),
+            "subset": config.get("subset"),
+            "reuse_identical_passes": opts.reuse_identical_passes,
+            "reuse_from": prior_name,
+            "reuse": reuse.summarize(rows_by_pass, prior_name),
         }
     )
     part_models = {"judge": opts.judge_model, "verify": opts.confirm_model}
@@ -811,6 +854,38 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
     cfg_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
     write_summary(out)
     return out
+
+
+def reused_utility_row(source: dict[str, Any], pass_no: int, ref: dict[str, Any]) -> dict[str, Any]:
+    """The judged row for a pass whose inputs hash identically to an already judged row."""
+    row = {k: v for k, v in source.items() if k not in ("judge", "reused_from")}
+    row.update({"pass": pass_no, "reused_from": ref})
+    return row
+
+
+def prior_utility_rows(
+    opts: argparse.Namespace, source: str
+) -> tuple[dict[str, dict[str, Any]], dict[str, str], str | None]:
+    """Judged pass-1 rows of --reuse-from made with the same models and answer source."""
+    prior: Path | None = getattr(opts, "reuse_from", None)
+    if not prior:
+        return {}, {}, None
+    cfg_path = prior / opts.out_name / "config.json"
+    cfg = json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}
+    if cfg.get("answer_source") != source:
+        return {}, {}, None
+    records = reuse.read_pass_records(prior, 1)
+    rows = {
+        cid: row
+        for cid, row in reuse.read_rows(prior / opts.out_name / "pass_01.jsonl").items()
+        if cid in records
+        and row.get("system")
+        and row.get("reference")
+        and not row.get("reused_from")
+        and same_models(row, opts)
+    }
+    hashes = {cid: reuse.judged_sha256(records[cid], source) for cid in rows}
+    return rows, hashes, attack.display_path(prior)
 
 
 def same_models(row: dict[str, Any], opts: argparse.Namespace) -> bool:
@@ -927,6 +1002,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--results", type=Path, required=True, help="run.py results directory")
     ap.add_argument("--passes", type=int, default=1, help="judge the first N passes (default 1)")
     ap.add_argument("--limit", type=int, default=None, help="only the first N chat cases per pass")
+    ap.add_argument("--subset", default=None, help="stratified:N or ids:PATH (eval/subset.py)")
+    ap.add_argument("--seed", type=int, default=0, help="seed for --subset stratified:N")
+    ap.add_argument(
+        "--reuse-identical-passes",
+        action="store_true",
+        help="reuse the pass-1 judgment for cases whose payloads (and recorded answer) hash "
+        "identically in a later pass",
+    )
+    ap.add_argument(
+        "--reuse-from",
+        type=Path,
+        default=None,
+        help="earlier results directory of the same system: reuse its judged pass-1 rows for "
+        "identical inputs made with the same judge and confirmation models",
+    )
     ap.add_argument("--category", action="append", default=None)
     ap.add_argument("--answer-source", choices=("auto", "recorded", "upstream"), default="auto")
     ap.add_argument("--base-url", default=attack.DEFAULT_BASE_URL)

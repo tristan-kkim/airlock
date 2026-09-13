@@ -56,7 +56,9 @@ import httpx
 EVAL_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EVAL_DIR))
 import protected  # noqa: E402
+import reuse  # noqa: E402
 import scoring  # noqa: E402
+import subset  # noqa: E402
 
 ATTACK_VERSION = "1.2.0"
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
@@ -1075,28 +1077,127 @@ def render_markdown(summary: dict[str, Any], config: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def prior_attack_rows(
+    opts: argparse.Namespace, cases: dict[str, dict[str, Any]]
+) -> tuple[dict[str, dict[str, Any]], dict[str, str], str | None]:
+    """Pass-1 attack rows of --reuse-from that were scored like this run would score them.
+
+    Returns (rows by case id, outbound hashes by case id, display path). A row qualifies when
+    the earlier run used the same attacker and grader models and reasoning, the attacker call
+    succeeded, and a situation-sensitive case carries its situation grade.
+    """
+    prior: Path | None = getattr(opts, "reuse_from", None)
+    if not prior:
+        return {}, {}, None
+    cfg_path = prior / opts.out_name / "config.json"
+    cfg = json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}
+    if (cfg.get("attacker_reasoning"), cfg.get("grader_reasoning")) != (
+        opts.attacker_reasoning,
+        opts.grader_reasoning,
+    ):
+        return {}, {}, None
+    records = reuse.read_pass_records(prior, 1)
+    rows = {}
+    for cid, row in reuse.read_rows(prior / opts.out_name / "pass_01.jsonl").items():
+        if cid not in cases or cid not in records or row.get("reused_from"):
+            continue
+        if row.get("sent"):
+            attacker = row.get("attacker") or {}
+            graders = [row[k] for k in GRADER_PARTS if row.get(k)]
+            if attacker.get("error") or (attacker.get("model") or ULTRA) != opts.attack_model:
+                continue
+            if any((g.get("model") or ULTRA) != opts.grader_model for g in graders):
+                continue
+            if protected.case_protection(cases[cid])["situation_sensitive"] and (
+                "situation_match" not in row
+            ):
+                continue
+        rows[cid] = row
+    hashes = {cid: reuse.outbound_sha256(records[cid]) for cid in rows}
+    return rows, hashes, display_path(prior)
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(EVAL_DIR.parent))
+    except ValueError:
+        return str(path)
+
+
+def reused_attack_row(
+    case: dict[str, Any], record: dict[str, Any], source: dict[str, Any], ref: dict[str, Any]
+) -> dict[str, Any]:
+    """A row that points at an identical earlier row instead of calling the models again."""
+    has_raw = not source.get("sent") or bool(source.get("attacker"))
+    return {
+        "case_id": case["id"],
+        "status": record.get("status"),
+        "sent": source.get("sent"),
+        "payload_sha256": ref["sha256"],
+        "reused_from": ref,
+        "intent_match": source.get("intent_match"),
+        "situation_match": source.get("situation_match"),
+        "score": rescore_row(case, source) if has_raw else source["score"],
+    }
+
+
+def resolve_source(row: dict[str, Any], out: Path, out_name: str) -> dict[str, Any] | None:
+    """The row a reused row points at (this run's pass file or an earlier run's)."""
+    ref = row["reused_from"]
+    if ref.get("results_dir"):
+        base = Path(ref["results_dir"])
+        if not base.is_absolute():
+            base = EVAL_DIR.parent / base
+        path = base / out_name / f"pass_{ref['pass']:02d}.jsonl"
+    else:
+        path = out / f"pass_{ref['pass']:02d}.jsonl"
+    return reuse.read_rows(path).get(row["case_id"])
+
+
 async def run_attack(opts: argparse.Namespace) -> Path:
     run_dir: Path = opts.rescore
     cases, records = load_run(run_dir, opts.passes)
     out = run_dir / opts.out_name
     wanted = set(opts.category or [])
+    chosen, subset_info = subset.select(list(cases.values()), opts.subset, opts.seed)
+    keep = {c["id"] for c in chosen}
     jobs_per_pass = [
         [
             (cases[r["case_id"]], r)
             for r in pass_records
             if r.get("status") != "error"
+            and r["case_id"] in keep
             and (not wanted or cases[r["case_id"]]["category"] in wanted)
         ]
         for pass_records in records
     ]
     if opts.limit:
         jobs_per_pass = [jobs[: opts.limit] for jobs in jobs_per_pass]
-    est = estimate_run([j for jobs in jobs_per_pass for j in jobs])
+    prior_rows, prior_hashes, prior_name = prior_attack_rows(opts, cases)
+    first_hashes = (
+        {c["id"]: reuse.outbound_sha256(r) for c, r in jobs_per_pass[0]} if jobs_per_pass else {}
+    )
+
+    def planned_ref(pass_index: int, case: dict[str, Any], record: dict[str, Any]) -> dict | None:
+        digest = reuse.outbound_sha256(record)
+        if pass_index and opts.reuse_identical_passes and first_hashes.get(case["id"]) == digest:
+            return reuse.reference(1, digest)
+        if prior_hashes.get(case["id"]) == digest:
+            return reuse.reference(1, digest, prior_name)
+        return None
+
+    to_score = [
+        (c, r) for i, jobs in enumerate(jobs_per_pass) for c, r in jobs if not planned_ref(i, c, r)
+    ]
+    est = estimate_run(to_score)
+    est["rows"] = sum(len(jobs) for jobs in jobs_per_pass)
+    est["rows_reused_planned"] = est["rows"] - len(to_score)
     print(
         f"attack estimate for {run_dir.name}: {est['attacker_calls']} attacker + "
         f"{est['grader_calls']} grader calls, ~{est['prompt_tokens_est']:,} prompt tokens, "
         f"<= {est['completion_tokens_max']:,} completion tokens "
-        f"(attacker {opts.attack_model}, graders {opts.grader_model})",
+        f"(attacker {opts.attack_model}, graders {opts.grader_model}); "
+        f"{est['rows_reused_planned']} of {est['rows']} rows reused by payload hash",
         file=sys.stderr,
     )
     if opts.dry_run:
@@ -1121,6 +1222,9 @@ async def run_attack(opts: argparse.Namespace) -> Path:
         "passes": len(jobs_per_pass),
         "limit": opts.limit,
         "categories": sorted(wanted) or None,
+        "subset": subset_info or source_config.get("subset"),
+        "reuse_identical_passes": opts.reuse_identical_passes,
+        "reuse_from": prior_name,
         "estimate": est,
         "started_at": datetime.now(UTC).isoformat(),
     }
@@ -1132,6 +1236,7 @@ async def run_attack(opts: argparse.Namespace) -> Path:
         for role, model in (("attack", opts.attack_model), ("grader", opts.grader_model))
     }
     scored_passes = []
+    rows_by_pass: list[list[dict[str, Any]]] = []
     async with httpx.AsyncClient(
         base_url=opts.base_url, headers=headers, timeout=timeout
     ) as client:
@@ -1142,11 +1247,24 @@ async def run_attack(opts: argparse.Namespace) -> Path:
             done = 0
             t0 = time.perf_counter()
             total = len(jobs)
+            first_rows = {r["case_id"]: r for r in rows_by_pass[0]} if rows_by_pass else {}
 
-            async def one(case, record, pass_no=pass_no, total=total):
+            async def one(case, record, pass_no=pass_no, total=total, first_rows=first_rows):
                 nonlocal done
-                async with sem:
-                    row = await attack_one(case, record, llm, opts, grader_llm)
+                ref = planned_ref(pass_no - 1, case, record)
+                source = None
+                if ref and "results_dir" in ref:
+                    source = prior_rows.get(case["id"])
+                elif ref:
+                    source = first_rows.get(case["id"])
+                    if source and (source.get("attacker") or {}).get("error"):
+                        source = None  # pass 1 failed: score this pass normally
+                if source is not None:
+                    row = reused_attack_row(case, record, source, ref)
+                else:
+                    async with sem:
+                        row = await attack_one(case, record, llm, opts, grader_llm)
+                    row["payload_sha256"] = reuse.outbound_sha256(record)
                 done += 1
                 if done % 25 == 0 or done == total:
                     print(f"  attack pass {pass_no}: {done}/{total}", file=sys.stderr)
@@ -1163,7 +1281,9 @@ async def run_attack(opts: argparse.Namespace) -> Path:
                 for row in rows:
                     f.write(json.dumps(row, ensure_ascii=False) + "\n")
             scored_passes.append([row["score"] for row in rows])
+            rows_by_pass.append(rows)
             print(f"  pass {pass_no} took {time.perf_counter() - t0:.0f}s", file=sys.stderr)
+    config["reuse"] = reuse.summarize(rows_by_pass, prior_name)
     config["usage"] = usage
     config["usage_by_role"] = usage_by_role
     config["cost_usd"] = run_cost(usage_by_role)
@@ -1173,7 +1293,9 @@ async def run_attack(opts: argparse.Namespace) -> Path:
             1
             for p in sorted(out.glob("pass_*.jsonl"))
             for row in scoring_read_jsonl(p)
-            if row.get("sent") and not (row.get("attacker") or {}).get("parsed_ok")
+            if row.get("sent")
+            and not row.get("reused_from")
+            and not (row.get("attacker") or {}).get("parsed_ok")
         ),
     }
     write_summary(out, config, scored_passes)
@@ -1297,7 +1419,17 @@ def score_only(run_dir: Path, out_name: str = "attack") -> None:
     for p in sorted(out.glob("pass_*.jsonl")):
         rows = scoring_read_jsonl(p)
         for row in rows:
-            row["score"] = rescore_row(cases[row["case_id"]], row)
+            case = cases[row["case_id"]]
+            if row.get("reused_from"):
+                source = resolve_source(row, out, out_name)
+                for _ in range(3):  # follow a pass-2 -> pass-1 -> earlier-run chain
+                    if source is None or not source.get("reused_from"):
+                        break
+                    source = resolve_source(source, out, out_name)
+                if source is not None and (not source.get("sent") or source.get("attacker")):
+                    row["score"] = rescore_row(case, source)
+                continue
+            row["score"] = rescore_row(case, row)
         with p.open("w", encoding="utf-8") as f:
             for row in rows:
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -1314,6 +1446,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--passes", type=int, default=1, help="attack the first N proxy passes (default 1)"
     )
     ap.add_argument("--limit", type=int, default=None, help="only the first N cases per pass")
+    ap.add_argument("--subset", default=None, help="stratified:N or ids:PATH (see eval/subset.py)")
+    ap.add_argument("--seed", type=int, default=0, help="seed for --subset stratified:N")
+    ap.add_argument(
+        "--reuse-identical-passes",
+        action="store_true",
+        help="reuse the pass-1 row for every case whose outbound payload hash is identical in a "
+        "later pass (deterministic baselines); other cases are scored normally",
+    )
+    ap.add_argument(
+        "--reuse-from",
+        type=Path,
+        default=None,
+        help="an earlier results directory of the same system: reuse its pass-1 attack rows for "
+        "cases with an identical payload hash, if scored with the same models",
+    )
     ap.add_argument(
         "--category", action="append", default=None, help="restrict to category (repeatable)"
     )
