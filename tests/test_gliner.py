@@ -238,19 +238,22 @@ def test_adjudication_accepts_yes_and_rejects_no(gliner_client, harness, fake_gl
 def test_one_adjudication_call_per_request_and_no_raw_pattern_values(
     gliner_client, harness, fake_gliner
 ):
-    fake_gliner.entities = {"Brightwell Dental": ("company_name", 0.9), "Ohana": ("city", 0.9)}
+    fake_gliner.entities = {
+        "Brightwell Dental": ("company_name", 0.9),
+        "12 Ohana Lane": ("street_address", 0.9),
+    }
     messages = [
         {"role": "system", "content": "You help with e-mails."},
         {"role": "user", "content": "Book a cleaning at Brightwell Dental, call 010-2345-6789."},
         {"role": "assistant", "content": "Sure."},
-        {"role": "user", "content": "Also mention I moved to Ohana last month."},
+        {"role": "user", "content": "Also mention I moved to 12 Ohana Lane last month."},
     ]
     r = chat(gliner_client, messages)
     assert r.status_code == 200, r.text
     [req] = adjudication_requests(harness)
     user = req["messages"][1]["content"]
     assert "010-2345-6789" not in user and "<CONTACT>" in user  # pattern values stay hidden
-    assert "⟦Brightwell Dental⟧" in user and "⟦Ohana⟧" in user
+    assert "⟦Brightwell Dental⟧" in user and "⟦12 Ohana Lane⟧" in user
     assert len(fake_gliner.calls) == len(gliner.label_groups())  # all texts in one batch
 
 

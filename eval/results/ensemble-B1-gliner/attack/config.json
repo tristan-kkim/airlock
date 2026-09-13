@@ -1,0 +1,27 @@
+{
+  "attack_version": "1.0.0",
+  "results_dir": "ensemble-B1-gliner",
+  "target_label": "airlock 79e9891 AIRLOCK_GLINER=on variant 1: agreement-only city,date_of_birth; Korean GLiNER-only names 3+ syllables",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "estimate": {
+    "attacker_calls": 231,
+    "grader_calls": 21,
+    "prompt_tokens_est": 163906,
+    "completion_tokens_max": 350700
+  },
+  "started_at": "2026-09-13T20:32:10.888635+00:00",
+  "usage": {
+    "prompt_tokens": 173603,
+    "completion_tokens": 63286
+  },
+  "finished_at": "2026-09-13T20:33:57.963816+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

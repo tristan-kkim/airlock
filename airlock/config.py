@@ -35,6 +35,7 @@ DEFAULT_TAVILY_BASE_URL = "https://api.tavily.com"
 # NVIDIA GLiNER-PII (optional second span proposer): a local directory or a cached Hub id.
 DEFAULT_GLINER_MODEL = "nvidia/gliner-PII"
 DEFAULT_GLINER_THRESHOLD = 0.4
+DEFAULT_GLINER_AGREEMENT_ONLY = "city,date_of_birth"
 
 
 def _bool(value: str | None, default: bool) -> bool:
@@ -89,8 +90,10 @@ class Settings:
     gliner_threshold: float = DEFAULT_GLINER_THRESHOLD
     gliner_thresholds: str = ""  # per-label overrides: "first_name=0.6,password=0.8"
     gliner_adjudicate: bool = True  # ask the local model about GLiNER-only spans
-    gliner_agreement_only: str = ""  # labels accepted only when another source agrees
-    gliner_ko_name_min_syllables: int = 2  # Hangul names accepted from GLiNER alone
+    # Chosen on the eval dev split (variant B1): GLiNER-only cities and birth dates had the worst
+    # adjudicated precision, and 2-syllable Hangul "names" were mostly common words.
+    gliner_agreement_only: str = DEFAULT_GLINER_AGREEMENT_ONLY  # accepted only with agreement
+    gliner_ko_name_min_syllables: int = 3  # Hangul names accepted from GLiNER alone
 
     host: str = "127.0.0.1"
     port: int = 8787
@@ -162,8 +165,11 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         gliner_threshold=_float(env.get("AIRLOCK_GLINER_THRESHOLD"), DEFAULT_GLINER_THRESHOLD),
         gliner_thresholds=env.get("AIRLOCK_GLINER_THRESHOLDS") or "",
         gliner_adjudicate=_bool(env.get("AIRLOCK_GLINER_ADJUDICATE"), True),
-        gliner_agreement_only=env.get("AIRLOCK_GLINER_AGREEMENT_ONLY") or "",
-        gliner_ko_name_min_syllables=int(env.get("AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES") or 2),
+        # Set AIRLOCK_GLINER_AGREEMENT_ONLY to an empty string to adjudicate every label.
+        gliner_agreement_only=env.get(
+            "AIRLOCK_GLINER_AGREEMENT_ONLY", DEFAULT_GLINER_AGREEMENT_ONLY
+        ),
+        gliner_ko_name_min_syllables=int(env.get("AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES") or 3),
         host=env.get("AIRLOCK_HOST") or "127.0.0.1",
         port=int(env.get("AIRLOCK_PORT") or 8787),
         allowed_hosts=tuple(
