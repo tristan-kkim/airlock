@@ -108,6 +108,10 @@ SEARCH_BLOCKED_NOTE = (
     "web_search was withheld by the user's privacy firewall: the query would reveal private "
     "details. Continue without it, or search for a more general topic."
 )
+EMPTY_FINISH_NOTE = (
+    "error: finish was received without an answer. Call finish again with the complete answer "
+    "in the answer argument."
+)
 RESULTS_WITHHELD_NOTE = (
     "These web_search results were withheld by the user's privacy firewall because they "
     "contained a private value. Continue without them."
@@ -258,6 +262,7 @@ class AgentRunner:
             "search_allowed": 0,
             "search_blocked": 0,
             "results_withheld": 0,
+            "finish_repaired": 0,
         }
         web_results: set[str] = set()  # tool_call_ids whose content is inbound web content
         record.meta.update(
@@ -289,12 +294,16 @@ class AgentRunner:
         }
 
         try:
-            for step in range(1, max_steps + 1):
+            step, limit = 0, max_steps
+            repair_turn = repaired = False
+            while step < limit:
+                step += 1
                 steps = step
-                last = step == max_steps
-                if last:
+                last = step == limit
+                if last and not repair_turn:
                     messages.append({"role": "user", "content": STEP_LIMIT_NOTE})
-                body = self._body(messages, FINISH_ONLY if last else TOOLS)
+                body = self._body(messages, FINISH_ONLY if last or repair_turn else TOOLS)
+                repair_turn = False
                 kind = "prompt" if step == 1 else "tool_result"
                 started = time.perf_counter()
 
@@ -426,6 +435,21 @@ class AgentRunner:
                         answer = str(
                             args.get("answer") or salvage_answer(call["arguments"]) or content or ""
                         ).strip()
+                        if not answer and not repaired:
+                            # Token Factory occasionally returns finish with "{}" arguments after
+                            # generating the whole answer. Ask once more; this turn does not
+                            # count against the step limit.
+                            messages.append(
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": call["id"],
+                                    "content": EMPTY_FINISH_NOTE,
+                                }
+                            )
+                            repaired = repair_turn = True
+                            limit += 1
+                            counts["finish_repaired"] += 1
+                            break
                         messages.append(
                             {"role": "tool", "tool_call_id": call["id"], "content": "done"}
                         )

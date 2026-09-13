@@ -611,3 +611,20 @@ def test_document_holding_an_undecodable_private_value_still_blocks(
     events = run_events(client, docs=docs)
     assert final_of(events)["status"] == "blocked"
     assert all("Okafor" not in raw.decode() for raw in agent.h.upstream_raw)
+
+
+def test_finish_without_answer_is_repaired_once(make_agent_client, agent) -> None:
+    seen = []
+
+    def again(payload):
+        seen.append(payload)
+        return tool_reply(call("finish", {"answer": "Here is the answer."}, 2))
+
+    agent.h.upstream_reply = script(tool_reply(call("finish", {})), again)
+    client = make_agent_client(AgentSettings(max_steps=1, safety_base_url=SAFETY))
+    events = run_events(client)
+    final = final_of(events)
+    assert final["status"] == "finished" and final["answer"] == "Here is the answer."
+    assert final["finish_repaired"] == 1 and final["steps"] == 2
+    assert seen[0]["messages"][-1]["content"].startswith("error: finish was received")
+    assert [t["function"]["name"] for t in seen[0]["tools"]] == ["finish"]
