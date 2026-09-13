@@ -133,7 +133,11 @@ def test_type_consistency_rejects_mislabels_before_adjudication(
     assert r.status_code == 200, r.text
 
     sent = outbound(harness)
-    assert "마흔다섯" in sent and "보안팀" in sent and "localhost" in sent
+    # None of the mislabels became a mask. (The age and the team are generalized by the
+    # employer/unit link instead, which is deterministic and independent of GLiNER.)
+    assert "localhost" in sent
+    user = harness.upstream_requests[0]["messages"][-1]["content"]
+    assert not any(t in user for t in ("<SECRET_", "<PERSON_", "<ID_NUMBER_")), user
     assert adjudication_requests(harness) == []
     stats = audit(gliner_client, r)["meta"]["detector"]
     assert stats["gliner_rejected_mislabel"] == 1
@@ -209,13 +213,13 @@ def test_korean_particles_are_trimmed_and_names_remapped(gliner_client, harness,
 
 def test_adjudication_accepts_yes_and_rejects_no(gliner_client, harness, fake_gliner):
     fake_gliner.entities = {
-        "Quillmere Analytics": ("company_name", 0.97),
+        "Quillmere Vane": ("company_name", 0.97),
         "Alan Turing": ("first_name", 0.99),
     }
     harness.adjudicate = lambda span: "no" if span == "Alan Turing" else "yes"
     r = chat(
         gliner_client,
-        "My manager at Quillmere Analytics keeps quoting Alan Turing in reviews. Draft a reply.",
+        "My manager at Quillmere Vane keeps quoting Alan Turing in reviews. Draft a reply.",
     )
     assert r.status_code == 200, r.text
 
@@ -239,21 +243,21 @@ def test_one_adjudication_call_per_request_and_no_raw_pattern_values(
     gliner_client, harness, fake_gliner
 ):
     fake_gliner.entities = {
-        "Brightwell Dental": ("company_name", 0.9),
-        "12 Ohana Lane": ("street_address", 0.9),
+        "Brightwell Smiles": ("company_name", 0.9),
+        "12 Ohana Gardens": ("street_address", 0.9),
     }
     messages = [
         {"role": "system", "content": "You help with e-mails."},
-        {"role": "user", "content": "Book a cleaning at Brightwell Dental, call 010-2345-6789."},
+        {"role": "user", "content": "Book a cleaning at Brightwell Smiles, call 010-2345-6789."},
         {"role": "assistant", "content": "Sure."},
-        {"role": "user", "content": "Also mention I moved to 12 Ohana Lane last month."},
+        {"role": "user", "content": "Also mention I moved to 12 Ohana Gardens last month."},
     ]
     r = chat(gliner_client, messages)
     assert r.status_code == 200, r.text
     [req] = adjudication_requests(harness)
     user = req["messages"][1]["content"]
     assert "010-2345-6789" not in user and "<CONTACT>" in user  # pattern values stay hidden
-    assert "⟦Brightwell Dental⟧" in user and "⟦12 Ohana Lane⟧" in user
+    assert "⟦Brightwell Smiles⟧" in user and "⟦12 Ohana Gardens⟧" in user
     assert len(fake_gliner.calls) == len(gliner.label_groups())  # all texts in one batch
 
 
@@ -268,36 +272,36 @@ def test_adjudication_is_skipped_without_gliner_only_candidates(
 
 
 def test_malformed_adjudication_fails_closed(gliner_client, harness, fake_gliner):
-    fake_gliner.entities = {"Quillmere Analytics": ("company_name", 0.97)}
+    fake_gliner.entities = {"Quillmere Vane": ("company_name", 0.97)}
     harness.adjudication_content = lambda user: '{"c1": "maybe"}'
-    r = chat(gliner_client, "My employer Quillmere Analytics denied my leave.")
+    r = chat(gliner_client, "My employer Quillmere Vane denied my leave.")
     assert r.status_code == 422
     assert r.json()["error"]["reasons"] == ["local_detector_malformed:schema"]
     assert harness.upstream_requests == []
 
 
 def test_thresholds_filter_low_scores(make_client, harness, fake_gliner):
-    fake_gliner.entities = {"Quillmere Analytics": ("company_name", 0.35)}
+    fake_gliner.entities = {"Quillmere Vane": ("company_name", 0.35)}
     client = make_client(gliner=True, gliner_threshold=0.4)
-    r = chat(client, "My employer Quillmere Analytics denied my leave.")
-    assert "Quillmere Analytics" in outbound(harness)
+    r = chat(client, "My employer Quillmere Vane denied my leave.")
+    assert "Quillmere Vane" in outbound(harness)
     assert audit(client, r)["meta"]["detector"]["gliner_spans"] == 0
 
     client = make_client(gliner=True, gliner_threshold=0.4, gliner_thresholds="company_name=0.3")
-    chat(client, "My employer Quillmere Analytics denied my leave.")
-    assert "Quillmere Analytics" not in outbound(harness)
+    chat(client, "My employer Quillmere Vane denied my leave.")
+    assert "Quillmere Vane" not in outbound(harness)
 
 
 def test_agreement_only_labels_and_korean_name_length(make_client, harness, fake_gliner):
     fake_gliner.entities = {
         "Port Aldine": ("city", 0.95),
         "이관": ("last_name", 0.9),
-        "Corvenna Systems": ("company_name", 0.95),
+        "Corvenna Oakline": ("company_name", 0.95),
     }
     client = make_client(
         gliner=True, gliner_agreement_only="city,date_of_birth", gliner_ko_name_min_syllables=3
     )
-    r = chat(client, "I moved to Port Aldine to join Corvenna Systems. 담당 이관 확인 부탁.")
+    r = chat(client, "I moved to Port Aldine to join Corvenna Oakline. 담당 이관 확인 부탁.")
     assert r.status_code == 200, r.text
     sent = outbound(harness)
     assert "Port Aldine" in sent and "이관" in sent and "Corvenna" not in sent
@@ -309,10 +313,10 @@ def test_agreement_only_labels_and_korean_name_length(make_client, harness, fake
 
 
 def test_search_path_uses_the_ensemble(gliner_client, harness, fake_gliner):
-    fake_gliner.entities = {"Quillmere Analytics": ("company_name", 0.97)}
+    fake_gliner.entities = {"Quillmere Vane": ("company_name", 0.97)}
     harness.rewrite = lambda q, c: "layoff rumors tech company"
     r = gliner_client.post(
-        "/v1/search", json={"query": "Quillmere Analytics layoffs", "context": "I work there."}
+        "/v1/search", json={"query": "Quillmere Vane layoffs", "context": "I work there."}
     )
     assert r.status_code == 200, r.text
     assert len(adjudication_requests(harness)) == 1
@@ -339,7 +343,9 @@ def test_disabled_mode_matches_current_behavior(make_client, harness, monkeypatc
     assert set(stats) == {
         "texts", "pattern_spans", "vault_spans", "masked_before_llm", "rule_spans", "llm_calls",
         "llm_proposed", "llm_kept", "llm_discarded_ungrounded", "llm_discarded_invalid",
-        "generalize_rejected", "semantic_cues",
+        "generalize_rejected", "semantic_cues", "spans_trimmed", "llm_retyped",
+        "llm_dropped_shape", "kept_situation", "quasi_linked", "generalization_fixed",
+        "entailment_calls", "propagated", "surrogates",
     }  # fmt: skip
     assert adjudication_requests(harness) == []
 

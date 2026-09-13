@@ -16,6 +16,13 @@ class ProtectionLevel(StrEnum):
     MINIMAL = "minimal"
 
 
+class Substitution(StrEnum):
+    """What replaces an identity value in the outbound text."""
+
+    PLACEHOLDER = "placeholder"  # <PERSON_1>
+    SURROGATE = "surrogate"  # a realistic, format-preserving fake value (secrets stay <SECRET_1>)
+
+
 class ReviewMode(StrEnum):
     """When Airlock stops and asks the client to confirm proposed redactions (HTTP 409)."""
 
@@ -78,6 +85,7 @@ class Settings:
     audit_hash_key_file: str = "./.airlock/audit_hash.key"
 
     protection_level: ProtectionLevel = ProtectionLevel.BALANCED
+    substitution: Substitution = Substitution.PLACEHOLDER
     review_mode: ReviewMode = ReviewMode.NEVER
     review_ttl_s: float = 600.0
     canaries: tuple[str, ...] = field(default_factory=tuple)
@@ -126,6 +134,14 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
             f"AIRLOCK_REVIEW must be always|uncertain|never, got {review_raw!r}"
         ) from exc
 
+    subst_raw = (env.get("AIRLOCK_SUBSTITUTION") or "placeholder").strip().lower()
+    try:
+        substitution = Substitution(subst_raw)
+    except ValueError as exc:
+        raise ValueError(
+            f"AIRLOCK_SUBSTITUTION must be placeholder|surrogate, got {subst_raw!r}"
+        ) from exc
+
     canaries = tuple(c.strip() for c in (env.get("AIRLOCK_CANARIES") or "").split(",") if c.strip())
 
     return Settings(
@@ -155,6 +171,7 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         audit_hash_key=env.get("AIRLOCK_AUDIT_HASH_KEY") or None,
         audit_hash_key_file=env.get("AIRLOCK_AUDIT_HASH_KEY_FILE") or "./.airlock/audit_hash.key",
         protection_level=level,
+        substitution=substitution,
         review_mode=review,
         canaries=canaries,
         gliner=_bool(env.get("AIRLOCK_GLINER"), False),

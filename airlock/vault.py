@@ -7,6 +7,7 @@ mappings only for the life of the process.
 
 from __future__ import annotations
 
+import secrets
 import sqlite3
 import threading
 import time
@@ -41,8 +42,10 @@ class Term:
 class Mapping:
     original: str
     type: str
-    action: Literal["mask", "generalize"]
-    value: str  # placeholder key (e.g. PERSON_1) for mask, replacement text for generalize
+    action: Literal["mask", "generalize", "surrogate"]
+    # placeholder key (e.g. PERSON_1) for mask, replacement text for generalize, the fake value
+    # for surrogate
+    value: str
 
     @property
     def outbound(self) -> str:
@@ -79,6 +82,9 @@ class Vault:
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._conn.executescript(_SCHEMA)
         self._lock = threading.RLock()
+        # Keys the surrogate generator's hash, so a surrogate cannot be predicted from the
+        # original. Surrogates themselves are stored, so a new key never changes a mapping.
+        self.surrogate_key = secrets.token_bytes(32)
         self._migrate_rendered_values()
 
     def _migrate_rendered_values(self) -> None:
@@ -201,6 +207,7 @@ class VaultSession:
         self.conversation_id = conversation_id
         self._by_norm: dict[str, Mapping] = {}
         self._by_key: dict[str, Mapping] = {}
+        self._by_surrogate: dict[str, Mapping] = {}
         for m in vault._load(conversation_id):
             self._remember(m)
 
@@ -208,6 +215,8 @@ class VaultSession:
         self._by_norm[normalize(m.original)] = m
         if m.action == "mask":
             self._by_key[m.value] = m
+        elif m.action == "surrogate":
+            self._by_surrogate[normalize(m.value)] = m
 
     def get(self, original: str) -> Mapping | None:
         return self._by_norm.get(normalize(original))
@@ -229,6 +238,21 @@ class VaultSession:
         )
         self._remember(m)
         return m
+
+    def surrogate(self, original: str, type_: str, value: str) -> Mapping:
+        existing = self.get(original)
+        if existing is not None:
+            return existing
+        m = self.vault._get_or_create(self.conversation_id, original, type_, "surrogate", value)
+        self._remember(m)
+        return m
+
+    def surrogate_taken(self, value: str) -> bool:
+        return normalize(value) in self._by_surrogate
+
+    def surrogate_pairs(self) -> list[tuple[str, str, str]]:
+        """(surrogate, original, type) for rehydration."""
+        return [(m.value, m.original, m.type) for m in self._by_surrogate.values()]
 
     def original_for(self, key: str) -> str | None:
         m = self._by_key.get(key)
@@ -253,6 +277,7 @@ class ScratchSession(VaultSession):
         self.conversation_id = base.conversation_id
         self._by_norm = dict(base._by_norm)
         self._by_key = dict(base._by_key)
+        self._by_surrogate = dict(base._by_surrogate)
 
     def _new(self, original: str, type_: str, action: str, value: str) -> Mapping:
         m = Mapping(original, type_, action, value)  # type: ignore[arg-type]
@@ -278,3 +303,7 @@ class ScratchSession(VaultSession):
             if existing is not None
             else self._new(original, type_, "generalize", replacement)
         )
+
+    def surrogate(self, original: str, type_: str, value: str) -> Mapping:
+        existing = self.get(original)
+        return existing if existing is not None else self._new(original, type_, "surrogate", value)

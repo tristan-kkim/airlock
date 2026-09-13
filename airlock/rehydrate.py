@@ -1,7 +1,9 @@
-"""Map placeholders in upstream responses back to the local originals.
+"""Map placeholders and surrogates in upstream responses back to the local originals.
 
-Matching is lenient about brackets and case (see `airlock.placeholders`), but only keys that
-exist in this conversation's vault are replaced, so `List<T_1>` or a stray `[x]` is untouched.
+Placeholder matching is lenient about brackets and case (see `airlock.placeholders`), but only
+keys that exist in this conversation's vault are replaced, so `List<T_1>` or a stray `[x]` is
+untouched. Surrogates (`AIRLOCK_SUBSTITUTION=surrogate`) are found as written or reformatted, and
+the Korean particle after a restored value is corrected (`airlock.surrogate.rehydrate`).
 """
 
 from __future__ import annotations
@@ -10,13 +12,15 @@ import copy
 import json
 from typing import Any
 
-from airlock import placeholders
+from airlock import placeholders, surrogate
 from airlock.vault import VaultSession
 
 
 def rehydrate_text(text: str, session: VaultSession, *, json_escape: bool = False) -> str:
     transform = (lambda s: json.dumps(s, ensure_ascii=False)[1:-1]) if json_escape else str
-    return placeholders.rehydrate(text, session.original_for, transform)
+    out = placeholders.rehydrate(text, session.original_for, transform)
+    pairs = session.surrogate_pairs()
+    return surrogate.rehydrate(out, pairs, transform) if pairs else out
 
 
 def _walk(obj: Any, session: VaultSession) -> Any:
@@ -80,12 +84,17 @@ class StreamRehydrator:
     def feed(self, text: str) -> str:
         self.buffer += text
         buf = self.buffer
+        cut = len(buf)
         for i in range(max(0, len(buf) - self.max_hold), len(buf)):
             if buf[i] in placeholders.OPENER_CHARS and placeholders.PARTIAL_RE.fullmatch(buf, i):
-                ready, self.buffer = buf[:i], buf[i:]
-                return rehydrate_text(ready, self.session)
-        self.buffer = ""
-        return rehydrate_text(buf, self.session)
+                cut = i
+                break
+        surrogates = [s for s, _, _ in self.session.surrogate_pairs()]
+        if surrogates:
+            # A surrogate split across chunks, or one whose particle has not arrived yet.
+            cut = min(cut, len(buf) - surrogate.pending_tail(buf, surrogates))
+        ready, self.buffer = buf[:cut], buf[cut:]
+        return rehydrate_text(ready, self.session)
 
     def flush(self) -> str:
         ready, self.buffer = self.buffer, ""

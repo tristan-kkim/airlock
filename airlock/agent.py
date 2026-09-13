@@ -42,7 +42,6 @@ from airlock.agent_settings import AgentSettings
 from airlock.audit import AuditLog, AuditRecord
 from airlock.config import Settings
 from airlock.detect.llm import LocalModelError, block_reason, load_prompt
-from airlock.detect.spans import Span
 from airlock.egress import EgressEvent, EgressPolicy
 from airlock.hashing import Hasher
 from airlock.pipeline import Detection, PayloadError, Sanitizer, dedupe_detections
@@ -551,51 +550,43 @@ class AgentRunner:
         web_results: set[str] | None = None,
         counts: dict[str, int] | None = None,
     ) -> tuple[dict[str, Any], list[Any], list[str], list[Detection]]:
-        """Sanitize the whole history; converge if a known value survived in some slots.
+        """Sanitize the whole history in one detection call.
 
-        Detection runs per text slot. A turn with several new tool results can hold a value that
-        was detected in one document but missed in another, or a name that lost overlap
-        resolution to a longer span in one document and appears alone in another. The gate
-        would block such a turn. The second pass reuses this turn's analysis and adds every
-        protected original as a span, so each one is masked in every slot (no second model
-        call).
+        Cross-slot consistency is handled by the pipeline: a value detected in any document,
+        search result or message of the turn (or masked earlier in the run) is masked in every
+        slot before the gate.
 
-        If known values still remain and every message that holds them is a web search result
-        (public inbound content, where for example the gate decodes an encoded URL the masker
-        cannot see), those results are withheld from the history and the turn is rebuilt.
-        Documents, the question and the model's own messages are never dropped: those turns
-        stay blocked. The gate still decides on the final payload.
+        One case remains: a known value that only the gate can see, because it is encoded (for
+        example a percent-encoded URL in a web search result). If every message that still holds
+        a known value is a web search result (public inbound content), those results are
+        withheld from the history and the turn is rebuilt. Documents, the question and the
+        model's own messages are never dropped: such a turn stays blocked. The gate still
+        decides on the final payload.
         """
         analysis = await self.sanitizer.analyze_chat(body, session)
         sanitized = self.sanitizer.build_chat(body, analysis, session)
-        if self._only_known_values_block(sanitized):
-            known = [
-                Span(text=p.text, type=p.type, source="vault")
-                for p in sanitized.protected
-                if p.code == "vault_original"
+        if self._only_known_values_block(sanitized) and web_results:
+            offenders = [
+                i
+                for i, msg in enumerate(sanitized.payload.get("messages") or [])
+                if not gate.check(msg, sanitized.protected, hasher=self.hasher).allowed
             ]
-            # Reuse this turn's analysis: a fresh one would query the local model again on
-            # differently masked text and could surface new spans after other slots were built.
-            sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
-            if self._only_known_values_block(sanitized) and web_results:
-                offenders = [
-                    i
-                    for i, msg in enumerate(sanitized.payload.get("messages") or [])
-                    if not gate.check(msg, sanitized.protected, hasher=self.hasher).allowed
-                ]
-                local = body["messages"]
-                if offenders and all(
-                    i < len(local)
-                    and local[i].get("role") == "tool"
-                    and local[i].get("tool_call_id") in web_results
-                    for i in offenders
-                ):
-                    for i in offenders:
-                        local[i]["content"] = RESULTS_WITHHELD_NOTE
-                        if counts is not None:
-                            counts["results_withheld"] += 1
-                    analysis = await self.sanitizer.analyze_chat(body, session)
-                    sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
+            # The placeholder note may shift outbound indices by one against the local history.
+            shift = len(sanitized.payload.get("messages") or []) - len(body["messages"])
+            local = body["messages"]
+            offenders = [i - shift for i in offenders]
+            if offenders and all(
+                0 <= i < len(local)
+                and local[i].get("role") == "tool"
+                and local[i].get("tool_call_id") in web_results
+                for i in offenders
+            ):
+                for i in offenders:
+                    local[i]["content"] = RESULTS_WITHHELD_NOTE
+                    if counts is not None:
+                        counts["results_withheld"] += 1
+                analysis = await self.sanitizer.analyze_chat(body, session)
+                sanitized = self.sanitizer.build_chat(body, analysis, session)
         return (
             sanitized.payload,
             sanitized.protected,

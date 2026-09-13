@@ -1,0 +1,48 @@
+{
+  "base_url": "http://127.0.0.1:8797",
+  "target_label": "airlock 79e9891 AIRLOCK_GLINER=on variant 1: agreement-only city,date_of_birth; Korean GLiNER-only names 3+ syllables",
+  "passes": 1,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "2549790dc5913bf1cac0d7f681427cf87b55af96a770b7f8678b83810bc82e70",
+  "protection_level": "balanced",
+  "server_health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "protection_level": "balanced",
+    "local_model": "nemotron-3-nano-4b",
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "upstream_configured": true,
+    "search_configured": true
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "started_at": "2026-09-13T19:46:56.931046+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8797",
+    "--passes",
+    "1",
+    "--reset-vault",
+    "--out",
+    "eval/results/ensemble-B1-gliner",
+    "--label",
+    "airlock 79e9891 AIRLOCK_GLINER=on variant 1: agreement-only city,date_of_birth; Korean GLiNER-only names 3+ syllables",
+    "--protection-level",
+    "balanced",
+    "--timeout",
+    "600"
+  ],
+  "finished_at": "2026-09-13T20:31:22.958354+00:00",
+  "subset": {
+    "file": "eval/results/s6-split/test90.json",
+    "source": "ensemble-B1-gliner"
+  }
+}

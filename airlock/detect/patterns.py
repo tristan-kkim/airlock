@@ -15,6 +15,10 @@ from dataclasses import dataclass
 from airlock.detect.spans import PLACEHOLDER_RE, Span
 
 
+def _words(block: str) -> list[str]:
+    return block.split()
+
+
 def _luhn_ok(value: str) -> bool:
     digits = [int(c) for c in value if c.isdigit()]
     if not 13 <= len(digits) <= 19:
@@ -58,6 +62,27 @@ def _password_like(value: str) -> bool:
         and bool(re.search(r"[\d\W_]", value))
         and not re.search(r"[가-힣]", value)
     )
+
+
+_PUBLIC_ID_PREFIXES = frozenset(
+    _words(
+        """
+        ISO SHA UTF AES RSA RFC PEP CVE CWE HTTP TLS SSL IEC IEEE DIN MIL GPT COVID SARS DDR
+        USB PCI LTE JIS ANSI NIST FIPS OWASP GHSA ASTM ICD NDC IPV ECMA ES KS BS EN RS MP
+        ATC HL SOC PCIE WPA WCAG DSM ASC IFRS GAAP IRS FORM
+        """
+    )
+)
+
+
+def _ticket_ok(value: str) -> bool:
+    prefix = value.split("-", 1)[0]
+    if prefix in _PUBLIC_ID_PREFIXES:
+        return False
+    if re.fullmatch(r"[A-Z0-9]{4}", prefix):
+        # 4-character mixed prefix (Q5F6-0648): needs a letter, and a year-like prefix is a date
+        return bool(re.search(r"[A-Z]", prefix)) and not prefix.isdigit()
+    return True
 
 
 @dataclass(frozen=True)
@@ -193,7 +218,95 @@ RULES: tuple[Rule, ...] = (
         validator=_password_like,
         priority=12,
     ),
+    Rule(
+        # 비밀번호 38966240, OTP 030846, 인증번호 5521: a code after the cue, no separator needed.
+        "code_after_cue",
+        "SECRET",
+        re.compile(
+            r"(?:비밀번호|패스워드|암호|OTP|인증\s?번호|인증\s?코드|보안\s?코드|PIN|핀\s?번호|"
+            r"passcode|passcodes|verification code|security code|door code|gate code|access code|"
+            r"one-time code|pin code)"
+            r"\s*(?:는|은|가|이|:|=|is|was|번호는)?\s*[\"'“‘]?"
+            r"(?P<v>[A-Za-z0-9!@#$%^&*._\-]{3,63}[A-Za-z0-9!@#$%^&*])"
+            r"(?!년|월|일|자리|회|번째|개|시간|분|초|원|명|퍼센트|%|자|차|대|층|호|번(?!호)|[A-Za-z0-9])",
+            re.IGNORECASE,
+        ),
+        group=1,
+        validator=lambda v: bool(re.search(r"\d", v)) and not re.fullmatch(r"(?:19|20)\d{2}", v),
+        priority=13,
+    ),
+    Rule(
+        # https://hooks.slack.com/services/T.../B.../xxx, discord webhooks, /webhook/<token>
+        "webhook_url",
+        "SECRET",
+        re.compile(
+            r"https?://(?:[^\s/'\"<>]*hook[^\s/'\"<>]*(/[A-Za-z0-9_\-/.~]{8,})"
+            r"|[^\s/'\"<>]+(/(?:api/)?webhook[sb2]*/[A-Za-z0-9_\-/.~]{8,}))",
+            re.IGNORECASE,
+        ),
+        group=-1,
+        validator=lambda v: bool(re.search(r"\d", v)) and bool(re.search(r"[A-Za-z]", v)),
+        priority=14,
+    ),
+    Rule(
+        # Signed or keyed URL parameters: X-Amz-Signature=..., sig=..., access_token=...
+        "signed_url_param",
+        "SECRET",
+        re.compile(
+            r"[?&](?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|X-Goog-Signature|sig|"
+            r"signature|token|access_token|api_key|apikey|key|auth|secret|client_secret)="
+            r"([A-Za-z0-9%._~+/\-]{12,})",
+            re.IGNORECASE,
+        ),
+        group=1,
+        validator=lambda v: bool(re.search(r"\d", v)) and bool(re.search(r"[A-Za-z]", v)),
+        priority=15,
+    ),
     # ---- Korean identifiers ----
+    Rule(
+        "kr_case_number",
+        "ID_NUMBER",
+        re.compile(
+            r"(?<!\d)(?:19|20)\d{2}\s?(?:가합|가단|가소|나|다|고합|고단|고정|노|도|구합|구단|누|두|"
+            r"드단|드합|르|머|카합|카단|카기|타경|허|후|형|즈단|즈기|느단|느합|개회|하단|하면|회단|"
+            r"회합)\s?\d{2,7}(?!\d)"
+        ),
+        priority=19,
+    ),
+    Rule(
+        "kr_address",
+        "LOCATION",
+        re.compile(
+            r"(?:(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|충청북도|충청남도|"
+            r"전북|전남|전라북도|전라남도|경북|경남|경상북도|경상남도|제주)[가-힣]*\s+)?"
+            r"(?:[가-힣]{1,6}(?:시|군|구)\s+){1,3}(?:[가-힣]{1,6}(?:읍|면|동)\s+)?"
+            r"(?:[가-힣0-9]{1,12}(?:로|길)\s*\d{1,5}(?:-\d{1,4})?|[가-힣0-9]{1,6}(?:동|리|가)\s+\d{1,5}"
+            r"(?:-\d{1,4})?(?:번지)?)"
+            r"(?:\s*,?\s*(?:[가-힣A-Za-z0-9]{1,12}\s+)?\d{1,4}\s?동(?:\s*\d{1,5}\s?호)?"
+            r"|\s*,?\s*\d{1,5}\s?호)?"
+        ),
+        priority=25,
+    ),
+    Rule(
+        "street_address",
+        "LOCATION",
+        re.compile(
+            r"(?<![\w-])\d{1,6}\s+(?:[A-Z][a-z'’]+\s+){1,3}(?:Street|St|Lane|Ln|Avenue|Ave|Road|Rd|"
+            r"Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl|Terrace|Circle|Parkway|Pkwy)\b\.?"
+            r"(?:,?\s*(?:Apt|Apartment|Unit|Suite|Ste|#)\.?\s*[\w-]+)?"
+        ),
+        priority=25,
+    ),
+    Rule(
+        # Ticket, case and document IDs: JIRA-4821, HFS-40418, CV-26-004417, Q5F6-0648.
+        "ticket_id",
+        "ID_NUMBER",
+        re.compile(
+            r"(?<![A-Za-z0-9_\-])(?:[A-Z]{2,5}(?:-\d{2})?-\d{3,}|[A-Z0-9]{4}-\d{4})(?![A-Za-z0-9_\-])"
+        ),
+        validator=lambda v: _ticket_ok(v),
+        priority=26,
+    ),
     Rule(
         "kr_rrn",
         "ID_NUMBER",
@@ -246,6 +359,7 @@ HIGH_CONFIDENCE_RULES: tuple[Rule, ...] = tuple(r for r in RULES if r.high_confi
 
 # ---- entropy ----
 _TOKEN_RE = re.compile(r"(?<![A-Za-z0-9+/_=.\-])[A-Za-z0-9+/_=\-]{24,}(?![A-Za-z0-9+/_=\-])")
+_URL_RE = re.compile(r"https?://[^\s'\"<>)\]]+")
 ENTROPY_MIN_LEN = 24
 ENTROPY_THRESHOLD = 4.2  # bits/char; pure hex tops out at 4.0 so git SHAs and UUIDs pass
 
@@ -272,12 +386,15 @@ def _looks_like_secret(token: str) -> bool:
 
 def _iter_rule_matches(rule: Rule, text: str):
     for m in rule.pattern.finditer(text):
-        value = m.group(rule.group)
+        group = rule.group
+        if group == -1:  # the first alternative's group that matched
+            group = next((i for i, g in enumerate(m.groups(), start=1) if g), 0)
+        value = m.group(group)
         if not value:
             continue
         if rule.validator is not None and not rule.validator(value):
             continue
-        yield m.start(rule.group), m.end(rule.group), value
+        yield m.start(group), m.end(group), value
 
 
 def _inside_placeholder(text: str, start: int, end: int) -> bool:
@@ -296,6 +413,17 @@ def detect_patterns(text: str) -> list[Span]:
                     text=value, type=rule.type, source="regex", start=start, end=end, rule=rule.name
                 )
             )
+    for url in _URL_RE.finditer(text):
+        # Tokens inside URL paths (the entropy rule below needs a non-path boundary).
+        offset = url.start()
+        for seg in re.finditer(r"(?<=/)[A-Za-z0-9_\-]{20,}(?=[/?#]|$)", url.group()):
+            token = seg.group()
+            start, end = offset + seg.start(), offset + seg.end()
+            if _looks_like_secret(token) and not _inside_placeholder(text, start, end):
+                spans.append(
+                    Span(text=token, type="SECRET", source="entropy", start=start, end=end,
+                         rule="url_path_token")  # fmt: skip
+                )
     for m in _TOKEN_RE.finditer(text):
         token = m.group(0)
         if _looks_like_secret(token) and not _inside_placeholder(text, m.start(), m.end()):

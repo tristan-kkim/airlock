@@ -1,0 +1,59 @@
+{
+  "utility_version": "1.1.0",
+  "results_dir": "s6-B1-test90",
+  "target_label": "airlock 79e9891 AIRLOCK_GLINER=on variant 1: agreement-only city,date_of_birth; Korean GLiNER-only names 3+ syllables",
+  "answer_source": "recorded",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "judge_reasoning": "none",
+  "default_upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "answer_max_tokens": 4096,
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "reference_dir": "eval/results/_reference_answers",
+  "runs": [
+    {
+      "at": "2026-09-13T21:34:38.100683+00:00",
+      "estimate": {
+        "reference_calls": 0,
+        "system_answer_calls": 0,
+        "judge_calls": 74,
+        "prompt_tokens_est": 169074,
+        "completion_tokens_typical": 18500,
+        "completion_tokens_max": 37000
+      },
+      "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "usage": {
+        "reference": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "system_answer": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "judge": {
+          "prompt_tokens": 187643,
+          "completion_tokens": 17130,
+          "calls": 74
+        },
+        "verify": {
+          "prompt_tokens": 45590,
+          "completion_tokens": 1653,
+          "calls": 33
+        }
+      },
+      "cost_usd": {
+        "reference": 0.0,
+        "system_answer": 0.0,
+        "judge": 0.239033,
+        "verify": 0.050549
+      }
+    }
+  ]
+}

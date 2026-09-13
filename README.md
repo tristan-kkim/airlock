@@ -52,7 +52,18 @@ Request flow for `POST /v1/chat/completions`:
    3. **Korean semantic rules** ([`airlock/detect/ko_rules.py`](airlock/detect/ko_rules.py)) propose spans the small model often misses in Korean: uniqueness cues (`유일한 여성 부사장`, `the only male nurse`), health terms in a sentence about a person (`공황장애 진단을 받았`), company and institution suffixes (`새론다움물류`, `㈜누리소프트`, `한빛병원`), and names before titles (`박지훈 고객`, `문태오 대리`). Each rule has negative lists (public figures, famous companies, generic words like `유일한 방법`, `초등학교`, `국회의원`) and never fires inside a placeholder.
    4. **Local model:** Nemotron-3-Nano-4B reads the masked draft with a JSON-schema-constrained output (temperature 0.6, top_p 0.95, thinking off, output cap sized to the input). The prompt lives in [`airlock/prompts/detector.md`](airlock/prompts/detector.md).
    5. **Verify:** a model span whose text does not occur in the original (after the vault's normalization) is discarded, so hallucinated IDs never become redactions. Discard counts are recorded in the audit record.
-2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. Each original gets a typed placeholder (`<PERSON_1>`, `<SECRET_1>`, ...) or, for health details and quasi-identifiers, a generalization ("in their 30s"). A generalization is rejected, and the span masked instead, when it still contains the original, a digit run or rare word from it, a proper noun, text in another language, or junk. Within a conversation, the same original always maps to the same placeholder.
+   6. **Refine the whole request at once.** All slots of a request, agent turn or search go through one entry point (`Sanitizer.detect_many`), so the GLiNER ensemble and these steps apply on every path:
+      - spans lose honorifics, titles and ID labels (`정다은님` → `정다은`, `invoice 9UUT-9586` → `9UUT-9586`);
+      - a local-model span must have the shape of its type ([`shape.py`](airlock/detect/shape.py)): a phone number labeled as an organization becomes CONTACT, `ci-runner` as ORG or `체외수정 시술` as SECRET is dropped;
+      - at `balanced`, what the task operates on is kept: amounts, lab values, dosages, durations, dates that are not a birth date, and common diagnoses and medications;
+      - employer + org unit + role are linked ([`org_rules.py`](airlock/detect/org_rules.py)): `동해누리정밀(주) 품질보증팀 박성훈 팀장` → `<ORG_1> 품질 부서 <PERSON_1> 관리자`, `the Payments Platform team at Halcyon Freight Systems` → `the engineering team at <ORG_1>`;
+      - generalizations must be entailed by the original ([`generalize.py`](airlock/generalize.py)): ages and birth decades are computed from the text and today's date, places become a containing region (`성남시` → `경기도의 도시`, never `서울`), a health generalization is checked by Nano ("does X imply Y?") or falls back to its category, and the replacement stays in the language of the text;
+      - a value detected in any slot is masked in every slot of the request before the gate.
+2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. `AIRLOCK_SUBSTITUTION` decides what replaces an identity value:
+   - `placeholder`: a typed token (`<PERSON_1>`, `<ORG_1>`, ...).
+   - `surrogate`: a realistic, format-preserving fake value (see *Surrogates* below).
+
+   Secrets and credentials always get `<SECRET_1>`, and quasi-identifiers get a generalization ("40대", "a plant in Oklahoma"). A generalization is rejected, and the span masked instead, when it still contains the original, a digit run or rare word from it, a proper noun, text in another language, or junk. Within a conversation or agent run, the same original always maps to the same placeholder or surrogate.
 3. **Gate.** The final outbound JSON is walked string by string, keys and numbers included. If any vault original, declared term, canary, or high-confidence secret or ID pattern is still present, or if the request contains content Airlock cannot inspect (images), the request is blocked with HTTP 422. "Present" covers variants, not only exact text:
    - letter case, full-width characters, and zero-width or other invisible format characters
    - inserted spaces or punctuation (`새론 다움물류` matches `새론다움물류`)
@@ -61,7 +72,7 @@ Request flow for `POST /v1/chat/completions`:
 
    The vault matcher uses the same normalized views, so a variant is usually masked rather than blocked. If the local model is down, times out, or malfunctions (prose instead of JSON, invalid JSON, output cut off at the token cap, a repetition loop), the request is also blocked after at most one resample of a short malformed answer. Airlock fails closed.
 4. **Upstream.** The exact bytes that passed the gate go to Token Factory. When placeholders are present, a one-line system note says: "Tokens like <PERSON_1> are placeholders for private values; copy them exactly." If the primary model returns 5xx or reports itself unavailable, Airlock retries once on the fallback model. That attempt is also audited.
-5. **Rehydrate.** Placeholders in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
+5. **Rehydrate.** Placeholders and surrogates in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
 6. **Audit.** One record per request stores the outbound payloads verbatim, detections as SHA-256 hashes, the gate decision, and timings.
 
 ### Optional: NVIDIA GLiNER-PII ensemble
@@ -101,6 +112,36 @@ If the package or weights are missing while `AIRLOCK_GLINER=on`, `airlock serve`
 | GLiNER ensemble (default) | 11.2% | 1.0% | 27.8% | 21.1% | 10.5% | 15.5% | 13.0% / 9.3% |
 
 Over all 243 cases, an LLM attacker reading only the outbound payloads recovers 1.0% of planted values with the ensemble, against 9.9% without it. The cost is real: 4 of 19 benign test prompts get a mask, and 2 benign searches are blocked because the local rewrite kept an organization GLiNER flagged. GLiNER adds p50 457 ms / p95 635 ms of CPU inference, run in parallel with Nano. The adjudication call is needed in 28% of chat requests and then takes p50 1.7 s / p95 2.2 s. Local latency across runs was contaminated by other models sharing the laptop.
+
+### Detector round two (S6): measured
+
+What changed is described in *Architecture* (step 1.6, step 2) and *Surrogates*. Rules and thresholds were tuned on the 72-case dev split only; the table is the 171-case test split, one pass per config ([`eval/results/s6-split/REPORT.md`](eval/results/s6-split/REPORT.md)). Attack and utility columns use a stratified 90-case subset of the test split to stay within the Token Factory budget; attacker, graders and judge are Nemotron 3 Ultra. B1 is the GLiNER ensemble default before this round, scored on the same cases.
+
+| Test split | B1 (before) | S6 placeholder (default) | S6 surrogate |
+|---|---:|---:|---:|
+| Leak rate | 11.2% | 8.6% | 7.9% |
+| Identity leak | 12.5% | 9.0% | 8.3% |
+| **Linkable disclosure** (90) | 16.7% | **8.3%** | 11.1% |
+| Situation inferred (90) | 55.0% | 72.5% | 62.5% |
+| Utility ratio (90) | 0.91 | 0.87 | 0.85 |
+| Distortion (90) | 16.2% | 27.6% | 32.9% |
+| Distortion of the reference answers, same judge run (90) | 14.9% | 6.6% | 11.8% |
+| Over-redaction | 15.5% | 7.8% | 8.8% |
+| Benign masked / over-blocked | 21.1% / 10.5% | 21.1% / 10.5% | 21.1% / 10.5% |
+| Leak ko / en | 13.0% / 9.3% | 9.1% / 8.0% | 6.5% / 9.3% |
+| Linkable ko / en (90) | 11.1% / 22.2% | 5.6% / 11.1% | 5.6% / 16.7% |
+| Detect p50 / p95 (chat) | 3.9 s / 8.2 s | 3.4 s / 8.4 s | 3.5 s / 7.8 s |
+
+How to read it:
+
+- **Linkable disclosure halves** (16.7% to 8.3%) and over-redaction halves (15.5% to 7.8%): the employer + unit + role link removes the combination that linked most, and amounts, lab values and common diagnoses now stay in the prompt. More situations are therefore visible to the cloud (72.5%), as intended: the cloud may learn the problem, not who has it.
+- **Distortion rose and utility did not improve.** The judge's distortion rate for the unchanged reference answers moved between 6.6% and 14.9% across these three runs, so one pass does not separate the configs well, but the gap to the reference (+21 points against +1 for B1) is a real signal. The distorted answers include invented dates and wrong arithmetic in both configs, a masked role read back as an ID number, and in surrogate mode answers built on the surrogate itself: a card "ending in" the surrogate's digits, a surrogate name transliterated into Korean in a translation task, a pronoun that did not match the surrogate's gender, a clinic written without its suffix. The last three kinds were fixed after the test run (card surrogates keep the last four digits, English first names are gender-neutral, an organization's stem alone is rehydrated); they are not reflected in the table.
+- **Placeholders stay the default.** Surrogates leak slightly less (identity leak 8.3% vs 9.0%) but link more on the 90-case subset and distort more, and answers that talk about placeholders or masked values were not rarer (22 vs 21 of about 163 answers; secrets keep placeholders in both modes). `AIRLOCK_SUBSTITUTION=surrogate` is available and tested.
+- **Benign masking is unchanged**: all four benign masks come from GLiNER-only spans the adjudicator accepted (`KTX` and `경주 불국사` as organizations in two search queries, which the gate then blocked, `장영실이` as a person, the number 479001600 in a factorial question as an account number).
+
+Agent mode, 4 scenarios (layoff and HR warning, Korean and English), airlock mode, 1 pass each ([`eval/results/s6-agent/`](eval/results/s6-agent/)). Identity facts found by the deterministic scanner in anything that left the machine: **0 of 19** with placeholders and 0 of 19 with surrogates. Before this round, team and employer names (`품질보증팀`, `영업2팀`, `Payments Platform`) survived all three passes of every run. The first agent attempt blocked every run at its third turn: GLiNER read the tool-argument key `doc_id` as an HTTP cookie. Object keys of tool-call arguments are now never rewritten and code identifiers are not secrets; a later surrogate attempt blocked once more (a title match crossed a line break and a surrogate organization contained that protected string), which was fixed before the runs counted here.
+
+Latency: Nemotron-3-Nano-4B Q4_K_M on an M3 Pro with GLiNER on CPU; another idle llama-server was loaded on the same machine during the runs. Detect time per chat request p50 3.4 s / p95 8.4 s (B1 on the same cases: 3.9 s / 8.2 s). The extra local call (health entailment) is only made for health generalizations outside the category table.
 
 ## Agent mode: egress firewall for tool calls and web search
 
@@ -202,7 +243,7 @@ The `local` fields and `local_query` contain your originals. Like review preview
 
 Documents are listed to the model by neutral ids (`doc-1`), because file names often describe the situation. A run has at most `AIRLOCK_AGENT_MAX_STEPS` planning turns (default 8); the last turn offers only `finish`. Ultra's native OpenAI tool calling is used, with `reasoning_effort: "none"`. In a live check it called `list_local_docs`, `read_local_doc` and `finish` correctly and kept `<ORG_1>`-style placeholders intact inside tool arguments, so no JSON-action fallback was needed. Two quirks showed up during evaluation and are handled: Token Factory occasionally returns `finish` with `{}` arguments after the whole answer was generated (the agent asks once more, outside the step limit), and a long answer can hit the output cap inside the arguments (the cap is 6000 tokens and a cut-off answer is recovered).
 
-Masking is recomputed for the whole history on every turn. When one turn adds several tool results, a value can be detected in one of them and missed in another. Before the gate decides, Airlock masks every known original in every slot once more. If a known value then survives only inside web search results (for example in an encoded URL the gate decodes), those results are withheld from the history and the agent is told so. A document or the question is never dropped: such a turn stays blocked.
+Masking is recomputed for the whole history on every turn, through the same detection entry point as chat (GLiNER ensemble and refinement included; the search guard uses it too). When one turn adds several tool results, a value can be detected in one of them and missed in another: the pipeline propagates every detected value to every slot of the turn before the gate decides, and object keys of tool-call arguments (`{"doc_id": ...}`) are never rewritten. If a known value then survives only inside web search results (for example in an encoded URL the gate decodes), those results are withheld from the history and the agent is told so. A document or the question is never dropped: such a turn stays blocked.
 
 ### Measured: unguarded agent vs Airlock
 
@@ -335,6 +376,7 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_AUDIT_HASH_KEY` | none | HMAC key for audit hashes; if unset, one is generated at the key file |
 | `AIRLOCK_AUDIT_HASH_KEY_FILE` | `./.airlock/audit_hash.key` | Where the generated key is stored (mode 600) |
 | `AIRLOCK_PROTECTION_LEVEL` | `balanced` | `strict`, `balanced` or `minimal` (see below) |
+| `AIRLOCK_SUBSTITUTION` | `placeholder` | `placeholder` (`<PERSON_1>`) or `surrogate` (format-preserving fake values; secrets stay placeholders). See *Surrogates* |
 | `AIRLOCK_REVIEW` | `never` | `always`, `uncertain` or `never`: when to stop and ask for confirmation (see review mode) |
 | `AIRLOCK_LOCAL_TIMEOUT_S` | `30` | Local detector timeout; a timeout blocks the request |
 | `AIRLOCK_CANARIES` | none | Comma-separated tripwire strings that must never leave |
@@ -356,11 +398,27 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 
 Protection levels:
 
-| Level | Direct identifiers and secrets | Quasi-identifiers, health, precise location |
-|---|---|---|
-| `strict` | masked | always masked with placeholders; the detector is told to flag aggressively |
-| `balanced` | masked | generalized as the detector suggests ("34" → "in their 30s") |
-| `minimal` | masked | `QUASI_IDENTIFIER` spans are left as-is; health and location are still generalized |
+| Level | Direct identifiers and secrets | Quasi-identifiers and precise location | Kept as-is (the situation) |
+|---|---|---|---|
+| `strict` | masked | masked with placeholders; the detector is told to flag aggressively | nothing the detectors flag |
+| `balanced` | masked (or surrogates) | generalized, entailed by the original ("마흔다섯" → "40대", "Tulsa" → "a city in Oklahoma"); employer + unit + role linked into one generalization | amounts, lab values, dosages, durations, dates that are not a birth date, common diagnoses and medications; a health generalization that is not entailed |
+| `minimal` | masked (or surrogates) | `QUASI_IDENTIFIER` spans are left as-is; location is still generalized | as `balanced` |
+
+### Surrogates
+
+`AIRLOCK_SUBSTITUTION=surrogate` replaces identity values with decoys instead of tokens. With placeholders, the baseline's cloud answers sometimes told the user that their own value "is a placeholder" and could not be processed. With surrogates the cloud model reads an ordinary document ([`airlock/surrogate.py`](airlock/surrogate.py)):
+
+| Value | Surrogate |
+|---|---|
+| Korean name | another name with the same syllable count, from a curated pool without public figures (`정다은` → `엄민재`) |
+| English name | same token count; a later last name alone reuses the same surrogate part |
+| Organization | a fictional name with the same suffix type (`새론다움물류` → `해솔물류`, `Halcyon Freight Systems` → `Larkmoor Freight Systems`) |
+| Phone, email | same shape in reserved or invalid ranges: `010-0000-xxxx`, `(415) 555-01xx`, `…@example.com` |
+| ID, card, account | same shape: RRN with month `00`, SSN area `000`, a card number that fails Luhn, IBAN check digits `00`, ticket prefixes kept (`HFS-40418` → `HFS-83120`) |
+| Street address | same region, fictional street and numbers (`경기도 성남시 분당구 은행나무샘길 88, 111동 2304호` → `경기도 성남시 분당구 새솔길 137, 441동 4511호`) |
+| Secret, credential | never a surrogate: `<SECRET_1>` |
+
+A value without a recognised shape (a project name declared as PERSON) falls back to a placeholder. Surrogates are drawn with a keyed hash (not predictable from the original), stored in the vault (consistent for the conversation or agent run), and rejected when they occur in the request, contain another original, repeat another surrogate, or match a high-confidence secret pattern. Rehydration finds a surrogate as written or reformatted (`01000004821`), restores a name's first or last part used alone, keeps English possessives, and corrects the Korean particle after the restored value (`해솔물류과의` → `새론다움물류와의`, `김서준이` → `박지우가`), also across streamed chunks. The placeholder note is only added when a placeholder remains.
 
 ## API
 
@@ -499,15 +557,21 @@ airlock/
   detect/ko_rules.py deterministic Korean/English semantic rules (quasi-identifiers, health, orgs, names)
   detect/gliner.py  NVIDIA GLiNER-PII wrapper and ensemble policy (agreement, type checks, adjudication)
   detect/verify.py  grounding check for model spans, generalization leak check
+  detect/shape.py   type shape checks for local-model spans, trimming of honorifics, titles, ID labels
+  detect/org_rules.py employer, org unit, site, role and age candidates and their request-level link
+  detect/regions.py Korean admin regions and foreign cities, for containing-region generalizations
+  generalize.py     entailed generalizations (ages, birth decades, places, health) and kept situation values
+  surrogate.py      format-preserving surrogates and their rehydration (particles, possessives, streams)
   detect/spans.py   span model, term matching, overlap resolution
   placeholders.py   <TYPE_N> syntax, lenient matching for rehydration
-  pipeline.py       patterns -> masked local model -> rules -> verification -> vault substitution
+  pipeline.py       one detection entry point: patterns -> masked local model -> rules -> ensemble ->
+                    refinement -> cross-slot propagation -> vault substitution
   vault.py          original <-> placeholder mappings, declared terms (SQLite)
   gate.py           deterministic allow/block on the exact outbound payload
   textnorm.py       normalized views (compact, digits, decoded) with raw offset maps
   hashing.py        HMAC key loading for audit hashes
   upstream.py       Token Factory client with one-shot fallback
-  rehydrate.py      placeholder restoration, including streams and tool calls
+  rehydrate.py      placeholder and surrogate restoration, including streams and tool calls
   search.py         private search: local rewrite, gate, Tavily, local re-rank
   egress.py         egress events and per-run hop audit for agent mode
   search_guard.py   search-intent guard: rewrite, gate, intent judge, retry, block

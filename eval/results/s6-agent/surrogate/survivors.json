@@ -1,0 +1,30 @@
+[
+ {
+  "scenario": "hr-warning-en",
+  "status": "finished",
+  "steps": 6,
+  "identity_facts": 5,
+  "survivors": []
+ },
+ {
+  "scenario": "hr-warning-ko",
+  "status": "finished",
+  "steps": 9,
+  "identity_facts": 5,
+  "survivors": []
+ },
+ {
+  "scenario": "layoff-en",
+  "status": "finished",
+  "steps": 8,
+  "identity_facts": 5,
+  "survivors": []
+ },
+ {
+  "scenario": "layoff-ko",
+  "status": "finished",
+  "steps": 7,
+  "identity_facts": 4,
+  "survivors": []
+ }
+]

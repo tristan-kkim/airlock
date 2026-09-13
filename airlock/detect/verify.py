@@ -52,9 +52,19 @@ def _identifying_tokens(original: str) -> set[str]:
 
 
 def generalization_ok(
-    original: str, replacement: str | None, others: list[str] = (), *, json_safe: bool = False
+    original: str,
+    replacement: str | None,
+    others: list[str] = (),
+    *,
+    json_safe: bool = False,
+    check_tokens: bool = True,
 ) -> bool:
-    """Whether `replacement` may stand in for `original` in the outbound text."""
+    """Whether `replacement` may stand in for `original` in the outbound text.
+
+    `check_tokens=False` is for replacements Airlock computed itself (a decade, a containing
+    region, a department category): they may reuse a common word of the original ("Senior
+    Project Architect" -> "an architect") but never the original, a crop of it or junk.
+    """
     repl = (replacement or "").strip()
     if not repl or len(repl) > MAX_REPLACEMENT_CHARS or contains_placeholder(repl):
         return False
@@ -63,8 +73,10 @@ def generalization_ok(
     if json_safe and any(c in repl for c in '"\\'):
         return False
     norm_repl = normalize(repl)
-    if norm_repl in normalize(original):
+    if check_tokens and norm_repl in normalize(original):
         return False  # a crop of the original is not a generalization
+    if norm_repl == normalize(original):
+        return False
     for other in [original, *others]:
         norm = normalize(other)
         if norm and norm in norm_repl:
@@ -72,6 +84,8 @@ def generalization_ok(
     # Same language: a Korean span needs a Korean replacement.
     if _HANGUL.search(original) and not _HANGUL.search(repl):
         return False
+    if not check_tokens:
+        return True
     repl_digits = set(_DIGIT_RUN.findall(repl))
     folded = repl.casefold()
     for token in _identifying_tokens(original):

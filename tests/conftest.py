@@ -69,6 +69,8 @@ class Harness:
     # GLiNER ensemble adjudication: span text -> "yes"/"no" (default: every candidate is private).
     adjudicate: Callable[[str], str] = lambda span: "yes"
     adjudication_content: Callable[[str], str] | None = None
+    # Health entailment checks: (original, replacement) -> "yes"/"no" (default: entailed).
+    entail: Callable[[str, str], str] = lambda original, replacement: "yes"
     upstream_reply: Callable[[dict[str, Any]], dict[str, Any]] = lambda p: completion("ok")
     tavily_results: list[dict[str, Any]] = field(
         default_factory=lambda: [
@@ -111,6 +113,12 @@ class Harness:
                 found = re.findall(r"^\[(c\d+)\] label=\S+ span=(.+)$", user, flags=re.M)
                 answers = {cid: self.adjudicate(ast.literal_eval(v)) for cid, v in found}
                 content = json.dumps(answers)
+        elif "entailment checker of Airlock" in system:
+            item = r'^\[(e\d+)\] ORIGINAL (".*?") REPLACEMENT (".*")$'
+            found = re.findall(item, user, flags=re.M)
+            content = json.dumps(
+                {eid: self.entail(json.loads(o), json.loads(r)) for eid, o, r in found}
+            )
         elif "search rewriter" in system:
             data = json.loads(user)
             content = json.dumps({"query": self.rewrite(data["query"], data["private_context"])})

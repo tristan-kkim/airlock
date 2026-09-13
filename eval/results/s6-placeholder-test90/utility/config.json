@@ -1,0 +1,59 @@
+{
+  "utility_version": "1.1.0",
+  "results_dir": "s6-placeholder-test90",
+  "target_label": "airlock 071c36c S6 round two, AIRLOCK_GLINER=on, AIRLOCK_SUBSTITUTION=placeholder, test split",
+  "answer_source": "recorded",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "judge_reasoning": "none",
+  "default_upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "answer_max_tokens": 4096,
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "reference_dir": "eval/results/_reference_answers",
+  "runs": [
+    {
+      "at": "2026-09-13T21:58:23.664423+00:00",
+      "estimate": {
+        "reference_calls": 0,
+        "system_answer_calls": 0,
+        "judge_calls": 76,
+        "prompt_tokens_est": 173671,
+        "completion_tokens_typical": 19000,
+        "completion_tokens_max": 38000
+      },
+      "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "usage": {
+        "reference": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "system_answer": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "judge": {
+          "prompt_tokens": 184474,
+          "completion_tokens": 17337,
+          "calls": 76
+        },
+        "verify": {
+          "prompt_tokens": 37191,
+          "completion_tokens": 1633,
+          "calls": 36
+        }
+      },
+      "cost_usd": {
+        "reference": 0.0,
+        "system_answer": 0.0,
+        "judge": 0.236485,
+        "verify": 0.04209
+      }
+    }
+  ]
+}

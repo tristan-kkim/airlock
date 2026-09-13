@@ -1,0 +1,30 @@
+{
+  "eval_version": "1.0.0",
+  "commit": "b666ac4",
+  "started_at": "2026-09-13T22:23:46.804393+00:00",
+  "scenarios": 4,
+  "scenario_langs": "ko 2, en 2",
+  "passes": 1,
+  "modes": [
+    "airlock"
+  ],
+  "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "local_model": "nemotron-3-nano-4b",
+  "reasoning_effort": "none",
+  "max_steps": 8,
+  "judge": "nano",
+  "grader_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "estimate": {
+    "runs": 4,
+    "agent_prompt_tokens_est": 63396,
+    "agent_completion_tokens_est": 9360,
+    "grading_prompt_tokens_est": 31112,
+    "grading_completion_tokens_max": 14800,
+    "tavily_searches_max": 16
+  },
+  "tavily": {
+    "calls": 15,
+    "cache_hits": 0
+  },
+  "runs_finished_at": "2026-09-13T22:33:11.645499+00:00"
+}

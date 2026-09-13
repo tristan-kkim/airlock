@@ -116,10 +116,10 @@ class PrivateSearch:
         protected: list[gate.Protected] = []
         detections: list[Detection] = []
         try:
-            for text in (query, context or ""):
-                if not text.strip():
-                    continue
-                result = await self.sanitizer.sanitize_text(text, session)
+            texts = [t for t in (query, context or "") if t.strip()]
+            # One detection call for query and context: a value found in the context is also
+            # masked in the query (cross-slot propagation).
+            for result in await self.sanitizer.sanitize_texts(texts, session):
                 protected += result.protected
                 detections += result.detections
         except LocalModelError as exc:

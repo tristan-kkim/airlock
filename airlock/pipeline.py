@@ -1,5 +1,8 @@
 """Detection + vault substitution for chat payloads and free text.
 
+Every path (chat, review, `/v1/search`, agent turns and the agent's search guard) detects through
+one entry point, `Sanitizer.detect_many`, which takes all texts of a request or turn at once.
+
 Flow per text slot:
 
 1. Deterministic spans first: regex/entropy patterns, declared vault terms, base64 payloads that
@@ -12,10 +15,16 @@ Flow per text slot:
    With `AIRLOCK_GLINER=on`, NVIDIA GLiNER-PII runs on the same texts in parallel, and its spans
    pass the ensemble policy (agreement, type consistency, one batched local adjudication call;
    see `airlock.detect.gliner`) before they join the others.
-5. All spans are merged -> protection-level policy -> overlap resolution (longest wins) ->
-   placeholders or validated generalizations.
+5. Refinement over the whole request: spans are trimmed (honorifics, titles, ID labels), local
+   model spans must have the shape of their type (`airlock.detect.shape`), values the task
+   operates on are kept at `balanced` (amounts, lab values, non-birth dates, common diagnoses),
+   employer + unit + role combinations are linked into generalizations
+   (`airlock.detect.org_rules`), generalizations are made entailed by their original
+   (`airlock.generalize`), and a value detected in one slot is propagated to every slot.
+6. Protection-level policy -> overlap resolution (longest wins) -> placeholders, surrogates
+   (`AIRLOCK_SUBSTITUTION=surrogate`, `airlock.surrogate`) or validated generalizations.
 
-`analyze_chat` runs steps 1-4 and `build_chat` runs step 5, so review mode can stop in between.
+`analyze_chat` runs steps 1-5 and `build_chat` runs step 6, so review mode can stop in between.
 """
 
 from __future__ import annotations
@@ -24,17 +33,20 @@ import asyncio
 import copy
 import hashlib
 import json
+import re
 from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any
 
-from airlock import placeholders
-from airlock.config import ProtectionLevel, Settings
+from airlock import generalize, placeholders, surrogate
+from airlock.config import ProtectionLevel, Settings, Substitution
+from airlock.detect import org_rules
 from airlock.detect.gliner import Ensemble, build_ensemble
 from airlock.detect.ko_rules import detect_rules
-from airlock.detect.llm import LLMDetector
-from airlock.detect.patterns import HIGH_CONFIDENCE_RULES, detect_patterns
+from airlock.detect.llm import LLMDetector, LocalModelError, LocalModelMalformed, load_prompt
+from airlock.detect.patterns import HIGH_CONFIDENCE_RULES, detect_patterns, high_confidence_hits
+from airlock.detect.shape import check_llm_span, trim
 from airlock.detect.spans import (
     Span,
     find_term,
@@ -70,6 +82,9 @@ FORWARDED_KEYS = (
     "stream",
     "stream_options",
 )
+
+ENTAIL_PROMPT = load_prompt("entail.md")
+DETERMINISTIC_SOURCES = frozenset({"regex", "entropy", "vault", "user"})
 
 PLACEHOLDER_NOTE = (
     "Tokens like <PERSON_1> are placeholders for private values; copy them exactly. "
@@ -130,6 +145,16 @@ class DetectStats:
     adjudicated_no: int = 0
     gliner_ms: int = 0
     adjudication_ms: int = 0
+    # Refinement, per request (see the module docstring, step 5).
+    spans_trimmed: int = 0  # honorifics, titles or ID labels removed from a span
+    llm_retyped: int = 0  # local model span whose shape matched another type
+    llm_dropped_shape: int = 0  # local model span that cannot hold a value of its type
+    kept_situation: int = 0  # amounts, lab values, non-birth dates, common diagnoses
+    quasi_linked: int = 0  # employer/unit/site/role/age generalizations
+    generalization_fixed: int = 0  # replacement recomputed to be entailed by the original
+    entailment_calls: int = 0  # local model "does X imply Y?" calls for health generalizations
+    propagated: int = 0  # spans copied to another slot of the same request
+    surrogates: int = 0  # values replaced by a surrogate
 
     def add(self, other: DetectStats) -> None:
         for key, value in asdict(other).items():
@@ -271,11 +296,46 @@ def _chat_slots(messages: list[Any]) -> tuple[list[tuple[Any, Any, bool]], list[
     return slots, extra_reasons
 
 
+_UNICODE_ESCAPE = re.compile(r"\\u[0-9a-fA-F]{4}")
+
+
+def decode_json_text(value: str) -> str:
+    """JSON text with `\\uXXXX` escapes decoded, so detectors read `강채원`, not escapes.
+
+    The structure is unchanged: it is parsed and dumped again with `ensure_ascii=False`. Text that
+    is not a JSON object or array is returned as is.
+    """
+    stripped = value.strip()
+    if not stripped or stripped[0] not in "{[":
+        return value
+    try:
+        parsed = json.loads(stripped)
+    except (ValueError, RecursionError):
+        return value
+    if not isinstance(parsed, dict | list):
+        return value
+    return json.dumps(parsed, ensure_ascii=False)
+
+
 def _messages_for(body: dict[str, Any], session: VaultSession) -> list[Any]:
     messages = body.get("messages")
     if not isinstance(messages, list) or not messages:
         raise PayloadError("'messages' must be a non-empty array")
     messages = copy.deepcopy(messages)
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        for call in msg.get("tool_calls") or []:
+            fn = call.get("function") if isinstance(call, dict) else None
+            if isinstance(fn, dict) and isinstance(fn.get("arguments"), str):
+                fn["arguments"] = decode_json_text(fn["arguments"])
+        fc = msg.get("function_call")
+        if isinstance(fc, dict) and isinstance(fc.get("arguments"), str):
+            fc["arguments"] = decode_json_text(fc["arguments"])
+        content = msg.get("content")
+        is_tool = msg.get("role") == "tool"
+        if is_tool and isinstance(content, str) and _UNICODE_ESCAPE.search(content):
+            msg["content"] = decode_json_text(content)
     slots, _ = _chat_slots(messages)
     for container, key, _json_safe in slots:
         # Clients may send back older or altered placeholders ([[PERSON_1]], < PERSON_1 >).
@@ -296,6 +356,7 @@ class Sanitizer:
         self.vault = vault
         # Raises GlinerUnavailable at startup when AIRLOCK_GLINER=on cannot be honored.
         self.ensemble = ensemble or build_ensemble(settings, detector.model)
+        self._entail_cache: dict[tuple[str, str], bool] = {}
 
     # ---- protected strings the gate always enforces ------------------------
     def standing_protected(self) -> list[Protected]:
@@ -346,11 +407,11 @@ class Sanitizer:
         stats.vault_spans = len(vault_spans)
         return spans + vault_spans, stats
 
-    async def detect(self, text: str, session: VaultSession) -> Detected:
-        """All candidate spans for `text`. Raises LocalModelError if the local model fails."""
+    async def _detect_one(self, text: str, session: VaultSession) -> Detected:
+        """Candidate spans for one text. Raises LocalModelError if the local model fails."""
         det, stats = self.deterministic(text, session)
         stats.texts = 1
-        rules = detect_rules(text)
+        rules = detect_rules(text) + org_rules.en_orgs(text)
         stats.rule_spans = len(rules)
         stats.semantic_cues = sum(1 for s in rules if s.type in ("QUASI_IDENTIFIER", "HEALTH"))
 
@@ -368,22 +429,208 @@ class Sanitizer:
         return Detected(spans, stats)
 
     async def detect_many(self, texts: list[str], session: VaultSession) -> list[Detected]:
-        """`detect` for each text, then the GLiNER ensemble merge step when it is enabled.
+        """The single detection entry point: all texts of one request, turn or search.
 
-        GLiNER runs in parallel with the per-text detectors. Its request-level counters are
-        added to the first text's stats, so summing the stats counts them once.
+        Per text: deterministic spans, rules and the local model; GLiNER runs in parallel over
+        all texts and is merged by the ensemble policy when enabled. Then the request-level
+        refinement (module docstring, step 5). Request-level counters are added to the first
+        text's stats, so summing the stats counts them once. Raises LocalModelError when a
+        local model call fails.
         """
-        base = asyncio.gather(*(self.detect(t, session) for t in texts))
-        if self.ensemble is None or not texts:
-            return list(await base)
-        detected, proposals = await asyncio.gather(base, self.ensemble.propose(texts))
-        merged = await self.ensemble.merge(texts, [d.spans for d in detected], proposals)
-        for d, extra in zip(detected, merged.accepted, strict=True):
-            d.spans = d.spans + extra
+        if not texts:
+            return []
+        base = asyncio.gather(*(self._detect_one(t, session) for t in texts))
+        if self.ensemble is None:
+            detected = list(await base)
+        else:
+            detected_t, proposals = await asyncio.gather(base, self.ensemble.propose(texts))
+            detected = list(detected_t)
+            merged = await self.ensemble.merge(texts, [d.spans for d in detected], proposals)
+            for d, extra in zip(detected, merged.accepted, strict=True):
+                d.spans = d.spans + extra
+            first = detected[0].stats
+            for key, value in merged.counts.items():
+                setattr(first, key, getattr(first, key) + int(value))
+        await self._refine(texts, detected, session)
+        return detected
+
+    # ---- refinement -----------------------------------------------------------------------
+    def _keeps_situation(self, span: Span, text: str) -> bool:
+        """Balanced and minimal keep what the task operates on, when it is not an identifier."""
+        if self.settings.protection_level is ProtectionLevel.STRICT:
+            return False
+        if span.source in DETERMINISTIC_SOURCES or span.type in (
+            "PERSON", "ORG", "CONTACT", "SECRET", "LOCATION"
+        ):  # fmt: skip
+            return False
+        if span.type == "HEALTH" and generalize.common_health_term(span.text):
+            return not generalize.SMALL_GROUP_CUE.search(text)
+        return generalize.situation_value(span.text, span.type) and not generalize.is_birth_date(
+            text, span.start, span.end, span.text
+        )
+
+    async def _refine(
+        self, texts: list[str], detected: list[Detected], session: VaultSession
+    ) -> None:
         first = detected[0].stats
-        for key, value in merged.counts.items():
-            setattr(first, key, getattr(first, key) + int(value))
-        return list(detected)
+        for text, d in zip(texts, detected, strict=True):
+            kept: list[Span] = []
+            for span in d.spans:
+                if span.source in DETERMINISTIC_SOURCES:
+                    kept.append(span)
+                    continue
+                trimmed = trim(span, text)
+                if trimmed is None:
+                    d.stats.spans_trimmed += 1
+                    continue
+                if trimmed is not span:
+                    d.stats.spans_trimmed += 1
+                span = trimmed
+                if span.type in ("SECRET", "ORG", "ID_NUMBER") and _IDENTIFIER.fullmatch(span.text):
+                    d.stats.llm_dropped_shape += 1
+                    continue  # doc_id, max_tokens: a code identifier, not a private value
+                if span.source == "llm":
+                    checked, outcome = check_llm_span(span, text)
+                    if checked is None:
+                        d.stats.llm_dropped_shape += 1
+                        continue
+                    if outcome == "retyped":
+                        d.stats.llm_retyped += 1
+                    span = checked
+                if span.action != "keep" and self._keeps_situation(span, text):
+                    span = replace(span, action="keep", replacement=None)
+                    d.stats.kept_situation += 1
+                elif span.type == "HEALTH" and span.action == "generalize":
+                    lang = generalize.text_lang(text)
+                    better = generalize.category_replacement(span.text, span.replacement, lang)
+                    if better:
+                        span = replace(span, replacement=better, rule="entailed")
+                        d.stats.generalization_fixed += 1
+                kept.append(span)
+            d.spans = kept
+
+        # Employer + unit/site + role/age: link into generalizations (the organization stays
+        # masked). An organization masked earlier in the conversation or run counts.
+        org_known = any(m.type == "ORG" for m in session.mappings())
+        for d, extra in zip(
+            detected, org_rules.link(texts, [d.spans for d in detected], org_known=org_known),
+            strict=True,
+        ):
+            if extra:
+                d.spans = d.spans + extra
+                first.quasi_linked += len(extra)
+
+        await self._entail(texts, detected, first)
+        if len(texts) > 1:
+            self._propagate(texts, detected, first)
+
+    async def _entail(self, texts: list[str], detected: list[Detected], stats: DetectStats) -> None:
+        """Generalizations must be entailed by their original (`airlock.generalize`)."""
+        pending: list[tuple[int, int, Span, str]] = []  # (text index, span index, span, lang)
+        for ti, (text, d) in enumerate(zip(texts, detected, strict=True)):
+            lang = generalize.text_lang(text)
+            for si, span in enumerate(d.spans):
+                if span.action != "generalize" or span.source in DETERMINISTIC_SOURCES:
+                    continue
+                if (span.rule or "").startswith("link:"):
+                    continue
+                fixed, outcome = generalize.fix_generalization(span, text)
+                if outcome == "fixed":
+                    stats.generalization_fixed += 1
+                elif outcome == "rejected":
+                    fixed = replace(span, action="mask", replacement=None)
+                d.spans[si] = fixed
+                if (
+                    fixed.type == "HEALTH"
+                    and fixed.action == "generalize"
+                    and outcome is None
+                    and fixed.source in ("llm", "gliner")
+                ):
+                    pending.append((ti, si, fixed, lang))
+        if not pending:
+            return
+        pairs = [(span.text, span.replacement or "") for _, _, span, _ in pending]
+        verdicts = await self._ask_entailment(pairs, stats)
+        for (ti, si, span, lang), verdict in zip(pending, verdicts, strict=True):
+            if verdict:
+                continue
+            category = generalize.health_category(span.text, lang)
+            if category and category != span.replacement:
+                detected[ti].spans[si] = replace(span, replacement=category, rule="entailed")
+                stats.generalization_fixed += 1
+            elif self.settings.protection_level is ProtectionLevel.STRICT:
+                detected[ti].spans[si] = replace(span, action="mask", replacement=None)
+            else:
+                # Balanced/minimal: a diagnosis is the situation. A wrong generalization would
+                # distort the answer; the identifiers around it are masked.
+                detected[ti].spans[si] = replace(span, action="keep", replacement=None)
+                stats.kept_situation += 1
+
+    async def _ask_entailment(
+        self, pairs: list[tuple[str, str]], stats: DetectStats
+    ) -> list[bool]:
+        """One batched local model call: does each original imply its replacement?"""
+        answers: dict[tuple[str, str], bool] = {}
+        todo = [p for p in dict.fromkeys(pairs) if p not in self._entail_cache]
+        for start in range(0, len(todo), 16):
+            batch = todo[start : start + 16]
+            ids = [f"e{i + 1}" for i in range(len(batch))]
+            lines = [
+                f"[{i}] ORIGINAL {json.dumps(o, ensure_ascii=False)} REPLACEMENT "
+                f"{json.dumps(r, ensure_ascii=False)}"
+                for i, (o, r) in zip(ids, batch, strict=True)
+            ]
+            schema = {
+                "type": "object",
+                "properties": {i: {"type": "string", "enum": ["yes", "no"]} for i in ids},
+                "required": ids,
+                "additionalProperties": False,
+            }
+            try:
+                data = await self.detector.model.chat_json(
+                    ENTAIL_PROMPT,
+                    "<items>\n" + "\n".join(lines) + "\n</items>",
+                    schema,
+                    "airlock_entailment",
+                    max_tokens=16 + 10 * len(ids),
+                    temperature=0.0,
+                )
+                stats.entailment_calls += 1
+                if not isinstance(data, dict) or any(data.get(i) not in ("yes", "no") for i in ids):
+                    raise LocalModelMalformed("schema")
+                for i, pair in zip(ids, batch, strict=True):
+                    self._entail_cache[pair] = data[i] == "yes"
+            except LocalModelError:
+                # Not a detection failure: without a verdict the generalization is not trusted.
+                for pair in batch:
+                    answers[pair] = False
+        return [answers.get(p, self._entail_cache.get(p, False)) for p in pairs]
+
+    def _propagate(self, texts: list[str], detected: list[Detected], stats: DetectStats) -> None:
+        """A value detected in any slot is masked in every slot of the request before the gate."""
+        active: dict[str, Span] = {}
+        for d in detected:
+            for span in d.spans:
+                if span.action != "keep":
+                    active.setdefault(normalize(span.text), span)
+        if not active:
+            return
+        for text, d in zip(texts, detected, strict=True):
+            have = {normalize(s.text) for s in d.spans if s.action != "keep"}
+            for norm, span in active.items():
+                if norm in have or not find_term(text, span.text):
+                    continue
+                d.spans.append(
+                    Span(
+                        text=span.text,
+                        type=span.type,
+                        action=span.action,
+                        replacement=span.replacement,
+                        source=span.source,
+                        rule=span.rule if (span.rule or "").startswith("link:") else "propagated",
+                    )
+                )
+                stats.propagated += 1
 
     def _policy(self, span: Span) -> Span:
         level = self.settings.protection_level
@@ -403,8 +650,13 @@ class Sanitizer:
         *,
         json_safe: bool = False,
         rejected: Iterable[str] = (),
+        context: Iterable[str] = (),
+        context_originals: Iterable[str] = (),
     ) -> TextResult:
-        """Substitute spans in `text`. `rejected` holds normalized originals the user kept."""
+        """Substitute spans in `text`. `rejected` holds normalized originals the user kept.
+
+        `context` holds every text of the request, which a surrogate must not collide with.
+        """
         rejected = set(rejected)
         spans = [self._policy(s) for s in spans]
         if rejected:
@@ -413,9 +665,21 @@ class Sanitizer:
         active = [s for s in spans if s.action != "keep"]
         originals = [s.text for s in active]
 
+        located = locate(text, active)
+        if json_safe:
+            # Never rewrite an object key of tool-call arguments ({"doc_id": ...}): the key is
+            # schema, not data, and a placeholder there breaks the call.
+            keys_only = {
+                id(s)
+                for s in active
+                if (hits := [p for p in located if p.span is s])
+                and all(_is_json_key(text, p.start, p.end) for p in hits)
+            }
+            located = [p for p in located if not _is_json_key(text, p.start, p.end)]
+            active = [s for s in active if id(s) not in keys_only]
         placements = [
             p
-            for p in resolve_overlaps(locate(text, active))
+            for p in resolve_overlaps(located)
             if normalize(text[p.start : p.end]) not in rejected
         ]
         out: list[str] = []
@@ -431,20 +695,31 @@ class Sanitizer:
             # A variant ("새론 다움물류") maps to the entry of the canonical term ("새론다움물류").
             key = original if span.start is not None else span.text
             existing = session.get(original) or session.get(key)
+            trusted = (span.rule or "").startswith(("link:", "entailed"))
             if existing is not None:
                 mapping = existing
             elif span.action == "generalize" and generalization_ok(
-                original, span.replacement, originals, json_safe=json_safe
+                original, span.replacement, originals, json_safe=json_safe, check_tokens=not trusted
             ):
                 mapping = session.generalize(key, span.type, span.replacement or "")
             else:
                 if span.action == "generalize":
                     rejected_generalizations += 1
-                mapping = session.mask(key, span.type)
+                mapping = self._substitute(
+                    key, span, session, [text, *context], [*originals, *context_originals]
+                )
             before = text[cursor : p.start]
             out.append(before)
             out_len += len(before)
             out.append(mapping.outbound)
+            end = p.end
+            if mapping.action != "mask":
+                # "마흔다섯이야" -> "40대야": the particle follows the new last syllable.
+                fix = surrogate.fix_particle(mapping.outbound, text[end : end + 4])
+                if fix is not None and text[end : end + fix[0]] != fix[1]:
+                    out.append(fix[1])
+                    out_len += len(fix[1])
+                    end += fix[0]
             applied.append(
                 Applied(
                     p.start,
@@ -457,7 +732,7 @@ class Sanitizer:
                 )
             )
             out_len += len(mapping.outbound)
-            cursor = p.end
+            cursor = end
             detections.append(
                 Detection(mapping.original, mapping.type, mapping.action, span.source)
             )
@@ -478,9 +753,50 @@ class Sanitizer:
             rejected_generalizations,
         )
 
+    def _substitute(
+        self, original: str, span: Span, session: VaultSession, texts: list[str], others: list[str]
+    ) -> Mapping:
+        """A surrogate when enabled and the value has a known shape; otherwise a placeholder."""
+        if (
+            self.settings.substitution is Substitution.SURROGATE
+            and span.type in surrogate.SURROGATE_TYPES
+        ):
+            known_originals = [m.original for m in session.mappings()] + others
+
+            def taken(value: str) -> bool:
+                return (
+                    session.surrogate_taken(value)
+                    or bool(high_confidence_hits(value))
+                    or surrogate.collides(value, texts, known_originals, ())
+                )
+
+            value = surrogate.generate(
+                original,
+                span.type,
+                key=self.vault.surrogate_key,
+                scope=session.conversation_id,
+                taken=taken,
+                known=[
+                    surrogate.Known(m.original, m.type, m.value)
+                    for m in session.mappings()
+                    if m.action == "surrogate"
+                ],
+            )
+            if value is not None:
+                return session.surrogate(original, span.type, value)
+        return session.mask(original, span.type)
+
+    async def sanitize_texts(self, texts: list[str], session: VaultSession) -> list[TextResult]:
+        detected = await self.detect_many(texts, session)
+        originals = [s.text for d in detected for s in d.spans if s.action != "keep"]
+        return [
+            self.apply(text, d.spans, session, context=texts, context_originals=originals)
+            for text, d in zip(texts, detected, strict=True)
+        ]
+
     async def sanitize_text(self, text: str, session: VaultSession) -> TextResult:
-        [detected] = await self.detect_many([text], session)
-        return self.apply(text, detected.spans, session)
+        [result] = await self.sanitize_texts([text], session)
+        return result
 
     # ---- chat payloads ------------------------------------------------------
     async def analyze_chat(self, body: dict[str, Any], session: VaultSession) -> ChatAnalysis:
@@ -514,11 +830,25 @@ class Sanitizer:
         detections: list[Detection] = []
         protected: list[Protected] = []
         applied: list[tuple[str, str, Applied]] = []
+        texts = [container[key] for container, key, _ in slots]
+        # A surrogate must not contain any value protected anywhere in the request.
+        request_originals = [
+            s.text for spans in analysis.spans_by_text.values() for s in spans if s.action != "keep"
+        ] + [s.text for s in added]
+        before = sum(1 for m in session.mappings() if m.action == "surrogate")
         for container, key, json_safe in slots:
             original = container[key]
             spans = list(analysis.spans_by_text.get(original, []))
             spans += [s for s in added if find_term(original, s.text)]
-            result = self.apply(original, spans, session, json_safe=json_safe, rejected=rejected)
+            result = self.apply(
+                original,
+                spans,
+                session,
+                json_safe=json_safe,
+                rejected=rejected,
+                context=texts,
+                context_originals=request_originals,
+            )
             container[key] = result.text
             detections += result.detections
             protected += result.protected
@@ -532,6 +862,7 @@ class Sanitizer:
         if any(m.action == "mask" for m in session.mappings()):
             _add_placeholder_note(payload["messages"])
 
+        stats.surrogates += sum(1 for m in session.mappings() if m.action == "surrogate") - before
         protected += [Protected(m.original, m.type, "vault_original") for m in session.mappings()]
         protected += self.standing_protected()
         return ChatSanitized(
@@ -595,6 +926,19 @@ class Sanitizer:
         if analysis.stats.semantic_cues:
             reasons.append("semantic_cues")
         return reasons
+
+
+_IDENTIFIER = re.compile(r"[a-z]+(?:_[a-z]+)+")
+_JSON_KEY_AFTER = re.compile(r'"\s*:')
+
+
+def _is_json_key(text: str, start: int, end: int) -> bool:
+    return (
+        start > 0
+        and text[start - 1] == '"'
+        and bool(_JSON_KEY_AFTER.match(text, end))
+        and text[max(0, start - 3) : start - 1].strip()[-1:] in ("{", ",", "")
+    )
 
 
 def _snippet(text: str, start: int, end: int, context: int = 24) -> str:
