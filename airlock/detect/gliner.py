@@ -198,7 +198,9 @@ def pick_device(requested: str) -> str:
         return requested
     import torch
 
-    # Measured on an M3 Pro (30 eval texts, 2 label prompts each): mps p50 324 ms, cpu 456 ms.
+    # M3 Pro, 2 label prompts per text. Alone, mps is faster (30 eval texts: p50 324 ms vs cpu
+    # 456 ms). Inside Airlock, GLiNER runs while Nano decodes on Metal, and cpu wins (61 dev
+    # requests: mps p50 1165 / p95 1752 ms, cpu p50 467 / p95 649 ms). The default is cpu.
     return "mps" if torch.backends.mps.is_available() else "cpu"
 
 

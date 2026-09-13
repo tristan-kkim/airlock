@@ -84,7 +84,8 @@ class Settings:
     # GLiNER ensemble (airlock.detect.gliner). Off by default; needs `uv sync --extra gliner`.
     gliner: bool = False
     gliner_model: str = DEFAULT_GLINER_MODEL
-    gliner_device: str = "auto"  # auto | mps | cpu | cuda
+    # cpu: GLiNER on Metal competes with the local model; see airlock.detect.gliner.pick_device.
+    gliner_device: str = "cpu"  # cpu | mps | cuda | auto
     gliner_threshold: float = DEFAULT_GLINER_THRESHOLD
     gliner_thresholds: str = ""  # per-label overrides: "first_name=0.6,password=0.8"
     gliner_adjudicate: bool = True  # ask the local model about GLiNER-only spans
@@ -155,7 +156,7 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         gliner_model=(
             env.get("AIRLOCK_GLINER_MODEL") or env.get("GLINER_PII_MODEL") or DEFAULT_GLINER_MODEL
         ),
-        gliner_device=(env.get("AIRLOCK_GLINER_DEVICE") or "auto").strip().lower(),
+        gliner_device=(env.get("AIRLOCK_GLINER_DEVICE") or "cpu").strip().lower(),
         gliner_threshold=_float(env.get("AIRLOCK_GLINER_THRESHOLD"), DEFAULT_GLINER_THRESHOLD),
         gliner_thresholds=env.get("AIRLOCK_GLINER_THRESHOLDS") or "",
         gliner_adjudicate=_bool(env.get("AIRLOCK_GLINER_ADJUDICATE"), True),
