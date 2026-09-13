@@ -1,0 +1,180 @@
+[s2_pipeline_t06_retry r0] ko01  ok=True full=3/3 fp=0 total=9.67s 
+[s2_pipeline_t06_retry r0] ko02  ok=True full=2/2 fp=0 total=5.49s 
+[s2_pipeline_t06_retry r0] ko03  ok=True full=3/3 fp=0 total=6.39s 
+[s2_pipeline_t06_retry r0] ko04  ok=True full=2/2 fp=0 total=3.29s 
+[s2_pipeline_t06_retry r0] ko05  ok=True full=0/1 fp=0 total=0.86s 
+[s2_pipeline_t06_retry r0] ko06  ok=True full=3/3 fp=0 total=3.79s 
+[s2_pipeline_t06_retry r0] ko07  ok=True full=1/1 fp=0 total=1.44s 
+[s2_pipeline_t06_retry r0] ko08  ok=True full=1/1 fp=0 total=0.50s 
+[s2_pipeline_t06_retry r0] ko09  ok=True full=4/4 fp=0 total=8.30s 
+[s2_pipeline_t06_retry r0] ko10  ok=True full=3/3 fp=0 total=3.80s 
+[s2_pipeline_t06_retry r0] ko11  ok=True full=0/0 fp=0 total=1.96s 
+[s2_pipeline_t06_retry r0] ko12  ok=True full=0/0 fp=0 total=1.02s 
+[s2_pipeline_t06_retry r0] ko13  ok=True full=0/0 fp=0 total=1.00s 
+[s2_pipeline_t06_retry r0] ko14  ok=True full=0/0 fp=0 total=1.00s 
+[s2_pipeline_t06_retry r0] ko15  ok=True full=3/3 fp=0 total=4.65s 
+[s2_pipeline_t06_retry r0] ko16  ok=True full=2/2 fp=0 total=3.09s 
+[s2_pipeline_t06_retry r0] ko17  ok=True full=8/8 fp=0 total=19.84s 
+[s2_pipeline_t06_retry r0] en01  ok=True full=3/3 fp=0 total=8.95s 
+[s2_pipeline_t06_retry r0] en02  ok=True full=3/3 fp=1 total=10.91s 
+[s2_pipeline_t06_retry r0] en03  ok=True full=4/4 fp=0 total=11.66s 
+[s2_pipeline_t06_retry r0] en04  ok=True full=2/2 fp=0 total=0.97s 
+[s2_pipeline_t06_retry r0] en05  ok=True full=1/1 fp=0 total=0.99s 
+[s2_pipeline_t06_retry r0] en06  ok=True full=0/1 fp=0 total=1.02s 
+[s2_pipeline_t06_retry r0] en07  ok=True full=3/3 fp=0 total=9.24s 
+[s2_pipeline_t06_retry r0] en08  ok=True full=1/1 fp=0 total=4.03s 
+[s2_pipeline_t06_retry r0] en09  ok=True full=0/1 fp=0 total=0.93s 
+[s2_pipeline_t06_retry r0] en10  ok=True full=2/3 fp=0 total=5.88s 
+[s2_pipeline_t06_retry r0] en11  ok=True full=3/3 fp=0 total=3.87s 
+[s2_pipeline_t06_retry r0] en12  ok=True full=0/0 fp=0 total=0.42s 
+[s2_pipeline_t06_retry r0] en13  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06_retry r0] en14  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06_retry r0] en15  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06_retry r0] en16  ok=True full=7/7 fp=0 total=5.89s 
+[s2_pipeline_t06_retry r0] en17  ok=True full=2/2 fp=0 total=3.91s 
+[s2_pipeline_t06_retry r1] ko01  ok=True full=3/3 fp=0 total=5.41s 
+[s2_pipeline_t06_retry r1] ko02  ok=True full=2/2 fp=1 total=2.90s 
+[s2_pipeline_t06_retry r1] ko03  ok=True full=3/3 fp=0 total=2.91s 
+[s2_pipeline_t06_retry r1] ko04  ok=True full=2/2 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r1] ko05  ok=True full=0/1 fp=0 total=0.44s 
+[s2_pipeline_t06_retry r1] ko06  ok=True full=3/3 fp=0 total=4.76s 
+[s2_pipeline_t06_retry r1] ko07  ok=True full=1/1 fp=0 total=0.76s 
+[s2_pipeline_t06_retry r1] ko08  ok=True full=1/1 fp=0 total=3.47s 
+[s2_pipeline_t06_retry r1] ko09  ok=True full=3/4 fp=0 total=2.87s 
+[s2_pipeline_t06_retry r1] ko10  ok=True full=3/3 fp=0 total=2.18s 
+[s2_pipeline_t06_retry r1] ko11  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r1] ko12  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r1] ko13  ok=True full=0/0 fp=0 total=0.44s 
+[s2_pipeline_t06_retry r1] ko14  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r1] ko15  ok=True full=3/3 fp=0 total=1.88s 
+[s2_pipeline_t06_retry r1] ko16  ok=True full=1/2 fp=0 total=0.45s 
+[s2_pipeline_t06_retry r1] ko17  ok=True full=8/8 fp=0 total=6.03s 
+[s2_pipeline_t06_retry r1] en01  ok=True full=3/3 fp=0 total=4.43s 
+[s2_pipeline_t06_retry r1] en02  ok=True full=3/3 fp=0 total=9.65s 
+[s2_pipeline_t06_retry r1] en03  ok=True full=4/4 fp=0 total=14.15s 
+[s2_pipeline_t06_retry r1] en04  ok=True full=2/2 fp=0 total=3.74s 
+[s2_pipeline_t06_retry r1] en05  ok=True full=1/1 fp=0 total=1.22s 
+[s2_pipeline_t06_retry r1] en06  ok=True full=0/1 fp=0 total=1.04s 
+[s2_pipeline_t06_retry r1] en07  ok=True full=3/3 fp=1 total=12.60s 
+[s2_pipeline_t06_retry r1] en08  ok=True full=1/1 fp=0 total=5.30s 
+[s2_pipeline_t06_retry r1] en09  ok=True full=1/1 fp=0 total=5.24s 
+[s2_pipeline_t06_retry r1] en10  ok=True full=2/3 fp=0 total=8.96s 
+[s2_pipeline_t06_retry r1] en11  ok=True full=3/3 fp=0 total=12.05s 
+[s2_pipeline_t06_retry r1] en12  ok=True full=0/0 fp=0 total=1.22s 
+[s2_pipeline_t06_retry r1] en13  ok=True full=0/0 fp=0 total=0.98s 
+[s2_pipeline_t06_retry r1] en14  ok=True full=0/0 fp=0 total=0.98s 
+[s2_pipeline_t06_retry r1] en15  ok=True full=0/0 fp=0 total=1.17s 
+[s2_pipeline_t06_retry r1] en16  ok=True full=7/7 fp=0 total=14.02s 
+[s2_pipeline_t06_retry r1] en17  ok=True full=2/2 fp=0 total=3.90s 
+[s2_pipeline_t06_retry r2] ko01  ok=True full=3/3 fp=0 total=8.64s 
+[s2_pipeline_t06_retry r2] ko02  ok=True full=2/2 fp=1 total=6.79s 
+[s2_pipeline_t06_retry r2] ko03  ok=True full=3/3 fp=0 total=3.72s 
+[s2_pipeline_t06_retry r2] ko04  ok=True full=2/2 fp=0 total=0.69s 
+[s2_pipeline_t06_retry r2] ko05  ok=True full=0/1 fp=0 total=0.70s 
+[s2_pipeline_t06_retry r2] ko06  ok=True full=3/3 fp=0 total=5.71s 
+[s2_pipeline_t06_retry r2] ko07  ok=True full=1/1 fp=0 total=0.76s 
+[s2_pipeline_t06_retry r2] ko08  ok=True full=1/1 fp=0 total=2.31s 
+[s2_pipeline_t06_retry r2] ko09  ok=True full=4/4 fp=1 total=5.74s 
+[s2_pipeline_t06_retry r2] ko10  ok=True full=3/3 fp=0 total=2.10s 
+[s2_pipeline_t06_retry r2] ko11  ok=True full=0/0 fp=0 total=0.54s 
+[s2_pipeline_t06_retry r2] ko12  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r2] ko13  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r2] ko14  ok=True full=0/0 fp=0 total=0.42s 
+[s2_pipeline_t06_retry r2] ko15  ok=True full=3/3 fp=0 total=1.87s 
+[s2_pipeline_t06_retry r2] ko16  ok=True full=1/2 fp=0 total=0.44s 
+[s2_pipeline_t06_retry r2] ko17  ok=True full=8/8 fp=0 total=25.61s 
+[s2_pipeline_t06_retry r2] en01  ok=True full=3/3 fp=0 total=14.45s 
+[s2_pipeline_t06_retry r2] en02  ok=True full=2/3 fp=0 total=3.62s 
+[s2_pipeline_t06_retry r2] en03  ok=True full=4/4 fp=0 total=5.46s 
+[s2_pipeline_t06_retry r2] en04  ok=True full=2/2 fp=0 total=1.10s 
+[s2_pipeline_t06_retry r2] en05  ok=True full=1/1 fp=0 total=0.43s 
+[s2_pipeline_t06_retry r2] en06  ok=True full=0/1 fp=0 total=0.67s 
+[s2_pipeline_t06_retry r2] en07  ok=True full=2/3 fp=0 total=4.69s 
+[s2_pipeline_t06_retry r2] en08  ok=True full=1/1 fp=0 total=0.68s 
+[s2_pipeline_t06_retry r2] en09  ok=True full=0/1 fp=0 total=0.65s 
+[s2_pipeline_t06_retry r2] en10  ok=True full=2/3 fp=0 total=2.69s 
+[s2_pipeline_t06_retry r2] en11  ok=True full=3/3 fp=0 total=4.86s 
+[s2_pipeline_t06_retry r2] en12  ok=True full=0/0 fp=0 total=0.42s 
+[s2_pipeline_t06_retry r2] en13  ok=True full=0/0 fp=0 total=0.62s 
+[s2_pipeline_t06_retry r2] en14  ok=True full=0/0 fp=0 total=0.54s 
+[s2_pipeline_t06_retry r2] en15  ok=True full=0/0 fp=0 total=0.60s 
+[s2_pipeline_t06_retry r2] en16  ok=True full=7/7 fp=0 total=6.76s 
+[s2_pipeline_t06_retry r2] en17  ok=True full=1/2 fp=0 total=1.07s 
+wrote /Users/tristan/Projects/cortexys-contents/devpost/airlock/scripts/local_model/results/s2_pipeline_t06_retry.jsonl
+
+## s2_pipeline_t06_retry  (102 requests)
+- JSON parse ok: 102/102
+
+| type | ko full (partial) | en full (partial) | all full (partial) | n |
+|---|---|---|---|---|
+| PERSON | 100.0% (100.0%) | 95.8% (95.8%) | 98.2% (98.2%) | 57 |
+| ORG | 66.7% (66.7%) | - | 66.7% (66.7%) | 6 |
+| CONTACT | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 24 |
+| ID_NUMBER | 100.0% (100.0%) | 66.7% (100.0%) | 85.7% (100.0%) | 21 |
+| FINANCIAL | 88.9% (88.9%) | 100.0% (100.0%) | 94.4% (94.4%) | 18 |
+| SECRET | 75.0% (75.0%) | 83.3% (83.3%) | 80.0% (80.0%) | 30 |
+| LOCATION | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 9 |
+| HEALTH | 100.0% (100.0%) | 91.7% (91.7%) | 95.8% (95.8%) | 24 |
+| QUASI_IDENTIFIER | 100.0% (100.0%) | 75.0% (75.0%) | 85.7% (85.7%) | 21 |
+| ALL | 94.4% (94.4%) | 89.2% (92.2%) | 91.9% (93.3%) | 210 |
+- semantic recall ko: 96.8% (n=63) | llm only 65.1%, rules only 61.9%, patterns only 0.0%
+- semantic recall en: 90.7% (n=54) | llm only 85.2%, rules only 11.1%, patterns only 0.0%
+- pipeline counters: {'llm_proposed': 182, 'llm_kept': 147, 'llm_discarded_ungrounded': 4, 'llm_discarded_invalid': 31, 'generalize_rejected': 0, 'rule_spans': 51, 'masked_before_llm': 57}
+- blocked by detector malfunction: 0 []
+
+- type label agreement on detected spans: 91.8% (180/196)
+- QUASI_IDENTIFIER detected -> action=generalize with replacement: 16/18
+- benign prompts with >=1 flagged span (FP rate): 0.0% (0/24)
+- spurious spans on sensitive prompts: 5/230 predicted spans (2.2%)
+- ungrounded spans (text not verbatim in prompt): 0/230 (0.0%)
+
+| type | regex-only ko / en | model(re-anchored)+regex ko / en / all |
+|---|---|---|
+| PERSON | 0.0% / 0.0% | 100.0% / 95.8% / 98.2% |
+| ORG | 0.0% / n/a | 66.7% / n/a / 66.7% |
+| CONTACT | 100.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| ID_NUMBER | 75.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| FINANCIAL | 66.7% / 100.0% | 88.9% / 100.0% / 94.4% |
+| SECRET | 100.0% / 83.3% | 100.0% / 100.0% / 100.0% |
+| LOCATION | 0.0% / 0.0% | 100.0% / 100.0% / 100.0% |
+| HEALTH | 0.0% / 0.0% | 100.0% / 91.7% / 95.8% |
+| QUASI_IDENTIFIER | 0.0% / 0.0% | 100.0% / 75.0% / 85.7% |
+| ALL | 36.1% / 44.1% | 97.2% / 95.1% / 96.2% |
+- regex hits on benign prompts: 0
+- sensitive prompts with every expected span fully covered: 78.2% (61/78)
+- TTFT p50/p95: nans / nans
+- total p50/p95/max: 2.25s / 12.57s / 25.61s
+
+| run | recall full | recall partial | benign FP | spurious spans | p50 total |
+|---|---|---|---|---|---|
+| 0 | 94.3% | 95.7% | 0/8 | 1 | 3.54s |
+| 1 | 92.9% | 94.3% | 0/8 | 2 | 2.89s |
+| 2 | 88.6% | 90.0% | 0/8 | 2 | 1.08s |
+
+- expected spans whose full-detection flips across runs: 6/70
+  - ko09 '6,200만원': [True, False, True]
+  - ko16 '그린루프': [True, False, False]
+  - en02 'Janet Okafor': [True, True, False]
+  - en07 'sertraline': [True, True, False]
+  - en09 'sole pediatric cardiologist': [False, True, False]
+  - en17 'youngest-ever woman elected mayor': [True, True, False]
+
+### misses (all runs, full-coverage)
+- en02 PERSON 'Janet Okafor' missed 1x
+- en06 SECRET 'BlueHeron!872' missed 3x
+- en07 HEALTH 'sertraline' missed 1x
+- en09 QUASI_IDENTIFIER 'sole pediatric cardiologist' missed 2x
+- en10 ID_NUMBER 'D4829-17735-06' missed 3x (partial)
+- en17 QUASI_IDENTIFIER 'youngest-ever woman elected mayor' missed 1x
+- ko05 SECRET 'Haneul#2024!!' missed 3x
+- ko09 FINANCIAL '6,200만원' missed 1x
+- ko16 ORG '그린루프' missed 2x
+
+### false-positive / spurious spans (all runs)
+- en02 QUASI_IDENTIFIER 'Summarize her case for the claims team' x1
+- en07 QUASI_IDENTIFIER 'the team' x1
+- ko02 QUASI_IDENTIFIER '보험 청구 내용' x1
+- ko02 ID_NUMBER '주민등록번호' x1
+- ko09 CONTACT '급여계좌' x1
+
+### ungrounded spans

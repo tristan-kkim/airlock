@@ -1,0 +1,198 @@
+[s2_pipeline_t06 r0] ko01  ok=True full=3/3 fp=0 total=7.93s 
+[s2_pipeline_t06 r0] ko02  ok=True full=2/2 fp=1 total=4.09s 
+[s2_pipeline_t06 r0] ko03  ok=True full=3/3 fp=0 total=3.79s 
+[s2_pipeline_t06 r0] ko04  ok=True full=2/2 fp=1 total=1.87s 
+[s2_pipeline_t06 r0] ko05  ok=True full=1/1 fp=1 total=1.77s 
+[s2_pipeline_t06 r0] ko06  ok=True full=3/3 fp=0 total=3.08s 
+[s2_pipeline_t06 r0] ko07  ok=True full=1/1 fp=1 total=5.01s 
+[s2_pipeline_t06 r0] ko08  ok=True full=1/1 fp=0 total=4.37s 
+[s2_pipeline_t06 r0] ko09  ok=True full=4/4 fp=0 total=3.29s 
+[s2_pipeline_t06 r0] ko10  ok=True full=3/3 fp=0 total=6.38s 
+[s2_pipeline_t06 r0] ko11  ok=True full=0/0 fp=0 total=0.60s 
+[s2_pipeline_t06 r0] ko12  ok=True full=0/0 fp=0 total=0.62s 
+[s2_pipeline_t06 r0] ko13  ok=True full=0/0 fp=0 total=0.69s 
+[s2_pipeline_t06 r0] ko14  ok=True full=0/0 fp=0 total=0.68s 
+[s2_pipeline_t06 r0] ko15  ok=True full=3/3 fp=0 total=3.29s 
+[s2_pipeline_t06 r0] ko16  ok=True full=1/2 fp=0 total=0.68s 
+[s2_pipeline_t06 r0] ko17  ok=True full=6/8 fp=0 total=10.29s 
+[s2_pipeline_t06 r0] en01  ok=True full=3/3 fp=0 total=3.11s 
+[s2_pipeline_t06 r0] en02  ok=False full=0/3 fp=0 total=3.60s local_detector_malformed:repetition
+[s2_pipeline_t06 r0] en03  ok=True full=4/4 fp=0 total=5.84s 
+[s2_pipeline_t06 r0] en04  ok=True full=2/2 fp=0 total=3.32s 
+[s2_pipeline_t06 r0] en05  ok=True full=1/1 fp=0 total=1.84s 
+[s2_pipeline_t06 r0] en06  ok=True full=1/1 fp=0 total=1.95s 
+[s2_pipeline_t06 r0] en07  ok=True full=3/3 fp=1 total=4.25s 
+[s2_pipeline_t06 r0] en08  ok=True full=1/1 fp=0 total=2.17s 
+[s2_pipeline_t06 r0] en09  ok=True full=1/1 fp=0 total=1.56s 
+[s2_pipeline_t06 r0] en10  ok=True full=2/3 fp=1 total=3.84s 
+[s2_pipeline_t06 r0] en11  ok=True full=3/3 fp=0 total=3.30s 
+[s2_pipeline_t06 r0] en12  ok=True full=0/0 fp=0 total=0.42s 
+[s2_pipeline_t06 r0] en13  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r0] en14  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r0] en15  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r0] en16  ok=True full=7/7 fp=0 total=4.61s 
+[s2_pipeline_t06 r0] en17  ok=True full=2/2 fp=0 total=3.32s 
+[s2_pipeline_t06 r1] ko01  ok=False full=0/3 fp=0 total=7.43s local_detector_malformed:repetition
+[s2_pipeline_t06 r1] ko02  ok=True full=2/2 fp=1 total=1.82s 
+[s2_pipeline_t06 r1] ko03  ok=True full=3/3 fp=0 total=7.03s 
+[s2_pipeline_t06 r1] ko04  ok=True full=2/2 fp=0 total=0.43s 
+[s2_pipeline_t06 r1] ko05  ok=True full=0/1 fp=0 total=0.44s 
+[s2_pipeline_t06 r1] ko06  ok=True full=3/3 fp=0 total=1.91s 
+[s2_pipeline_t06 r1] ko07  ok=True full=1/1 fp=0 total=0.54s 
+[s2_pipeline_t06 r1] ko08  ok=True full=1/1 fp=0 total=1.71s 
+[s2_pipeline_t06 r1] ko09  ok=True full=4/4 fp=0 total=3.20s 
+[s2_pipeline_t06 r1] ko10  ok=True full=3/3 fp=0 total=1.96s 
+[s2_pipeline_t06 r1] ko11  ok=True full=0/0 fp=0 total=0.43s 
+[s2_pipeline_t06 r1] ko12  ok=True full=0/0 fp=0 total=0.78s 
+[s2_pipeline_t06 r1] ko13  ok=True full=0/0 fp=0 total=0.65s 
+[s2_pipeline_t06 r1] ko14  ok=True full=0/0 fp=0 total=0.64s 
+[s2_pipeline_t06 r1] ko15  ok=True full=3/3 fp=0 total=3.14s 
+[s2_pipeline_t06 r1] ko16  ok=True full=2/2 fp=1 total=3.36s 
+[s2_pipeline_t06 r1] ko17  ok=True full=6/8 fp=0 total=5.07s 
+[s2_pipeline_t06 r1] en01  ok=True full=2/3 fp=0 total=0.44s 
+[s2_pipeline_t06 r1] en02  ok=True full=3/3 fp=0 total=4.17s 
+[s2_pipeline_t06 r1] en03  ok=True full=4/4 fp=0 total=6.89s 
+[s2_pipeline_t06 r1] en04  ok=True full=2/2 fp=0 total=3.17s 
+[s2_pipeline_t06 r1] en05  ok=True full=1/1 fp=0 total=0.66s 
+[s2_pipeline_t06 r1] en06  ok=True full=0/1 fp=0 total=0.67s 
+[s2_pipeline_t06 r1] en07  ok=True full=3/3 fp=1 total=5.36s 
+[s2_pipeline_t06 r1] en08  ok=True full=1/1 fp=0 total=1.67s 
+[s2_pipeline_t06 r1] en09  ok=True full=1/1 fp=0 total=2.68s 
+[s2_pipeline_t06 r1] en10  ok=True full=2/3 fp=0 total=4.18s 
+[s2_pipeline_t06 r1] en11  ok=True full=3/3 fp=0 total=6.26s 
+[s2_pipeline_t06 r1] en12  ok=True full=0/0 fp=0 total=0.42s 
+[s2_pipeline_t06 r1] en13  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r1] en14  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r1] en15  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r1] en16  ok=True full=7/7 fp=0 total=7.81s 
+[s2_pipeline_t06 r1] en17  ok=True full=2/2 fp=0 total=3.95s 
+[s2_pipeline_t06 r2] ko01  ok=False full=0/3 fp=0 total=5.95s local_detector_malformed:repetition
+[s2_pipeline_t06 r2] ko02  ok=True full=2/2 fp=1 total=1.68s 
+[s2_pipeline_t06 r2] ko03  ok=True full=3/3 fp=0 total=3.58s 
+[s2_pipeline_t06 r2] ko04  ok=True full=2/2 fp=0 total=0.43s 
+[s2_pipeline_t06 r2] ko05  ok=True full=0/1 fp=0 total=0.44s 
+[s2_pipeline_t06 r2] ko06  ok=True full=3/3 fp=0 total=5.11s 
+[s2_pipeline_t06 r2] ko07  ok=True full=1/1 fp=0 total=2.53s 
+[s2_pipeline_t06 r2] ko08  ok=True full=1/1 fp=0 total=2.52s 
+[s2_pipeline_t06 r2] ko09  ok=True full=4/4 fp=0 total=5.32s 
+[s2_pipeline_t06 r2] ko10  ok=True full=3/3 fp=0 total=3.94s 
+[s2_pipeline_t06 r2] ko11  ok=True full=0/0 fp=0 total=0.68s 
+[s2_pipeline_t06 r2] ko12  ok=True full=0/0 fp=0 total=0.65s 
+[s2_pipeline_t06 r2] ko13  ok=True full=0/0 fp=0 total=0.70s 
+[s2_pipeline_t06 r2] ko14  ok=True full=0/0 fp=0 total=0.95s 
+[s2_pipeline_t06 r2] ko15  ok=True full=3/3 fp=0 total=3.59s 
+[s2_pipeline_t06 r2] ko16  ok=True full=2/2 fp=0 total=2.35s 
+[s2_pipeline_t06 r2] ko17  ok=True full=6/8 fp=0 total=9.19s 
+[s2_pipeline_t06 r2] en01  ok=False full=0/3 fp=0 total=5.11s local_detector_malformed:repetition
+[s2_pipeline_t06 r2] en02  ok=False full=0/3 fp=0 total=4.35s local_detector_malformed:repetition
+[s2_pipeline_t06 r2] en03  ok=True full=4/4 fp=0 total=5.35s 
+[s2_pipeline_t06 r2] en04  ok=True full=2/2 fp=0 total=3.18s 
+[s2_pipeline_t06 r2] en05  ok=True full=1/1 fp=0 total=1.90s 
+[s2_pipeline_t06 r2] en06  ok=True full=1/1 fp=0 total=1.98s 
+[s2_pipeline_t06 r2] en07  ok=True full=3/3 fp=1 total=7.68s 
+[s2_pipeline_t06 r2] en08  ok=True full=1/1 fp=0 total=0.70s 
+[s2_pipeline_t06 r2] en09  ok=True full=0/1 fp=0 total=0.69s 
+[s2_pipeline_t06 r2] en10  ok=True full=2/3 fp=0 total=4.87s 
+[s2_pipeline_t06 r2] en11  ok=True full=3/3 fp=0 total=7.99s 
+[s2_pipeline_t06 r2] en12  ok=True full=0/0 fp=0 total=0.68s 
+[s2_pipeline_t06 r2] en13  ok=True full=0/0 fp=0 total=0.59s 
+[s2_pipeline_t06 r2] en14  ok=True full=0/0 fp=0 total=0.38s 
+[s2_pipeline_t06 r2] en15  ok=True full=0/0 fp=0 total=0.37s 
+[s2_pipeline_t06 r2] en16  ok=True full=7/7 fp=0 total=4.09s 
+[s2_pipeline_t06 r2] en17  ok=True full=2/2 fp=0 total=2.79s 
+wrote /Users/tristan/Projects/cortexys-contents/devpost/airlock/scripts/local_model/results/s2_pipeline_t06.jsonl
+
+## s2_pipeline_t06  (102 requests)
+- JSON parse ok: 97/102
+
+| type | ko full (partial) | en full (partial) | all full (partial) | n |
+|---|---|---|---|---|
+| PERSON | 93.9% (93.9%) | 83.3% (83.3%) | 89.5% (89.5%) | 57 |
+| ORG | 33.3% (33.3%) | - | 33.3% (33.3%) | 6 |
+| CONTACT | 66.7% (66.7%) | 83.3% (83.3%) | 75.0% (75.0%) | 24 |
+| ID_NUMBER | 100.0% (100.0%) | 44.4% (77.8%) | 76.2% (90.5%) | 21 |
+| FINANCIAL | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 18 |
+| SECRET | 83.3% (83.3%) | 94.4% (94.4%) | 90.0% (90.0%) | 30 |
+| LOCATION | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 9 |
+| HEALTH | 75.0% (75.0%) | 100.0% (100.0%) | 87.5% (87.5%) | 24 |
+| QUASI_IDENTIFIER | 100.0% (100.0%) | 75.0% (75.0%) | 85.7% (85.7%) | 21 |
+| ALL | 86.1% (86.1%) | 85.3% (88.2%) | 85.7% (87.1%) | 210 |
+- semantic recall ko: 85.7% (n=63) | llm only 63.5%, rules only 52.4%, patterns only 0.0%
+- semantic recall en: 87.0% (n=54) | llm only 81.5%, rules only 11.1%, patterns only 0.0%
+- pipeline counters: {'llm_proposed': 187, 'llm_kept': 156, 'llm_discarded_ungrounded': 2, 'llm_discarded_invalid': 29, 'generalize_rejected': 4, 'rule_spans': 45, 'masked_before_llm': 51}
+- blocked by detector malfunction: 5 ['local_detector_malformed:repetition']
+
+- type label agreement on detected spans: 90.7% (166/183)
+- QUASI_IDENTIFIER detected -> action=generalize with replacement: 16/18
+- benign prompts with >=1 flagged span (FP rate): 0.0% (0/24)
+- spurious spans on sensitive prompts: 11/225 predicted spans (4.9%)
+- ungrounded spans (text not verbatim in prompt): 0/225 (0.0%)
+
+| type | regex-only ko / en | model(re-anchored)+regex ko / en / all |
+|---|---|---|
+| PERSON | 0.0% / 0.0% | 93.9% / 83.3% / 89.5% |
+| ORG | 0.0% / n/a | 33.3% / n/a / 33.3% |
+| CONTACT | 100.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| ID_NUMBER | 75.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| FINANCIAL | 66.7% / 100.0% | 100.0% / 100.0% / 100.0% |
+| SECRET | 100.0% / 83.3% | 100.0% / 100.0% / 100.0% |
+| LOCATION | 0.0% / 0.0% | 100.0% / 100.0% / 100.0% |
+| HEALTH | 0.0% / 0.0% | 75.0% / 100.0% / 87.5% |
+| QUASI_IDENTIFIER | 0.0% / 0.0% | 100.0% / 75.0% / 85.7% |
+| ALL | 36.1% / 44.1% | 91.7% / 93.1% / 92.4% |
+- regex hits on benign prompts: 0
+- sensitive prompts with every expected span fully covered: 78.2% (61/78)
+- TTFT p50/p95: nans / nans
+- total p50/p95/max: 2.52s / 7.67s / 10.29s
+
+| run | recall full | recall partial | benign FP | spurious spans | p50 total |
+|---|---|---|---|---|---|
+| 0 | 90.0% | 91.4% | 0/8 | 6 | 3.20s |
+| 1 | 87.1% | 88.6% | 0/8 | 3 | 1.87s |
+| 2 | 80.0% | 81.4% | 0/8 | 2 | 2.52s |
+
+- expected spans whose full-detection flips across runs: 13/70
+  - ko01 '김서연': [True, False, False]
+  - ko01 '010-4821-7753': [True, False, False]
+  - ko01 'seoyeon.kim@hanbitsoft.co.kr': [True, False, False]
+  - ko05 'Haneul#2024!!': [True, False, False]
+  - ko16 '그린루프': [False, True, True]
+  - en01 'Marcus Ellery': [True, False, False]
+  - en01 '555-0193': [True, True, False]
+  - en01 'marcus.ellery@brightforge.io': [True, True, False]
+  - en02 'Janet Okafor': [False, True, False]
+  - en02 '521-38-4476': [False, True, False]
+  - en02 '1987-04-12': [False, True, False]
+  - en06 'BlueHeron!872': [True, False, True]
+  - en09 'sole pediatric cardiologist': [True, True, False]
+
+### misses (all runs, full-coverage)
+- en01 CONTACT '555-0193' missed 1x
+- en01 CONTACT 'marcus.ellery@brightforge.io' missed 1x
+- en01 PERSON 'Marcus Ellery' missed 2x
+- en02 ID_NUMBER '521-38-4476' missed 2x
+- en02 PERSON 'Janet Okafor' missed 2x
+- en02 QUASI_IDENTIFIER '1987-04-12' missed 2x
+- en06 SECRET 'BlueHeron!872' missed 1x
+- en09 QUASI_IDENTIFIER 'sole pediatric cardiologist' missed 1x
+- en10 ID_NUMBER 'D4829-17735-06' missed 3x (partial)
+- ko01 CONTACT '010-4821-7753' missed 2x
+- ko01 CONTACT 'seoyeon.kim@hanbitsoft.co.kr' missed 2x
+- ko01 PERSON '김서연' missed 2x
+- ko05 SECRET 'Haneul#2024!!' missed 2x
+- ko16 ORG '그린루프' missed 1x
+- ko17 HEALTH '공황장애' missed 3x
+- ko17 ORG '대원물산' missed 3x
+
+### false-positive / spurious spans (all runs)
+- en07 QUASI_IDENTIFIER 'cover his shifts' x3
+- en10 QUASI_IDENTIFIER 'guest' x1
+- ko02 ID_NUMBER '주민등록번호' x1
+- ko02 PERSON '주민등록번호' x1
+- ko02 SECRET '주민등록번호' x1
+- ko04 SECRET 'DATABASE_URL' x1
+- ko05 ORG '회사' x1
+- ko07 HEALTH '진정서' x1
+- ko16 CONTACT '팀 송' x1
+
+### ungrounded spans

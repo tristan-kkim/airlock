@@ -8,6 +8,11 @@ Examples:
   python3 probe.py detect --runs 3 --temperature 0 --tag q4_t0
   python3 probe.py placeholders --runs 3 --tag q4_ph
   python3 probe.py summarize results/q4_t06.jsonl results/q4_t0.jsonl
+
+  # Full Airlock detection pipeline (patterns -> masked LLM input -> ko_rules -> verification).
+  # Needs the airlock package: run from the repo root with uv.
+  uv run python scripts/local_model/probe.py detect --pipeline --url http://127.0.0.1:8082 \
+      --runs 3 --tag s2_pipeline_t06
 """
 from __future__ import annotations
 
@@ -243,7 +248,95 @@ def load_cases(path: Path) -> list[dict]:
     return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
+def cmd_pipeline(args: argparse.Namespace) -> None:
+    """Score what the Airlock pipeline would actually substitute, plus per-source breakdowns."""
+    import asyncio
+
+    sys.path.insert(0, str(HERE.parents[1]))
+    import httpx
+
+    from airlock.config import Settings
+    from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError, block_reason
+    from airlock.pipeline import Sanitizer
+    from airlock.vault import Vault
+
+    cases = load_cases(Path(args.cases))
+    if args.only:
+        cases = [c for c in cases if c["id"] in set(args.only.split(","))]
+    out_dir = HERE / "results"
+    out_dir.mkdir(exist_ok=True)
+    out_path = out_dir / f"{args.tag}.jsonl"
+    settings = Settings(
+        local_base_url=args.url.rstrip("/") + "/v1",
+        local_temperature=args.temperature,
+        local_top_p=args.top_p,
+        local_timeout_s=120.0,
+        vault_path=":memory:",
+        audit_db=":memory:",
+    )
+
+    def as_dicts(spans, text):
+        out = []
+        for sp in spans:
+            t = text[sp.start:sp.end] if sp.start is not None else sp.text
+            out.append({"text": t, "type": sp.type, "action": sp.action,
+                        "replacement": sp.replacement or "", "source": sp.source})
+        return out
+
+    async def run_all() -> None:
+        async with httpx.AsyncClient() as http:
+            local = LocalModel(settings, http)
+            with out_path.open("w", encoding="utf-8") as fh:
+                for run in range(args.runs):
+                    for case in cases:
+                        vault = Vault(":memory:")
+                        detector = LLMDetector(local, settings.protection_level, cache_size=0)
+                        sanitizer = Sanitizer(settings, detector, vault)
+                        session = vault.session(case["id"])
+                        text = case["text"]
+                        t0 = time.perf_counter()
+                        err, spans, by_source, stats = None, [], {}, {}
+                        try:
+                            detected = await sanitizer.detect(text, session)
+                            result = sanitizer.apply(text, detected.spans, session.scratch())
+                            spans = [
+                                {"text": a.original, "type": a.mapping.type,
+                                 "action": a.mapping.action,
+                                 "replacement": a.mapping.value if a.mapping.action == "generalize" else "",
+                                 "source": a.span.source}
+                                for a in result.applied
+                            ]
+                            for src in ("regex", "entropy", "vault", "rule", "llm"):
+                                by_source[src] = as_dicts([x for x in detected.spans if x.source == src], text)
+                            stats = {**detected.stats.as_dict(), "generalize_rejected": result.generalize_rejected}
+                        except LocalModelError as exc:
+                            err = block_reason(exc)
+                        total = time.perf_counter() - t0
+                        sc = score_case(case, spans)
+                        rec = {
+                            "tag": args.tag, "run": run, "id": case["id"], "lang": case["lang"],
+                            "category": case["category"], "benign": case["benign"],
+                            "parse_ok": err is None, "error": err, "spans": spans, **sc,
+                            "by_source": by_source, "stats": stats,
+                            "ttft_s": None, "total_s": total, "usage": None, "timings": None,
+                            "finish_reason": None, "reasoning_chars": 0, "raw": None,
+                        }
+                        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                        fh.flush()
+                        n_exp = len(sc["expected"])
+                        n_full = sum(e["full"] for e in sc["expected"])
+                        print(f"[{args.tag} r{run}] {case['id']:5s} ok={err is None} full={n_full}/{n_exp} "
+                              f"fp={len(sc['fp_spans'])} total={total:.2f}s {err or ''}", flush=True)
+
+    asyncio.run(run_all())
+    print(f"wrote {out_path}")
+    summarize([out_path])
+
+
 def cmd_detect(args: argparse.Namespace) -> None:
+    if args.pipeline:
+        cmd_pipeline(args)
+        return
     cases = load_cases(Path(args.cases))
     if args.only:
         cases = [c for c in cases if c["id"] in set(args.only.split(","))]
@@ -493,6 +586,38 @@ def summarize(paths: list[Path]) -> None:
             row.append(str(agg[(t, 'all')][2]))
             print("| " + " | ".join(row) + " |")
 
+        # semantic types (PERSON/ORG/LOCATION/HEALTH/QUASI_IDENTIFIER) by language
+        semantic = {"PERSON", "ORG", "LOCATION", "HEALTH", "QUASI_IDENTIFIER"}
+        cases_by_id_sem = {c["id"]: c for c in load_cases(HERE / "probe_cases.jsonl")}
+        for lang in ("ko", "en"):
+            ex = [e for r in recs if r["lang"] == lang for e in r["expected"] if e["type"] in semantic]
+            line = f"- semantic recall {lang}: {pct(sum(e['full'] for e in ex), len(ex))} (n={len(ex)})"
+            if recs and "by_source" in recs[0]:
+                parts = []
+                for label, srcs in (("llm only", ("llm",)), ("rules only", ("rule",)),
+                                    ("patterns only", ("regex", "entropy"))):
+                    hit = n = 0
+                    for r in recs:
+                        if r["lang"] != lang:
+                            continue
+                        text = cases_by_id_sem[r["id"]]["text"]
+                        covers = [iv for src in srcs for sp in r.get("by_source", {}).get(src, [])
+                                  for iv in find_all(text, sp["text"])]
+                        for e in r["expected"]:
+                            if e["type"] in semantic:
+                                n += 1
+                                hit += max(coverage(o, covers) for o in find_all(text, e["text"])) >= 0.999
+                    parts.append(f"{label} {pct(hit, n)}")
+                line += " | " + ", ".join(parts)
+            print(line)
+        if recs and "stats" in recs[0]:
+            keys = ("llm_proposed", "llm_kept", "llm_discarded_ungrounded", "llm_discarded_invalid",
+                    "generalize_rejected", "rule_spans", "masked_before_llm")
+            totals = {k: sum((r.get("stats") or {}).get(k, 0) for r in recs) for k in keys}
+            print(f"- pipeline counters: {totals}")
+            errors = [r["error"] for r in recs if r.get("error")]
+            print(f"- blocked by detector malfunction: {len(errors)} {sorted(set(errors))}")
+
         # type agreement and action for detected expected spans
         det = [e for r in recs for e in r["expected"] if e["partial"]]
         type_ok = sum(e["pred_type"] == e["type"] for e in det)
@@ -621,6 +746,8 @@ def main() -> None:
     d.add_argument("--thinking", action="store_true", help="enable_thinking=true in chat template")
     d.add_argument("--no-schema", action="store_true", help="do not send response_format json_schema")
     d.add_argument("--only", default="", help="comma-separated case ids")
+    d.add_argument("--pipeline", action="store_true",
+                   help="run the Airlock detection pipeline (patterns, masked LLM input, ko_rules)")
     d.add_argument("--tag", required=True)
 
     p = sub.add_parser("placeholders")
