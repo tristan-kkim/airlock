@@ -122,6 +122,7 @@ class DetectStats:
     gliner_agreed: int = 0  # overlapped a span from another source
     gliner_rejected_mislabel: int = 0  # age/date/money text under another label
     gliner_rejected_shape: int = 0  # failed the type-consistency check
+    gliner_rejected_label: int = 0  # GLiNER-only span of an agreement-only label
     gliner_remapped: int = 0  # a name under another label, kept as PERSON
     gliner_candidates: int = 0  # GLiNER-only spans sent to adjudication
     adjudication_calls: int = 0

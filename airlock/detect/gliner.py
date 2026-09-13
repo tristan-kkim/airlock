@@ -158,6 +158,14 @@ def parse_thresholds(raw: str | None) -> dict[str, float]:
     return out
 
 
+def parse_labels(raw: str | None) -> frozenset[str]:
+    names = frozenset(n.strip() for n in (raw or "").split(",") if n.strip())
+    unknown = sorted(names - LABELS_BY_NAME.keys())
+    if unknown:
+        raise ValueError(f"AIRLOCK_GLINER_AGREEMENT_ONLY: unknown labels {unknown}")
+    return names
+
+
 # ---- model --------------------------------------------------------------------------------------
 
 
@@ -334,14 +342,14 @@ def _digit_shape(text: str, min_digits: int, min_ratio: float = 0.3) -> bool:
     return plain == 0 or plain / max(1, len(compact)) >= min_ratio
 
 
-def ko_name(text: str) -> str | None:
+def ko_name(text: str, min_syllables: int = 2) -> str | None:
     """The Korean name inside `text` (particles and honorifics stripped), or None."""
     name = text.strip()
     for _ in range(2):
         stripped = _KO_NAME_TAIL.sub("", name)
         if len(stripped) >= 2:
             name = stripped
-    if not re.fullmatch(r"[가-힣]{2,4}", name):
+    if not re.fullmatch(r"[가-힣]{2,4}", name) or len(name) < min_syllables:
         return None
     if not (name.startswith(_COMPOUND) or name[0] in _SURNAMES):
         return None
@@ -374,12 +382,12 @@ def mislabel(text: str, label: Label) -> bool:
     return label.shape != "birthdate" and bool(_DATE.match(t))
 
 
-def shape_ok(text: str, label: Label) -> bool:
+def shape_ok(text: str, label: Label, ko_min_syllables: int = 2) -> bool:
     t = text.strip()
     shape = label.shape
     if shape == "name":
         if _HANGUL.search(t):
-            return ko_name(t) is not None
+            return ko_name(t, ko_min_syllables) is not None
         return latin_name(t)
     if shape == "secret":
         if _HANGUL.search(t) or len(t) < 6:
@@ -412,10 +420,10 @@ def shape_ok(text: str, label: Label) -> bool:
     return False
 
 
-def remap_person(text: str, label: Label) -> bool:
+def remap_person(text: str, label: Label, ko_min_syllables: int = 2) -> bool:
     """A name under a label whose shape it fails (`독고새론` as password): treat it as PERSON."""
     t = text.strip()
-    return ko_name(t) is not None or (label.shape == "handle" and latin_name(t))
+    return ko_name(t, ko_min_syllables) is not None or (label.shape == "handle" and latin_name(t))
 
 
 def trim(text: str, start: int, end: int, label: Label) -> tuple[int, int]:
@@ -554,6 +562,8 @@ class Ensemble:
         self.settings = settings
         self.gliner = gliner
         self.local = local
+        # Labels whose GLiNER-only spans are never accepted: only agreement can confirm them.
+        self.agreement_only = parse_labels(settings.gliner_agreement_only)
 
     async def propose(self, texts: Sequence[str]) -> tuple[list[list[Entity]], float]:
         started = time.perf_counter()
@@ -574,6 +584,7 @@ class Ensemble:
             "gliner_agreed": 0,
             "gliner_rejected_mislabel": 0,
             "gliner_rejected_shape": 0,
+            "gliner_rejected_label": 0,
             "gliner_remapped": 0,
             "gliner_candidates": 0,
             "adjudication_calls": 0,
@@ -608,9 +619,13 @@ class Ensemble:
                     if not covered and all(p.span.action == "mask" for p in partners):
                         accepted[i].append(cand.span(text))
                     continue
+                if cand.label.name in self.agreement_only:
+                    counts["gliner_rejected_label"] += 1
+                    continue
                 value = text[cand.start : cand.end]
-                if not shape_ok(value, cand.label):
-                    if not remap_person(value, cand.label):
+                ko_min = self.settings.gliner_ko_name_min_syllables
+                if not shape_ok(value, cand.label, ko_min):
+                    if not remap_person(value, cand.label, ko_min):
                         counts["gliner_rejected_shape"] += 1
                         continue
                     cand.type = "PERSON"
