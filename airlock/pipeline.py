@@ -9,6 +9,9 @@ Flow per text slot:
 3. Deterministic semantic rules (`airlock.detect.ko_rules`) run on the original text.
 4. The local model runs on the partially masked text. Its spans are verified against the
    original: text that does not occur there is discarded and counted.
+   With `AIRLOCK_GLINER=on`, NVIDIA GLiNER-PII runs on the same texts in parallel, and its spans
+   pass the ensemble policy (agreement, type consistency, one batched local adjudication call;
+   see `airlock.detect.gliner`) before they join the others.
 5. All spans are merged -> protection-level policy -> overlap resolution (longest wins) ->
    placeholders or validated generalizations.
 
@@ -28,6 +31,7 @@ from typing import Any
 
 from airlock import placeholders
 from airlock.config import ProtectionLevel, Settings
+from airlock.detect.gliner import Ensemble, build_ensemble
 from airlock.detect.ko_rules import detect_rules
 from airlock.detect.llm import LLMDetector
 from airlock.detect.patterns import HIGH_CONFIDENCE_RULES, detect_patterns
@@ -112,6 +116,19 @@ class DetectStats:
     llm_discarded_invalid: int = 0
     generalize_rejected: int = 0  # generalizations that leaked the original; masked instead
     semantic_cues: int = 0  # rule spans of type QUASI_IDENTIFIER or HEALTH
+    # GLiNER ensemble, per request (absent from `as_dict` when the ensemble is off).
+    gliner_texts: int = 0
+    gliner_spans: int = 0  # GLiNER spans above threshold, after joining name parts
+    gliner_agreed: int = 0  # overlapped a span from another source
+    gliner_rejected_mislabel: int = 0  # age/date/money text under another label
+    gliner_rejected_shape: int = 0  # failed the type-consistency check
+    gliner_remapped: int = 0  # a name under another label, kept as PERSON
+    gliner_candidates: int = 0  # GLiNER-only spans sent to adjudication
+    adjudication_calls: int = 0
+    adjudicated_yes: int = 0
+    adjudicated_no: int = 0
+    gliner_ms: int = 0
+    adjudication_ms: int = 0
 
     def add(self, other: DetectStats) -> None:
         for key, value in asdict(other).items():
@@ -122,7 +139,15 @@ class DetectStats:
         return self.llm_discarded_ungrounded + self.llm_discarded_invalid
 
     def as_dict(self) -> dict[str, int]:
-        return asdict(self)
+        data = asdict(self)
+        if not self.gliner_texts:
+            data = {k: v for k, v in data.items() if k not in _ENSEMBLE_FIELDS}
+        return data
+
+
+_ENSEMBLE_FIELDS = frozenset(
+    k for k in DetectStats.__dataclass_fields__ if k.startswith(("gliner_", "adjudicat"))
+)
 
 
 @dataclass
@@ -258,10 +283,18 @@ def _messages_for(body: dict[str, Any], session: VaultSession) -> list[Any]:
 
 
 class Sanitizer:
-    def __init__(self, settings: Settings, detector: LLMDetector, vault: Vault):
+    def __init__(
+        self,
+        settings: Settings,
+        detector: LLMDetector,
+        vault: Vault,
+        ensemble: Ensemble | None = None,
+    ):
         self.settings = settings
         self.detector = detector
         self.vault = vault
+        # Raises GlinerUnavailable at startup when AIRLOCK_GLINER=on cannot be honored.
+        self.ensemble = ensemble or build_ensemble(settings, detector.model)
 
     # ---- protected strings the gate always enforces ------------------------
     def standing_protected(self) -> list[Protected]:
@@ -332,6 +365,24 @@ class Sanitizer:
             stats.llm_discarded_invalid = llm.discarded_invalid
             spans += llm.spans
         return Detected(spans, stats)
+
+    async def detect_many(self, texts: list[str], session: VaultSession) -> list[Detected]:
+        """`detect` for each text, then the GLiNER ensemble merge step when it is enabled.
+
+        GLiNER runs in parallel with the per-text detectors. Its request-level counters are
+        added to the first text's stats, so summing the stats counts them once.
+        """
+        base = asyncio.gather(*(self.detect(t, session) for t in texts))
+        if self.ensemble is None or not texts:
+            return list(await base)
+        detected, proposals = await asyncio.gather(base, self.ensemble.propose(texts))
+        merged = await self.ensemble.merge(texts, [d.spans for d in detected], proposals)
+        for d, extra in zip(detected, merged.accepted, strict=True):
+            d.spans = d.spans + extra
+        first = detected[0].stats
+        for key, value in merged.counts.items():
+            setattr(first, key, getattr(first, key) + int(value))
+        return list(detected)
 
     def _policy(self, span: Span) -> Span:
         level = self.settings.protection_level
@@ -427,7 +478,7 @@ class Sanitizer:
         )
 
     async def sanitize_text(self, text: str, session: VaultSession) -> TextResult:
-        detected = await self.detect(text, session)
+        [detected] = await self.detect_many([text], session)
         return self.apply(text, detected.spans, session)
 
     # ---- chat payloads ------------------------------------------------------
@@ -436,7 +487,7 @@ class Sanitizer:
         messages = _messages_for(body, session)
         slots, extra_reasons = _chat_slots(messages)
         unique_texts = list(dict.fromkeys(container[key] for container, key, _ in slots))
-        detected = await asyncio.gather(*(self.detect(t, session) for t in unique_texts))
+        detected = await self.detect_many(unique_texts, session)
         stats = DetectStats()
         for d in detected:
             stats.add(d.stats)
@@ -530,8 +581,9 @@ class Sanitizer:
         reasons = []
         llm_only = False
         for text, spans in analysis.spans_by_text.items():
-            others = locate(text, [s for s in spans if s.source != "llm"])
-            for p in locate(text, [s for s in spans if s.source == "llm"]):
+            model_only = ("llm", "gliner")
+            others = locate(text, [s for s in spans if s.source not in model_only])
+            for p in locate(text, [s for s in spans if s.source in model_only]):
                 if not any(p.start < o.end and o.start < p.end for o in others):
                     llm_only = True
                     break
@@ -565,6 +617,7 @@ _BASE_CONFIDENCE = {
     "entropy": 0.7,
     "rule": 0.6,
     "llm": 0.6,
+    "gliner": 0.6,
 }
 
 

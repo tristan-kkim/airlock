@@ -26,8 +26,9 @@ SPAN_TYPES: tuple[str, ...] = (
 )
 
 # vault: declared terms and earlier conversation mappings; regex/entropy: deterministic patterns;
-# rule: deterministic Korean/English semantic rules; llm: the local model; user: added in review.
-Source = Literal["llm", "regex", "vault", "entropy", "rule", "user"]
+# rule: deterministic Korean/English semantic rules; llm: the local model; user: added in review;
+# gliner: NVIDIA GLiNER-PII, accepted by the ensemble policy in airlock.detect.gliner.
+Source = Literal["llm", "regex", "vault", "entropy", "rule", "user", "gliner"]
 Action = Literal["mask", "generalize", "keep"]
 
 # Lower value wins ties between equally long overlapping spans.
@@ -38,6 +39,7 @@ _SOURCE_PRIORITY: dict[str, int] = {
     "entropy": 3,
     "rule": 4,
     "llm": 5,
+    "gliner": 6,
 }
 _ACTION_PRIORITY: dict[str, int] = {"mask": 0, "generalize": 1, "keep": 2}
 

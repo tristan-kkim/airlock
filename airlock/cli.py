@@ -12,6 +12,7 @@ import httpx
 
 from airlock import __version__
 from airlock.config import Settings, load_settings
+from airlock.detect import gliner
 from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError
 
 Status = Literal["ok", "warn", "fail"]
@@ -115,6 +116,7 @@ async def run_doctor(settings: Settings) -> list[Check]:
     async with httpx.AsyncClient() as client:
         return [
             *await check_local(settings, client),
+            *[Check(*row) for row in gliner.doctor_checks(settings)],
             *await check_upstream(settings, client),
             *await check_tavily(settings, client),
         ]
@@ -151,6 +153,9 @@ def main(argv: list[str] | None = None) -> int:
 
         host = args.host or settings.host
         port = args.port or settings.port
+        if settings.gliner and (problem := gliner.availability_problem(settings)):
+            print(f"error: AIRLOCK_GLINER=on but GLiNER cannot run: {problem}", file=sys.stderr)
+            return 1
         if host not in ("127.0.0.1", "localhost", "::1"):
             print(f"warning: binding to {host}; Airlock should listen on loopback", file=sys.stderr)
         uvicorn.run(

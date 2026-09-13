@@ -15,6 +15,13 @@ dependencies = [
     "uvicorn>=0.52.4",
 ]
 
+[project.optional-dependencies]
+# NVIDIA GLiNER-PII as a second local span proposer (AIRLOCK_GLINER=on). `uv sync --extra gliner`
+gliner = [
+    "gliner>=0.2.29",
+    "torch>=2.4",
+]
+
 [project.scripts]
 airlock = "airlock.cli:main"
 

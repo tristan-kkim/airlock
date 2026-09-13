@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -64,6 +66,9 @@ class Harness:
     # Spans returned whether or not they occur in the draft (simulated hallucinations).
     extra_spans: list[dict[str, str]] = field(default_factory=list)
     rewrite: Callable[[str, str | None], str] = lambda q, c: "generic query"
+    # GLiNER ensemble adjudication: span text -> "yes"/"no" (default: every candidate is private).
+    adjudicate: Callable[[str], str] = lambda span: "yes"
+    adjudication_content: Callable[[str], str] | None = None
     upstream_reply: Callable[[dict[str, Any]], dict[str, Any]] = lambda p: completion("ok")
     tavily_results: list[dict[str, Any]] = field(
         default_factory=lambda: [
@@ -99,6 +104,13 @@ class Harness:
                 ]
                 content = json.dumps({"spans": spans + self.extra_spans}, ensure_ascii=False)
             return httpx.Response(200, json=completion(content, finish_reason=self.local_finish))
+        elif "span adjudicator of Airlock" in system:
+            if self.adjudication_content is not None:
+                content = self.adjudication_content(user)
+            else:
+                found = re.findall(r"^\[(c\d+)\] label=\S+ span=(.+)$", user, flags=re.M)
+                answers = {cid: self.adjudicate(ast.literal_eval(v)) for cid, v in found}
+                content = json.dumps(answers)
         elif "search rewriter" in system:
             data = json.loads(user)
             content = json.dumps({"query": self.rewrite(data["query"], data["private_context"])})
