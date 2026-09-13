@@ -78,6 +78,9 @@ uv run eval/compare.py
 
 # 9. The full published protocol (prints the plan and cost; --yes runs it)
 eval/final_protocol.sh --commit <sha> --gliner both
+
+# 10. Judge model calibration over stored results (see "Judge models")
+uv run eval/calibrate_judges.py --dry-run
 ```
 
 `run.py`, `generate.py` and `mock_airlock.py` carry PEP 723 headers, so `uv run` installs what they
@@ -116,8 +119,12 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 ## Final measurement protocol
 
 `eval/final_protocol.sh` is the protocol for published numbers. It does not start anything
-without `--yes`: it first prints the plan and a cloud call and token estimate
-(`protocol_estimate.py`).
+without `--yes`: it first prints the plan and a cloud call, token and dollar estimate
+(`protocol_estimate.py`, list prices per model), followed by reference projections for
+5 systems at 3 passes, at 2 passes and on a stratified 120-case subset. The scoring roles use the
+models chosen in *Judge models* (`--attack-model`, `--grader-model`, `--judge-model`,
+`--confirm-model` or the `AIRLOCK_*_MODEL` variables override them; `--ultra` puts every role on
+Nemotron 3 Ultra).
 
 ```bash
 eval/final_protocol.sh --commit <sha> --gliner both            # plan and estimate only
@@ -492,8 +499,11 @@ uv run eval/attack.py --rescore eval/results/<run> --grade-situation     # add s
 
 Options: `--passes N` (default 1), `--limit N`, `--category` (repeatable), `--out-name` (another
 subdirectory, for ablations), `--attacker-reasoning` / `--grader-reasoning` (default `none`),
-`--concurrency` (6), `--base-url`, `--model`. The key is `NEBIUS_API_KEY` from the environment or
-the repository `.env`; it is never printed or stored.
+`--concurrency` (6), `--base-url`, `--attack-model` (`AIRLOCK_ATTACK_MODEL`), `--grader-model`
+(`AIRLOCK_GRADER_MODEL`), `--model` (one model for both). Defaults and per-model request
+handling: *Judge models*. `config.json` records `attack_model`, `grader_model`, token usage per
+role and the list-price cost. The key is `NEBIUS_API_KEY` from the environment or the repository
+`.env`; it is never printed or stored.
 
 **Data.** This sends outbound payloads to Token Factory. For the `raw` baseline the payload is the
 full synthetic prompt. That is acceptable only because every value in the dataset is fictional.
@@ -611,7 +621,8 @@ For every chat case in the first N passes:
    rehydration). `--answer-source auto` picks this from the run label; answers are cached in
    `utility/answers_pass_NN.jsonl`. The `raw` baseline sends the same prompt as the reference, so
    its row is the noise floor of sampling plus judging.
-3. **Blind judge.** Nemotron 3 Ultra (`reasoning_effort` none, strict JSON schema) gets the user's
+3. **Blind judge.** The utility judge (`--judge-model`, `AIRLOCK_UTILITY_MODEL`; Nemotron 3 Ultra
+   by default, `reasoning_effort` none, strict JSON schema) gets the user's
    real request, the case's answer notes and the two answers as "Answer 1" and "Answer 2", in a
    random order seeded by system, case and pass, without being told which is the reference. For
    each answer: `usefulness` 1 to 5 against a strict rubric, and binary `distortion`: the answer
@@ -621,7 +632,9 @@ For every chat case in the first N passes:
 4. **Distortion verifier.** In a pilot the one-shot judge sometimes called a placeholder token a
    distortion despite the rubric. Every flagged answer gets a second, focused call that must quote
    the contradicting sentence; the flag stands only if confirmed (the judge's flag is kept as
-   `distortion_judge`). `reasoning_effort: low` fixed the same pilot cases but cost about 5,500
+   `distortion_judge`). The confirmation model is its own role (`--confirm-model`,
+   `AIRLOCK_DISTORTION_CONFIRM_MODEL`). Stored judgments are reused only if the same judge and
+   confirmation models made them; `config.json` records both and the cost per part. `reasoning_effort: low` fixed the same pilot cases but cost about 5,500
    completion tokens per judgment, so it is not the default.
 
 | Metric | Definition |
@@ -640,6 +653,61 @@ scored. Search cases are not judged (a fair reference would need a direct search
 possible, and it applies to both answers); no human calibration; pairwise scores are relative to
 one sampled reference; the reference itself sometimes errs (see `reference_distortion_rate`);
 answers are truncated to 12,000 characters for the judge.
+
+## Judge models (`calibrate_judges.py`)
+
+Four scoring roles call Token Factory, each with its own model:
+
+| Role | Variable | Flag | Used by | Default |
+|---|---|---|---|---|
+| attacker | `AIRLOCK_ATTACK_MODEL` | `--attack-model` | `attack.py` | Nemotron 3 Ultra |
+| intent and situation graders | `AIRLOCK_GRADER_MODEL` | `--grader-model` | `attack.py`, `reframe.py agent` | Nemotron 3 Ultra |
+| utility judge | `AIRLOCK_UTILITY_MODEL` | `--judge-model` | `utility.py`, `reframe.py agent` | Nemotron 3 Ultra |
+| distortion confirmation | `AIRLOCK_DISTORTION_CONFIRM_MODEL` | `--confirm-model` | `utility.py`, `reframe.py agent` | Nemotron 3 Ultra |
+
+The defaults live in `attack.py` (`DEFAULT_ROLE_MODELS`) together with list prices
+(`MODEL_PRICES`). Upstream answers (reference, baseline and Airlock answers) are not a scoring
+role: they stay on the upstream model the system uses.
+
+**Request adapters.** Models differ in what they accept, so `attack.make_llm` builds each request
+through a per-model adapter (`MODEL_ADAPTERS`):
+
+- Nemotron 3 Ultra: strict `json_schema`, `reasoning_effort` as given (`none` by default).
+- Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`): rejects every `reasoning_effort` value
+  and ignores `json_schema` (it answers `match=true`), so it runs in `json_object` mode with the
+  schema in the prompt and thinking switched with `chat_template_kwargs.enable_thinking`.
+- Nemotron 3.5 Lightning and Nemotron 3 Nano 30B: `json_schema` with the same thinking switch
+  (without it, Lightning writes its reasoning into `content`).
+
+Replies are read from `content` only (`reasoning_content` is dropped, as are inline `<think>`
+blocks and leading blank lines), validated locally against the schema, and retried once in JSON
+mode with the errors in the prompt when they do not parse or validate.
+
+**Calibration.** `calibrate_judges.py` re-runs each role with cheaper candidates on a stratified
+sample of stored (system, case) items: the harness and proxy never run, and the stored Ultra
+outputs are the reference, so Ultra is not paid twice. Roles are isolated (a candidate grader
+grades Ultra's stored attacks, a candidate judge sees the exact answer pair and order Ultra saw,
+a candidate confirmation re-checks exactly Ultra's flags), and Ultra re-runs the cheap roles to
+show its own noise. It reports Cohen's kappa, Spearman and mean absolute difference, the change
+in every headline rate per system and pooled, ranking reversals, and tokens and dollars per role
+and model. Calls are cached in `results/judge-calibration/calls.jsonl` and capped by
+`--max-tokens` (2M by default); the estimate prints first and the sample shrinks to fit.
+
+```bash
+uv run eval/calibrate_judges.py --dry-run      # sample and estimate
+uv run eval/calibrate_judges.py --yes          # run
+uv run eval/calibrate_judges.py --report-only  # rebuild results/JUDGE_CALIBRATION.md from the cache
+uv run eval/calibrate_judges.py --roles distortion_confirm --candidates nvidia/Nemotron-3_5-Lightning \
+  --retest-roles --per-stratum 3 --sensitive-extra 0 --tag confirm-lightning --yes  # follow-up
+```
+
+A candidate takes a role only if every headline rate of the role stays within ±3pp of Ultra
+(±0.03 for the utility ratio), pooled and per system, with no ranking reversal. In the study
+(`results/JUDGE_CALIBRATION.md`, 1.72M tokens, about $0.51) no candidate met that bar for any
+role: Super as attacker inferred more situations (+10pp), Super as utility judge confirmed 15pp
+fewer distortions, Lightning as confirmation model moved distortion by -3.5pp on 144 items and by
+-8pp for one system, Nano as grader called 22pp more situations inferred. Ultra therefore stays
+the default everywhere; the cheaper models remain one flag away for pilots and smoke runs.
 
 ## Known limitations
 

@@ -14,8 +14,16 @@
 #   --systems "..."     subset of: raw regex presidio_ko gliner_pii airlock (default: all)
 #   --out DIR           results directory (default eval/results/final-<UTC timestamp>)
 #   --model PATH        local GGUF (default ~/.cache/airlock/models/NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf)
+#   --attack-model M    attacker model (default $AIRLOCK_ATTACK_MODEL or the calibrated default)
+#   --grader-model M    intent + situation grader (default $AIRLOCK_GRADER_MODEL or calibrated)
+#   --judge-model M     utility judge (default $AIRLOCK_UTILITY_MODEL or calibrated)
+#   --confirm-model M   distortion confirmation (default $AIRLOCK_DISTORTION_CONFIRM_MODEL or calibrated)
+#   --ultra             every scoring role on Nemotron 3 Ultra, overriding the environment
 #   --yes               confirm cloud calls (Airlock upstream + Tavily, attacker, judge)
 #   --publish           also write eval/results/COMPARISON.md from this run
+#
+# Scoring role defaults come from eval/results/JUDGE_CALIBRATION.md (eval/attack.py
+# DEFAULT_ROLE_MODELS). The plan prints projected tokens and dollars at list prices before running.
 #
 # Isolation rules this script enforces:
 #   * systems run one after another, never in parallel;
@@ -49,9 +57,17 @@ while [ $# -gt 0 ]; do
     --systems) SYSTEMS="$2"; shift 2 ;;
     --out) OUT="$2"; shift 2 ;;
     --model) MODEL_PATH="$2"; shift 2 ;;
+    --attack-model) export AIRLOCK_ATTACK_MODEL="$2"; shift 2 ;;
+    --grader-model) export AIRLOCK_GRADER_MODEL="$2"; shift 2 ;;
+    --judge-model) export AIRLOCK_UTILITY_MODEL="$2"; shift 2 ;;
+    --confirm-model) export AIRLOCK_DISTORTION_CONFIRM_MODEL="$2"; shift 2 ;;
+    --ultra) ULTRA_MODEL=nvidia/Nemotron-3-Ultra-550b-a55b
+      export AIRLOCK_ATTACK_MODEL="$ULTRA_MODEL" AIRLOCK_GRADER_MODEL="$ULTRA_MODEL" \
+        AIRLOCK_UTILITY_MODEL="$ULTRA_MODEL" AIRLOCK_DISTORTION_CONFIRM_MODEL="$ULTRA_MODEL"
+      shift ;;
     --yes) YES=1; shift ;;
     --publish) PUBLISH=1; shift ;;
-    -h|--help) sed -n '2,27p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -85,8 +101,10 @@ echo "   baselines: ${BASELINE_LIST[*]:-none}"
 echo "   airlock:   ${COMMIT:-not measured} variants: ${VARIANTS[*]:-none}"
 echo "   passes:    $PASSES harness, $SCORING_PASSES attacked and judged"
 echo
+# Role models reach every script through the AIRLOCK_*_MODEL variables exported above.
 uv run --quiet eval/protocol_estimate.py --passes "$PASSES" --judge-passes "$SCORING_PASSES" \
-  --systems ${BASELINE_LIST[@]+"${BASELINE_LIST[@]}"} --airlock-variants "${#VARIANTS[@]}"
+  --systems ${BASELINE_LIST[@]+"${BASELINE_LIST[@]}"} --airlock-variants "${#VARIANTS[@]}" \
+  --projections
 echo
 echo "   Every value in the dataset is synthetic. The raw baseline, the reference answers and the"
 echo "   attacker send those synthetic prompts to Token Factory."
