@@ -404,6 +404,8 @@ def shape_ok(text: str, label: Label, ko_min_syllables: int = 2) -> bool:
     if shape == "secret":
         if _HANGUL.search(t) or len(t) < 6:
             return False
+        if re.fullmatch(r"[A-Za-z]+(?:[_\-.][A-Za-z]+)*", t):
+            return False  # an identifier such as doc_id or api-key, not a value
         return bool(_looks_like_secret(t) or detect_patterns(t) or _password_like(t))
     if shape == "pin":
         return bool(re.fullmatch(r"\d{3,8}", t)) or _digit_shape(t, 6, 0.5) or code_token(t)

@@ -486,6 +486,9 @@ class Sanitizer:
                 if trimmed is not span:
                     d.stats.spans_trimmed += 1
                 span = trimmed
+                if span.type in ("SECRET", "ORG", "ID_NUMBER") and _IDENTIFIER.fullmatch(span.text):
+                    d.stats.llm_dropped_shape += 1
+                    continue  # doc_id, max_tokens: a code identifier, not a private value
                 if span.source == "llm":
                     checked, outcome = check_llm_span(span, text)
                     if checked is None:
@@ -661,9 +664,21 @@ class Sanitizer:
         active = [s for s in spans if s.action != "keep"]
         originals = [s.text for s in active]
 
+        located = locate(text, active)
+        if json_safe:
+            # Never rewrite an object key of tool-call arguments ({"doc_id": ...}): the key is
+            # schema, not data, and a placeholder there breaks the call.
+            keys_only = {
+                id(s)
+                for s in active
+                if (hits := [p for p in located if p.span is s])
+                and all(_is_json_key(text, p.start, p.end) for p in hits)
+            }
+            located = [p for p in located if not _is_json_key(text, p.start, p.end)]
+            active = [s for s in active if id(s) not in keys_only]
         placements = [
             p
-            for p in resolve_overlaps(locate(text, active))
+            for p in resolve_overlaps(located)
             if normalize(text[p.start : p.end]) not in rejected
         ]
         out: list[str] = []
@@ -897,6 +912,19 @@ class Sanitizer:
         if analysis.stats.semantic_cues:
             reasons.append("semantic_cues")
         return reasons
+
+
+_IDENTIFIER = re.compile(r"[a-z]+(?:_[a-z]+)+")
+_JSON_KEY_AFTER = re.compile(r'"\s*:')
+
+
+def _is_json_key(text: str, start: int, end: int) -> bool:
+    return (
+        start > 0
+        and text[start - 1] == '"'
+        and bool(_JSON_KEY_AFTER.match(text, end))
+        and text[max(0, start - 3) : start - 1].strip()[-1:] in ("{", ",", "")
+    )
 
 
 def _snippet(text: str, start: int, end: int, context: int = 24) -> str:

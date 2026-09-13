@@ -635,3 +635,29 @@ def test_unicode_escaped_tool_arguments_are_decoded_before_detection(client, har
     ]
     assert json.loads(sent_args)["recipient_name"] == "<PERSON_1>"
     assert "\\uac15" not in wire and "강채원" not in wire
+
+
+def test_json_keys_of_tool_arguments_are_never_rewritten(client, harness) -> None:
+    """GLiNER once read `doc_id` as an HTTP cookie; a placeholder key breaks the call and the gate
+    then blocks the turn because the tool schema still holds the key."""
+    harness.entities = {"doc_id": ("SECRET", "mask", ""), "Mira Solberg": ("PERSON", "mask", "")}
+    args = json.dumps({"doc_id": "doc-1", "note": "for Mira Solberg"})
+    messages = [
+        {"role": "user", "content": "read it"},
+        {"role": "assistant", "content": None,
+         "tool_calls": [{"id": "c1", "type": "function",
+                         "function": {"name": "read_local_doc", "arguments": args}}]},
+        {"role": "tool", "tool_call_id": "c1", "content": "text"},
+    ]  # fmt: skip
+    r = chat(client, messages)
+    assert r.status_code == 200, r.text
+    sent = harness.upstream_requests[-1]["messages"][-2]["tool_calls"][0]["function"]["arguments"]
+    assert json.loads(sent) == {"doc_id": "doc-1", "note": "for <PERSON_1>"}
+
+
+def test_gliner_secret_shape_rejects_identifiers() -> None:
+    from airlock.detect.gliner import LABELS_BY_NAME, shape_ok
+
+    assert not shape_ok("doc_id", LABELS_BY_NAME["http_cookie"])
+    assert not shape_ok("api-key", LABELS_BY_NAME["password"])
+    assert shape_ok("hunter2!", LABELS_BY_NAME["password"])
