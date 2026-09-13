@@ -64,6 +64,44 @@ Request flow for `POST /v1/chat/completions`:
 5. **Rehydrate.** Placeholders in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
 6. **Audit.** One record per request stores the outbound payloads verbatim, detections as SHA-256 hashes, the gate decision, and timings.
 
+### Optional: NVIDIA GLiNER-PII ensemble
+
+`AIRLOCK_GLINER=on` adds [`nvidia/gliner-PII`](https://huggingface.co/nvidia/gliner-PII) (570M span NER, the NeMo Guardrails PII backend) as a second local proposer. Install it with `uv sync --extra gliner` and point `AIRLOCK_GLINER_MODEL` at the downloaded weights.
+
+```mermaid
+flowchart LR
+    T["Text slots of one request"] --> D["regex / entropy / vault<br/>→ mask → Nano-4B spans<br/>+ Korean rules"]
+    T --> G["GLiNER-PII<br/>34 labels, threshold 0.4<br/>(runs in parallel, CPU)"]
+    D --> A{"Agreement?<br/>overlaps a span from<br/>another source"}
+    G --> A
+    A -->|yes| Accept["accept"]
+    A -->|"GLiNER only"| F{"Type consistency<br/>SECRET: entropy/pattern<br/>phone/ID/account: digit or code shape<br/>PERSON: surname + 3-4 Hangul syllables<br/>or capitalized Latin words<br/>age/date/money text: drop<br/>city, birth date: agreement only"}
+    F -->|fails| Drop["drop (counted)"]
+    F -->|passes| J{"Nano-4B adjudication<br/>one batched call per request<br/>JSON schema, temp 0, thinking off<br/>'private to the user here?'"}
+    J -->|yes| Accept
+    J -->|no| Drop
+    Accept --> R["overlap resolution → vault → gate"]
+```
+
+Why three steps instead of trusting GLiNER:
+
+- **GLiNER has the recall.** Alone on the 243-case eval it leaks 19.0% of cases, against 76.9% for Presidio and 94.0% for regex ([`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)).
+- **It over-masks, most of all in Korean.** It masks 59.3% of benign prompts and loses 14.1% of the strings answers need. It was trained on English only: in `qid-ko-01` the age `마흔다섯` became PASSWORD and the company RELIGIOUS_BELIEF. Airlock drops the labels that drove that (religion, gender, occupation, age, dates, URLs, IPs), and Nano and the Korean rules handle quasi-identifiers with generalizations instead.
+- **Agreement is free precision.** When regex, the rules or Nano already flagged an overlapping span, the second opinion costs nothing and can only widen a mask. A GLiNER span next to a generalization never overrides it.
+- **Type consistency is deterministic and explainable.** A span labeled PASSWORD with no Latin letters and digits, or a phone number with no digits, is a mislabel no matter the score. Korean particles the tokenizer attached (`조유나입니다`, `F8YAXXGS이고`) are trimmed first, and a Korean name under a wrong label (`독고새론` as password) is kept as PERSON.
+- **Local adjudication settles context.** Whether `Tucson` or `Corvenna Systems` is private depends on the sentence. Only GLiNER-only spans that passed the shape check are asked, all in one call with `<TYPE>` tokens in place of pattern values, so requests without such candidates pay nothing. A malformed answer blocks the request, like any local detector failure.
+
+If the package or weights are missing while `AIRLOCK_GLINER=on`, `airlock serve` refuses to start and `airlock doctor` reports it; nothing fails per request. Per-request counters go to `meta.detector` (`gliner_spans`, `gliner_agreed`, `gliner_rejected_mislabel`, `gliner_rejected_shape`, `gliner_remapped`, `gliner_candidates`, `adjudication_calls`, `adjudicated_yes`, `adjudicated_no`, `gliner_ms`, `adjudication_ms`). With GLiNER off these keys are absent and behavior is unchanged.
+
+**Measured** ([`eval/results/ENSEMBLE.md`](eval/results/ENSEMBLE.md)), 1 pass per config on the 171-case test split. Thresholds, shape rules, the adjudication prompt and the variant were chosen on a separate 72-case dev split.
+
+| Test split (70%) | Leak | Canary leak | Quasi re-id | Benign masked | Over-block benign | Over-redaction | Leak ko / en |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| GLiNER off (HEAD detector) | 26.3% | 14.1% | 38.9% | 0.0% | 0.0% | 14.1% | 26.0% / 26.7% |
+| GLiNER ensemble (default) | 11.2% | 1.0% | 27.8% | 21.1% | 10.5% | 15.5% | 13.0% / 9.3% |
+
+Over all 243 cases, an LLM attacker reading only the outbound payloads recovers 1.0% of planted values with the ensemble, against 9.9% without it. The cost is real: 4 of 19 benign test prompts get a mask, and 2 benign searches are blocked because the local rewrite kept an organization GLiNER flagged. GLiNER adds p50 457 ms / p95 635 ms of CPU inference, run in parallel with Nano. The adjudication call is needed in 28% of chat requests and then takes p50 1.7 s / p95 2.2 s. Local latency across runs was contaminated by other models sharing the laptop.
+
 ## Quickstart
 
 Requirements: macOS or Linux, Python 3.12, [uv](https://docs.astral.sh/uv/), [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`).
@@ -115,6 +153,7 @@ Airlock is built around a division of labour between two NVIDIA open models.
 | Role | Model | Where it runs | Why this model |
 |---|---|---|---|
 | Privacy detector, search rewriter, result re-ranker | **NVIDIA Nemotron-3-Nano-4B** (`nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF`, Q4_K_M) | On your machine via llama.cpp | Small enough to run on a laptop, and it follows a JSON schema reliably. It sees private text (with pattern-detected secrets already masked), so it must never leave the device. Reasoning is disabled per request (`chat_template_kwargs.enable_thinking=false`) to keep latency low. |
+| Optional second PII proposer | **NVIDIA GLiNER-PII** (`nvidia/gliner-PII`) | On your machine (PyTorch, CPU by default) | High recall on names, IDs and secrets, including many Korean spans. Its over-masking is filtered by agreement, type checks and a Nano adjudication call (see the ensemble section). |
 | Reasoning over the sanitized request | **NVIDIA Nemotron 3 Ultra** (`nvidia/Nemotron-3-Ultra-550b-a55b`) | **Nebius Token Factory** (OpenAI-compatible API) | A frontier-class open model for the real task. It only ever receives placeholders and generalizations, and it keeps `<PERSON_1>`-style placeholders intact, including in Korean output. |
 | Fallback | **NVIDIA Nemotron 3 Super** (`nvidia/nemotron-3-super-120b-a12b`) | Nebius Token Factory | Used once, automatically, when Ultra returns 5xx or is unavailable. `reasoning_effort` is dropped for this model because it rejects that field. Its `reasoning_content` is hidden from clients unless they opt in. |
 
@@ -146,6 +185,14 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_REVIEW` | `never` | `always`, `uncertain` or `never`: when to stop and ask for confirmation (see review mode) |
 | `AIRLOCK_LOCAL_TIMEOUT_S` | `30` | Local detector timeout; a timeout blocks the request |
 | `AIRLOCK_CANARIES` | none | Comma-separated tripwire strings that must never leave |
+| `AIRLOCK_GLINER` | `off` | `on` adds the NVIDIA GLiNER-PII ensemble (needs `uv sync --extra gliner`) |
+| `AIRLOCK_GLINER_MODEL` | `nvidia/gliner-PII` | Local weights directory or an already-cached Hub id (falls back to `GLINER_PII_MODEL`); never downloaded at runtime |
+| `AIRLOCK_GLINER_THRESHOLD` | `0.4` | Score threshold for every label |
+| `AIRLOCK_GLINER_THRESHOLDS` | none | Per-label overrides, e.g. `city=0.6,first_name=0.5` |
+| `AIRLOCK_GLINER_DEVICE` | `cpu` | `cpu`, `mps` or `cuda`. On an M3 Pro, `mps` is faster alone but slower while Nano decodes on Metal |
+| `AIRLOCK_GLINER_ADJUDICATE` | `on` | Ask the local model about GLiNER-only spans; `off` accepts every span that passes the shape check |
+| `AIRLOCK_GLINER_AGREEMENT_ONLY` | `city,date_of_birth` | Labels whose GLiNER-only spans are dropped; only agreement with another source confirms them. Empty adjudicates every label |
+| `AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES` | `3` | Shortest Hangul name GLiNER may add on its own |
 | `AIRLOCK_HOST` / `AIRLOCK_PORT` | `127.0.0.1` / `8787` | Bind address |
 | `AIRLOCK_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Accepted `Host` headers (DNS-rebinding protection); `*` disables |
 
@@ -290,6 +337,7 @@ airlock/
   detect/llm.py     local model client + LLM span detector (fail-closed errors)
   detect/patterns.py Korean-aware PII regexes, secret patterns, entropy check
   detect/ko_rules.py deterministic Korean/English semantic rules (quasi-identifiers, health, orgs, names)
+  detect/gliner.py  NVIDIA GLiNER-PII wrapper and ensemble policy (agreement, type checks, adjudication)
   detect/verify.py  grounding check for model spans, generalization leak check
   detect/spans.py   span model, term matching, overlap resolution
   placeholders.py   <TYPE_N> syntax, lenient matching for rehydration
@@ -304,7 +352,7 @@ airlock/
   audit.py          audit records (hashes only)
   server.py         FastAPI app
   cli.py            `airlock serve`, `airlock doctor`
-  prompts/          detector, search rewrite and re-rank prompts
+  prompts/          detector, adjudication, search rewrite and re-rank prompts
   static/index.html demo UI
 scripts/local_model/  llama.cpp serving for the local model
 eval/                 synthetic evaluation set and harness

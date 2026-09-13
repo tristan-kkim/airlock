@@ -9,9 +9,10 @@ steps, applied only to GLiNER's spans:
    rules, Nano) is accepted. If it lies entirely inside that span it adds nothing and is only
    counted.
 2. Type consistency. A GLiNER-only span must look like its type: SECRET needs the entropy or a
-   password/key pattern, phone/ID/account labels need a digit shape, PERSON needs a name shape
-   (2-4 Hangul syllables starting with a common surname, or capitalized Latin words), and
-   age-, date- or money-like text under any other label is dropped as a mislabel.
+   password/key pattern, phone/ID/account labels need a digit or code shape, PERSON needs a
+   name shape (a common surname plus 3-4 Hangul syllables by default, or capitalized Latin
+   words), and age-, date- or money-like text under any other label is dropped as a mislabel.
+   Labels in AIRLOCK_GLINER_AGREEMENT_ONLY (default: city, date_of_birth) stop here.
 3. Local adjudication. Survivors go to Nemotron-3-Nano-4B in one batched call per request: "is
    each span private to the user in this context?", JSON schema, temperature 0, thinking off.
    Only "yes" is accepted.
