@@ -1,6 +1,6 @@
 {
   "reframe_version": "1.0.0",
-  "source_run": "/Users/tristan/worktrees/airlock-agent/eval/agent/results/20260913T174153Z",
+  "source_run": "./eval/agent/results/20260913T174153Z",
   "passes": 3,
   "modes": {
     "unguarded": {
@@ -2570,7 +2570,7 @@
   ],
   "config": {
     "reframe_version": "1.0.0",
-    "source_run": "/Users/tristan/worktrees/airlock-agent/eval/agent/results/20260913T174153Z",
+    "source_run": "./eval/agent/results/20260913T174153Z",
     "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
     "runs": [
       {

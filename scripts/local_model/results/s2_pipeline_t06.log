@@ -100,7 +100,7 @@
 [s2_pipeline_t06 r2] en15  ok=True full=0/0 fp=0 total=0.37s 
 [s2_pipeline_t06 r2] en16  ok=True full=7/7 fp=0 total=4.09s 
 [s2_pipeline_t06 r2] en17  ok=True full=2/2 fp=0 total=2.79s 
-wrote /Users/tristan/Projects/cortexys-contents/devpost/airlock/scripts/local_model/results/s2_pipeline_t06.jsonl
+wrote ./scripts/local_model/results/s2_pipeline_t06.jsonl
 
 ## s2_pipeline_t06  (102 requests)
 - JSON parse ok: 97/102

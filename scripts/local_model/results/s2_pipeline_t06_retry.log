@@ -100,7 +100,7 @@
 [s2_pipeline_t06_retry r2] en15  ok=True full=0/0 fp=0 total=0.60s 
 [s2_pipeline_t06_retry r2] en16  ok=True full=7/7 fp=0 total=6.76s 
 [s2_pipeline_t06_retry r2] en17  ok=True full=1/2 fp=0 total=1.07s 
-wrote /Users/tristan/Projects/cortexys-contents/devpost/airlock/scripts/local_model/results/s2_pipeline_t06_retry.jsonl
+wrote ./scripts/local_model/results/s2_pipeline_t06_retry.jsonl
 
 ## s2_pipeline_t06_retry  (102 requests)
 - JSON parse ok: 102/102
