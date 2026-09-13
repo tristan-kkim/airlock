@@ -1,0 +1,27 @@
+{
+  "attack_version": "1.0.0",
+  "results_dir": "ensemble-B-gliner",
+  "target_label": "airlock 685d3c7 AIRLOCK_GLINER=on (threshold 0.4, cpu, adjudication on)",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "estimate": {
+    "attacker_calls": 229,
+    "grader_calls": 21,
+    "prompt_tokens_est": 163189,
+    "completion_tokens_max": 347700
+  },
+  "started_at": "2026-09-13T19:46:58.651829+00:00",
+  "usage": {
+    "prompt_tokens": 169626,
+    "completion_tokens": 60791
+  },
+  "finished_at": "2026-09-13T19:48:58.044570+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

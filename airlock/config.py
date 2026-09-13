@@ -32,6 +32,10 @@ DEFAULT_UPSTREAM_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 # Used once when the primary model returns 5xx or reports itself unavailable.
 DEFAULT_UPSTREAM_FALLBACK_MODEL = "nvidia/nemotron-3-super-120b-a12b"
 DEFAULT_TAVILY_BASE_URL = "https://api.tavily.com"
+# NVIDIA GLiNER-PII (optional second span proposer): a local directory or a cached Hub id.
+DEFAULT_GLINER_MODEL = "nvidia/gliner-PII"
+DEFAULT_GLINER_THRESHOLD = 0.4
+DEFAULT_GLINER_AGREEMENT_ONLY = "city,date_of_birth"
 
 
 def _bool(value: str | None, default: bool) -> bool:
@@ -77,6 +81,19 @@ class Settings:
     review_mode: ReviewMode = ReviewMode.NEVER
     review_ttl_s: float = 600.0
     canaries: tuple[str, ...] = field(default_factory=tuple)
+
+    # GLiNER ensemble (airlock.detect.gliner). Off by default; needs `uv sync --extra gliner`.
+    gliner: bool = False
+    gliner_model: str = DEFAULT_GLINER_MODEL
+    # cpu: GLiNER on Metal competes with the local model; see airlock.detect.gliner.pick_device.
+    gliner_device: str = "cpu"  # cpu | mps | cuda | auto
+    gliner_threshold: float = DEFAULT_GLINER_THRESHOLD
+    gliner_thresholds: str = ""  # per-label overrides: "first_name=0.6,password=0.8"
+    gliner_adjudicate: bool = True  # ask the local model about GLiNER-only spans
+    # Chosen on the eval dev split (variant B1): GLiNER-only cities and birth dates had the worst
+    # adjudicated precision, and 2-syllable Hangul "names" were mostly common words.
+    gliner_agreement_only: str = DEFAULT_GLINER_AGREEMENT_ONLY  # accepted only with agreement
+    gliner_ko_name_min_syllables: int = 3  # Hangul names accepted from GLiNER alone
 
     host: str = "127.0.0.1"
     port: int = 8787
@@ -140,6 +157,19 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         protection_level=level,
         review_mode=review,
         canaries=canaries,
+        gliner=_bool(env.get("AIRLOCK_GLINER"), False),
+        gliner_model=(
+            env.get("AIRLOCK_GLINER_MODEL") or env.get("GLINER_PII_MODEL") or DEFAULT_GLINER_MODEL
+        ),
+        gliner_device=(env.get("AIRLOCK_GLINER_DEVICE") or "cpu").strip().lower(),
+        gliner_threshold=_float(env.get("AIRLOCK_GLINER_THRESHOLD"), DEFAULT_GLINER_THRESHOLD),
+        gliner_thresholds=env.get("AIRLOCK_GLINER_THRESHOLDS") or "",
+        gliner_adjudicate=_bool(env.get("AIRLOCK_GLINER_ADJUDICATE"), True),
+        # Set AIRLOCK_GLINER_AGREEMENT_ONLY to an empty string to adjudicate every label.
+        gliner_agreement_only=env.get(
+            "AIRLOCK_GLINER_AGREEMENT_ONLY", DEFAULT_GLINER_AGREEMENT_ONLY
+        ),
+        gliner_ko_name_min_syllables=int(env.get("AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES") or 3),
         host=env.get("AIRLOCK_HOST") or "127.0.0.1",
         port=int(env.get("AIRLOCK_PORT") or 8787),
         allowed_hosts=tuple(

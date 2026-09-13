@@ -132,11 +132,14 @@ class LocalModel:
         *,
         max_tokens: int = 512,
         retries: int = 1,
+        temperature: float | None = None,
     ) -> Any:
         body: dict[str, Any] = {
             "model": self.settings.local_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            "temperature": self.settings.local_temperature,
+            "temperature": (
+                self.settings.local_temperature if temperature is None else temperature
+            ),
             "top_p": self.settings.local_top_p,
             "max_tokens": max_tokens,
             "stream": False,

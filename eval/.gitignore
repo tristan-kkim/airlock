@@ -4,3 +4,7 @@ results/*
 !results/baseline-*/
 !results/COMPARISON.md
 results/*.server.log
+!results/ensemble-*/
+!results/ensemble-split.json
+!results/ENSEMBLE.md
+results/ensemble-*.server.log
