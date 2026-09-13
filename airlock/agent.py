@@ -108,6 +108,10 @@ SEARCH_BLOCKED_NOTE = (
     "web_search was withheld by the user's privacy firewall: the query would reveal private "
     "details. Continue without it, or search for a more general topic."
 )
+RESULTS_WITHHELD_NOTE = (
+    "These web_search results were withheld by the user's privacy firewall because they "
+    "contained a private value. Continue without them."
+)
 DOC_CHARS = 12000
 RESULT_CHARS = 500
 
@@ -248,7 +252,14 @@ class AgentRunner:
         by_id = {d.doc_id: d for d in docs}
         read: set[str] = set()
         detections: list[Detection] = []
-        counts = {"searches": 0, "search_rewritten": 0, "search_allowed": 0, "search_blocked": 0}
+        counts = {
+            "searches": 0,
+            "search_rewritten": 0,
+            "search_allowed": 0,
+            "search_blocked": 0,
+            "results_withheld": 0,
+        }
+        web_results: set[str] = set()  # tool_call_ids whose content is inbound web content
         record.meta.update(
             {
                 "run_id_hmac": self.hasher(run_id),
@@ -290,7 +301,9 @@ class AgentRunner:
                 # -- sanitize + gate the planning turn ---------------------------------------
                 if guard:
                     try:
-                        payload, protected, extra, found = await self._sanitize_turn(body, session)
+                        payload, protected, extra, found = await self._sanitize_turn(
+                            body, session, web_results, counts
+                        )
                     except LocalModelError as exc:
                         reasons = [block_reason(exc)]
                         event = EgressEvent("upstream", kind, None, step)
@@ -458,6 +471,7 @@ class AgentRunner:
                             counts,
                         )
                         yield search_event
+                        web_results.add(call["id"])
                     else:
                         output = f"error: unknown tool {name!r}"
                     messages.append({"role": "tool", "tool_call_id": call["id"], "content": output})
@@ -507,26 +521,30 @@ class AgentRunner:
         }
 
     async def _sanitize_turn(
-        self, body: dict[str, Any], session: VaultSession
+        self,
+        body: dict[str, Any],
+        session: VaultSession,
+        web_results: set[str] | None = None,
+        counts: dict[str, int] | None = None,
     ) -> tuple[dict[str, Any], list[Any], list[str], list[Detection]]:
-        """Sanitize the whole history; converge once if a value was masked in only some slots.
+        """Sanitize the whole history; converge if a known value survived in some slots.
 
         Detection runs per text slot. A turn with several new tool results can hold a value that
         was detected in one document but missed in another, or a name that lost overlap
         resolution to a longer span in one document and appears alone in another. The gate
-        would block such a turn. One more pass masks every known original in every slot: the
-        vault mappings created by the first pass, plus each protected original as an added span
-        (no second model call). The gate still decides on the final payload.
+        would block such a turn. The second pass reuses this turn's analysis and adds every
+        protected original as a span, so each one is masked in every slot (no second model
+        call).
+
+        If known values still remain and every message that holds them is a web search result
+        (public inbound content, where for example the gate decodes an encoded URL the masker
+        cannot see), those results are withheld from the history and the turn is rebuilt.
+        Documents, the question and the model's own messages are never dropped: those turns
+        stay blocked. The gate still decides on the final payload.
         """
         analysis = await self.sanitizer.analyze_chat(body, session)
         sanitized = self.sanitizer.build_chat(body, analysis, session)
-        first = gate.check(
-            sanitized.payload,
-            sanitized.protected,
-            hasher=self.hasher,
-            extra_reasons=sanitized.extra_reasons,
-        )
-        if not first.allowed and all(r.startswith("vault_original:") for r in first.reasons):
+        if self._only_known_values_block(sanitized):
             known = [
                 Span(text=p.text, type=p.type, source="vault")
                 for p in sanitized.protected
@@ -535,11 +553,41 @@ class AgentRunner:
             # Reuse this turn's analysis: a fresh one would query the local model again on
             # differently masked text and could surface new spans after other slots were built.
             sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
+            if self._only_known_values_block(sanitized) and web_results:
+                offenders = [
+                    i
+                    for i, msg in enumerate(sanitized.payload.get("messages") or [])
+                    if not gate.check(msg, sanitized.protected, hasher=self.hasher).allowed
+                ]
+                local = body["messages"]
+                if offenders and all(
+                    i < len(local)
+                    and local[i].get("role") == "tool"
+                    and local[i].get("tool_call_id") in web_results
+                    for i in offenders
+                ):
+                    for i in offenders:
+                        local[i]["content"] = RESULTS_WITHHELD_NOTE
+                        if counts is not None:
+                            counts["results_withheld"] += 1
+                    analysis = await self.sanitizer.analyze_chat(body, session)
+                    sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
         return (
             sanitized.payload,
             sanitized.protected,
             sanitized.extra_reasons,
             sanitized.detections,
+        )
+
+    def _only_known_values_block(self, sanitized: Any) -> bool:
+        decision = gate.check(
+            sanitized.payload,
+            sanitized.protected,
+            hasher=self.hasher,
+            extra_reasons=sanitized.extra_reasons,
+        )
+        return not decision.allowed and all(
+            r.startswith("vault_original:") for r in decision.reasons
         )
 
     def _hop_event(

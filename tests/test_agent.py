@@ -565,3 +565,49 @@ def test_name_inside_a_longer_span_in_one_document_is_masked_alone_in_another(
     assert final_of(events)["status"] == "finished"
     wire = b"".join(agent.h.upstream_raw).decode()
     assert "Solberg" not in wire
+
+
+def test_search_result_holding_an_undecodable_private_value_is_withheld(
+    make_agent_client, agent
+) -> None:
+    """The gate decodes a percent-encoded URL the masker cannot see: drop that result only."""
+    agent.h.tavily_results = [
+        {
+            "title": "Profile",
+            "url": "https://people.example/Daniel%20Okafor",
+            "content": "a public page",
+            "score": 0.5,
+        }
+    ]
+    seen = []
+
+    def finish(payload):
+        seen.append(payload)
+        return tool_reply(call("finish", {"answer": "ok"}))
+
+    agent.h.upstream_reply = script(*STANDARD[:3], finish)
+    client = make_agent_client()
+    events = run_events(client)
+    final = final_of(events)
+    assert final["status"] == "finished"
+    assert final["results_withheld"] == 1
+    assert seen[0]["messages"][-1]["content"].startswith("These web_search results were withheld")
+    assert all("Okafor" not in raw.decode() for raw in agent.h.upstream_raw)
+
+
+def test_document_holding_an_undecodable_private_value_still_blocks(
+    make_agent_client, agent
+) -> None:
+    agent.h.upstream_reply = script(*STANDARD)
+    client = make_agent_client()
+    docs = [("notice.md", DOC), ("links.md", "See https://people.example/Daniel%20Okafor")]
+    agent.h.upstream_reply = script(
+        tool_reply(
+            call("read_local_doc", {"doc_id": "doc-1"}, 1),
+            call("read_local_doc", {"doc_id": "doc-2"}, 2),
+        ),
+        tool_reply(call("finish", {"answer": "ok"})),
+    )
+    events = run_events(client, docs=docs)
+    assert final_of(events)["status"] == "blocked"
+    assert all("Okafor" not in raw.decode() for raw in agent.h.upstream_raw)
