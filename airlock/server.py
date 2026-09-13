@@ -19,6 +19,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from airlock import __version__, gate
+from airlock.agent_settings import AgentSettings
 from airlock.audit import AuditLog, AuditRecord
 from airlock.config import ReviewMode, Settings, load_settings
 from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError, block_reason
@@ -270,7 +271,10 @@ async def relay_stream(
 
 
 def create_app(
-    settings: Settings | None = None, *, transport: httpx.AsyncBaseTransport | None = None
+    settings: Settings | None = None,
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+    agent_settings: AgentSettings | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     services = build_services(settings, transport)
@@ -576,5 +580,11 @@ def create_app(
         services.sanitizer.detector.clear_cache()
         services.reviews.clear()
         return {"reset": True, **services.vault.reset()}
+
+    # Agent mode (egress firewall for tool calls and web search): airlock/agent_api.py
+    from airlock.agent_api import add_agent_routes
+    from airlock.agent_settings import load_agent_settings
+
+    add_agent_routes(app, services, agent_settings or load_agent_settings())
 
     return app

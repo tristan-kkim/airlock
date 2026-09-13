@@ -129,6 +129,65 @@ def _print_checks(settings: Settings, checks: list[Check]) -> int:
     return 1 if failed else 0
 
 
+def _short(text: object, limit: int = 160) -> str:
+    flat = " ".join(str(text or "").split())
+    return flat if len(flat) <= limit else flat[: limit - 1] + "…"
+
+
+def print_agent_event(event: dict, out=sys.stdout) -> None:
+    """Human-readable trace line. Local-only: may show originals (never forwarded)."""
+    kind = event.get("type")
+    if kind == "run_started":
+        print(f"run {event['run_id']} · {len(event['docs'])} local doc(s)", file=out)
+    elif kind == "hop" and event.get("destination") == "upstream":
+        new = event.get("outbound") or []
+        preview = _short(new[-1].get("content") if new else "")
+        print(
+            f"  [{event['step']}] → Ultra  {event['decision']:<9} {event['kind']:<11} {preview}",
+            file=out,
+        )
+    elif kind == "hop":
+        sent = _short(event.get("outbound_query"), 70) or "(nothing)"
+        local = _short(event.get("local_query"), 70)
+        print(
+            f"  [{event['step']}] → Tavily {event['decision']:<9} local: {local}  sent: {sent}",
+            file=out,
+        )
+    elif kind == "tool":
+        print(
+            f"  [{event['step']}]   local  {event['name']} {_short(event.get('summary', ''))}",
+            file=out,
+        )
+    elif kind == "error":
+        print(f"  error: {event.get('message')}", file=out)
+    elif kind == "final":
+        print(f"\n{event['status']} after {event['steps']} step(s)\n\n{event['answer']}", file=out)
+    elif kind == "done":
+        print(f"\naudit: GET /audit/{event['request_id']}", file=out)
+
+
+async def run_agent_cli(
+    settings: Settings, question: str, docs_dir: str, max_steps: int | None
+) -> int:
+    from airlock.agent import load_docs_dir
+    from airlock.agent_api import build_agent_runner
+    from airlock.agent_settings import load_agent_settings
+    from airlock.server import build_services
+
+    services = build_services(settings)
+    try:
+        runner = build_agent_runner(services, load_agent_settings())
+        docs = load_docs_dir(docs_dir) if docs_dir else []
+        status = "error"
+        async for event in runner.events(question, docs, guard=True, max_steps=max_steps):
+            print_agent_event(event)
+            if event["type"] == "final":
+                status = event["status"]
+        return 0 if status == "finished" else 1
+    finally:
+        await services.aclose()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="airlock", description="Local privacy airlock for cloud AI"
@@ -142,6 +201,11 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--reload", action="store_true", help="auto-reload (development)")
 
     sub.add_parser("doctor", help="check the local model, upstream key and Tavily key")
+
+    agent = sub.add_parser("agent", help="run the private research agent on local documents")
+    agent.add_argument("question", help="what to research")
+    agent.add_argument("--docs", default="", help="directory of .md/.txt files (stay local)")
+    agent.add_argument("--max-steps", type=int, default=None, help="planning turns (max 16)")
 
     args = parser.parse_args(argv)
     settings = load_settings()
@@ -159,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "doctor":
         return _print_checks(settings, asyncio.run(run_doctor(settings)))
+    if args.command == "agent":
+        return asyncio.run(run_agent_cli(settings, args.question, args.docs, args.max_steps))
     return 2
 
 
