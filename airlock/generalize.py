@@ -116,6 +116,36 @@ def birth_year(text: str) -> int | None:
     return d.year if d else None
 
 
+_DOB_DATE = re.compile(
+    r"(?:생년월일|\bDOB\b|\bD\.O\.B\.?|date of birth|birth\s*date|birthday|\bborn(?:\s+on)?)"
+    r"\s*(?:is|was|:|-)?\s*(?P<date>(?:19|20)\d{2}\s*[-./년]\s*\d{1,2}\s*[-./월]\s*\d{1,2}(?:\s*일)?"
+    r"|\d{1,2}[/.]\d{1,2}[/.](?:19|20)\d{2}"
+    r"|(?:" + "|".join(_MONTHS) + r")[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+(?:19|20)\d{2})",
+    re.IGNORECASE,
+)
+
+
+def birth_dates(text: str) -> list[Span]:
+    """Exact birth dates next to their label ("DOB 1953-01-15"), masked as DATE_OF_BIRTH.
+
+    Deterministic, so a birth date does not depend on the local model noticing it (a dev run of
+    `hlt-en-08` sent "DOB 1953-01-15" when the model proposed nothing there). A placeholder, not
+    a birth decade: a form the user fills in gets the real date back after rehydration.
+    """
+    return [
+        Span(
+            text=m.group("date"),
+            type="DATE_OF_BIRTH",
+            source="rule",
+            start=m.start("date"),
+            end=m.end("date"),
+            rule="birth_date",
+        )
+        for m in _DOB_DATE.finditer(text)
+        if birth_year(m.group("date"))
+    ]
+
+
 def age_from_birth(born: date, today: date | None = None) -> int:
     today = today or date.today()
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))

@@ -263,3 +263,28 @@ def test_rehydrated_answer_uses_the_new_rules_end_to_end(client, harness) -> Non
     assert r.status_code == 200, r.text
     assert "$612.40" in json.dumps(sent(harness))
     assert r.json()["choices"][0]["message"]["content"] == "Card ending in 5448."
+
+
+# ---- deterministic backstops for values the local model missed on dev ----------------------------
+
+
+def test_seed_phrase_is_a_secret_without_the_local_model() -> None:
+    text = "Wallet won't restore from this seed phrase: \"orbit cactus harbor hazel hazel tundra "
+    text += 'meadow dynamo ember anchor dynamo velvet". Did I get the order wrong?'
+    [span] = [s for s in detect_patterns(text) if s.rule == "seed_phrase"]
+    assert span.text.startswith("orbit cactus") and span.text.endswith("dynamo velvet")
+    assert not [s for s in detect_patterns("Why is a seed phrase safer than a password?")]
+
+
+def test_labeled_birth_date_is_masked_without_the_local_model(client, harness) -> None:
+    r = chat(client, "My mother (DOB 1953-01-15) was diagnosed with breast cancer. Explain.")
+    assert r.status_code == 200, r.text
+    messages = sent(harness)
+    assert "(DOB <DATE_OF_BIRTH_1>)" in messages[-1]["content"]
+    assert "<DATE_OF_BIRTH_n> is a date of birth" in messages[0]["content"]
+    assert [s.text for s in generalize.birth_dates("생년월일: 1990년 3월 2일이야")] == [
+        "1990년 3월 2일"
+    ]
+    assert generalize.birth_dates("결제일 2026-03-02, born on March 3, 1987")[0].text == (
+        "March 3, 1987"
+    )

@@ -114,6 +114,7 @@ TYPE_LEGEND = {
     "LOCATION": "an address or place",
     "HEALTH": "a health detail",
     "QUASI_IDENTIFIER": "an identifying personal detail",
+    "DATE_OF_BIRTH": "a date of birth",
     "CANARY": "a private marker",
 }
 
@@ -437,7 +438,7 @@ class Sanitizer:
         """Candidate spans for one text. Raises LocalModelError if the local model fails."""
         det, stats = self.deterministic(text, session)
         stats.texts = 1
-        rules = detect_rules(text) + org_rules.en_orgs(text)
+        rules = detect_rules(text) + org_rules.en_orgs(text) + generalize.birth_dates(text)
         stats.rule_spans = len(rules)
         stats.semantic_cues = sum(1 for s in rules if s.type in ("QUASI_IDENTIFIER", "HEALTH"))
 

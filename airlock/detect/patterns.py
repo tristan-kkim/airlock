@@ -207,6 +207,19 @@ RULES: tuple[Rule, ...] = (
         priority=11,
     ),
     Rule(
+        # A wallet recovery phrase: 12 to 24 lower-case words after its name.
+        "seed_phrase",
+        "SECRET",
+        re.compile(
+            r"(?:(?:seed|recovery|mnemonic|backup|secret)\s+(?:phrase|words)|mnemonic|"
+            r"시드\s*(?:문구|구문)|복구\s*(?:문구|구문)|니모닉)"
+            r"[^\n\"'“‘]{0,20}?[\"'“‘]?((?:[a-z]{3,8}\s+){11,23}[a-z]{3,8})(?![a-z])",
+            re.IGNORECASE,
+        ),
+        group=1,
+        priority=12,
+    ),
+    Rule(
         "password_phrase",
         "SECRET",
         re.compile(
