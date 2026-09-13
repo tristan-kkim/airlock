@@ -490,3 +490,45 @@ def test_search_guard_local_rewriter_down_blocks_only_the_search(make_agent_clie
     assert hop["decision"] == "block"
     assert hop["reasons"] == ["local_rewriter_unavailable:LocalModelUnavailable"]
     assert agent.h.tavily_requests == []
+
+
+def test_value_detected_in_one_document_is_masked_in_all_documents_of_the_turn(
+    make_agent_client, agent
+) -> None:
+    """The detector finds the name only in the letter, not in the note read in the same turn."""
+    agent.h.entities = {}
+    agent.h.local_content = lambda user: json.dumps(
+        {
+            "spans": [
+                {"text": "Zed Quillfeather", "type": "PERSON", "action": "mask", "replacement": ""}
+            ]
+        }  # fmt: skip
+        if "Dear Zed Quillfeather" in user
+        else {"spans": []}
+    )
+    agent.h.upstream_reply = script(
+        tool_reply(
+            call("read_local_doc", {"doc_id": "doc-1"}, 1),
+            call("read_local_doc", {"doc_id": "doc-2"}, 2),
+        ),
+        tool_reply(call("finish", {"answer": "ok <PERSON_1>"})),
+    )  # fmt: skip
+    client = make_agent_client()
+    docs = [
+        ("a.md", "Dear Zed Quillfeather, your role ends."),
+        ("b.md", "Zed Quillfeather signed."),
+    ]
+    events = run_events(client, docs=docs)
+    assert final_of(events)["status"] == "finished"
+    assert final_of(events)["answer"] == "ok Zed Quillfeather"
+    wire = b"".join(agent.h.upstream_raw).decode()
+    assert "Quillfeather" not in wire
+    assert "<PERSON_1> signed." in wire
+
+
+def test_truncated_finish_arguments_are_salvaged() -> None:
+    from airlock.agent import salvage_answer
+
+    assert salvage_answer('{"answer": "Line one\\nLine \\"two\\"') == 'Line one\nLine "two"'
+    assert salvage_answer('{"answer": "complete"}') == "complete"
+    assert salvage_answer("{}") == ""

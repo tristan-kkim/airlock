@@ -26,7 +26,8 @@ class AgentSettings:
     max_steps: int = 8
     # reasoning_effort for the planning model; "none" keeps turns fast and tool calls reliable.
     reasoning_effort: str | None = "none"
-    max_tokens: int = 2000
+    # Long final answers arrive inside finish() arguments; a low cap truncates their JSON.
+    max_tokens: int = 6000
     search_max_results: int = 5
     # Intent judge for rewritten search queries.
     search_judge: JudgeMode = "nano"

@@ -37,6 +37,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
+from airlock import gate
 from airlock.agent_settings import AgentSettings
 from airlock.audit import AuditLog, AuditRecord
 from airlock.config import Settings
@@ -288,7 +289,7 @@ class AgentRunner:
                 # -- sanitize + gate the planning turn ---------------------------------------
                 if guard:
                     try:
-                        sanitized = await self.sanitizer.sanitize_chat(body, session)
+                        payload, protected, extra, found = await self._sanitize_turn(body, session)
                     except LocalModelError as exc:
                         reasons = [block_reason(exc)]
                         event = EgressEvent("upstream", kind, None, step)
@@ -298,10 +299,7 @@ class AgentRunner:
                             record, step, kind, "block", reasons, [], messages, prev_local
                         )
                         break
-                    payload = sanitized.payload
-                    detections += sanitized.detections
-                    protected = sanitized.protected
-                    extra = sanitized.extra_reasons
+                    detections += found
                 else:
                     payload = {"model": self.settings.upstream_model, **copy.deepcopy(body)}
                     protected, extra = [], []
@@ -411,7 +409,9 @@ class AgentRunner:
                         args = {}
                     name = call["name"]
                     if name == "finish":
-                        answer = str(args.get("answer") or content or "").strip()
+                        answer = str(
+                            args.get("answer") or salvage_answer(call["arguments"]) or content or ""
+                        ).strip()
                         messages.append(
                             {"role": "tool", "tool_call_id": call["id"], "content": "done"}
                         )
@@ -504,6 +504,33 @@ class AgentRunner:
             "request_id": record.request_id,
             "audit": audit_data,
         }
+
+    async def _sanitize_turn(
+        self, body: dict[str, Any], session: VaultSession
+    ) -> tuple[dict[str, Any], list[Any], list[str], list[Detection]]:
+        """Sanitize the whole history; converge once if a value was detected in only some slots.
+
+        Detection runs per text slot, and a new mapping reaches other slots only on the next
+        sanitization. A turn with several new tool results can therefore hold a value that was
+        masked in one document but missed in another, which the gate would block. One more pass
+        applies this turn's mappings to every slot (the detector cache makes it cheap). The gate
+        still decides on the final payload.
+        """
+        sanitized = await self.sanitizer.sanitize_chat(body, session)
+        first = gate.check(
+            sanitized.payload,
+            sanitized.protected,
+            hasher=self.hasher,
+            extra_reasons=sanitized.extra_reasons,
+        )
+        if not first.allowed and all(r.startswith("vault_original:") for r in first.reasons):
+            sanitized = await self.sanitizer.sanitize_chat(body, session)
+        return (
+            sanitized.payload,
+            sanitized.protected,
+            sanitized.extra_reasons,
+            sanitized.detections,
+        )
 
     def _hop_event(
         self,
@@ -646,6 +673,24 @@ class AgentRunner:
             events=events,
             audit=done.get("audit"),
         )
+
+
+_ANSWER_START = re.compile(r'"answer"\s*:\s*"')
+
+
+def salvage_answer(arguments: str) -> str:
+    """The answer from finish() arguments whose JSON was cut off (for example at max_tokens)."""
+    m = _ANSWER_START.search(arguments or "")
+    if not m:
+        return ""
+    body = arguments[m.end() :]
+    body = re.sub(r'(?<!\\)"\s*\}?\s*$', "", body)
+    for end in range(len(body), max(len(body) - 8, -1), -1):
+        try:
+            return json.loads('"' + body[:end] + '"')
+        except json.JSONDecodeError:
+            continue
+    return body.replace("\\n", "\n")
 
 
 def clean(query: str) -> str:
