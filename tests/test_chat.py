@@ -30,7 +30,7 @@ def outbound_text(harness, i=-1) -> str:
 def test_masking_round_trip_and_rehydration(client, harness) -> None:
     harness.entities = {NAME: ("PERSON", "mask", ""), ORG: ("ORG", "mask", "")}
     harness.upstream_reply = lambda p: completion(
-        "Dear [[PERSON_1]], I will call [[CONTACT_1]] and email [[CONTACT_2]] about [[ORG_1]]."
+        "Dear <PERSON_1>, I will call <CONTACT_1> and email <CONTACT_2> about <ORG_1>."
     )
     prompt = f"I am {NAME} from {ORG}. Call me at {PHONE} or {EMAIL}."
     r = chat(client, [{"role": "user", "content": prompt}])
@@ -41,9 +41,7 @@ def test_masking_round_trip_and_rehydration(client, harness) -> None:
     for original in (NAME, PHONE, EMAIL, ORG):
         assert original not in sent
     user_msg = harness.upstream_requests[0]["messages"][-1]["content"]
-    assert (
-        user_msg == "I am [[PERSON_1]] from [[ORG_1]]. Call me at [[CONTACT_1]] or [[CONTACT_2]]."
-    )
+    assert user_msg == "I am <PERSON_1> from <ORG_1>. Call me at <CONTACT_1> or <CONTACT_2>."
     assert harness.upstream_requests[0]["model"] == "nvidia/Nemotron-3-Ultra-550b-a55b"
 
     answer = r.json()["choices"][0]["message"]["content"]
@@ -99,7 +97,7 @@ def test_fail_closed_on_unparseable_detector_output(client, harness) -> None:
     harness.local_garbage = True
     r = chat(client, [{"role": "user", "content": "hello"}])
     assert r.status_code == 422
-    assert r.json()["error"]["reasons"] == ["local_detector_unavailable:LocalModelBadOutput"]
+    assert r.json()["error"]["reasons"] == ["local_detector_malformed:prose"]
     assert harness.upstream_requests == []
 
 
@@ -156,14 +154,14 @@ def test_images_are_blocked_as_uninspectable(client, harness) -> None:
 
 def test_multi_turn_placeholder_consistency(client, harness) -> None:
     harness.entities = {NAME: ("PERSON", "mask", ""), "Jane Park": ("PERSON", "mask", "")}
-    harness.upstream_reply = lambda p: completion("Noted, [[PERSON_1]].")
+    harness.upstream_reply = lambda p: completion("Noted, <PERSON_1>.")
     turn1 = [{"role": "user", "content": f"My name is {NAME}."}]
     r1 = chat(client, turn1)
     assert r1.status_code == 200
     conv = r1.headers["x-airlock-conversation-id"]
     assert r1.json()["choices"][0]["message"]["content"] == f"Noted, {NAME}."
 
-    harness.upstream_reply = lambda p: completion("[[PERSON_2]] is [[PERSON_1]]'s manager.")
+    harness.upstream_reply = lambda p: completion("<PERSON_2> is <PERSON_1>'s manager.")
     turn2 = [
         *turn1,
         {"role": "assistant", "content": f"Noted, {NAME}."},
@@ -173,17 +171,17 @@ def test_multi_turn_placeholder_consistency(client, harness) -> None:
     assert r2.status_code == 200
     assert r2.headers["x-airlock-conversation-id"] == conv
     sent = harness.upstream_requests[1]["messages"]
-    assert sent[-3]["content"] == "My name is [[PERSON_1]]."
-    assert sent[-2]["content"] == "Noted, [[PERSON_1]]."
-    assert sent[-1]["content"] == "[[PERSON_2]] manages [[PERSON_1]]. Who manages whom?"
+    assert sent[-3]["content"] == "My name is <PERSON_1>."
+    assert sent[-2]["content"] == "Noted, <PERSON_1>."
+    assert sent[-1]["content"] == "<PERSON_2> manages <PERSON_1>. Who manages whom?"
     assert r2.json()["choices"][0]["message"]["content"] == f"Jane Park is {NAME}'s manager."
 
     # A client that keeps placeholders in its history works too.
-    turn3 = [*turn1, {"role": "assistant", "content": "Noted, [[PERSON_1]]."}]
+    turn3 = [*turn1, {"role": "assistant", "content": "Noted, <PERSON_1>."}]
     turn3.append({"role": "user", "content": "Repeat my name."})
     r3 = chat(client, turn3)
     assert r3.status_code == 200
-    assert harness.upstream_requests[2]["messages"][-2]["content"] == "Noted, [[PERSON_1]]."
+    assert harness.upstream_requests[2]["messages"][-2]["content"] == "Noted, <PERSON_1>."
 
 
 def test_explicit_conversation_header_scopes_placeholders(client, harness) -> None:
@@ -191,7 +189,7 @@ def test_explicit_conversation_header_scopes_placeholders(client, harness) -> No
     h = {"x-airlock-conversation-id": "demo-1"}
     chat(client, [{"role": "user", "content": "Jane Park called."}], headers=h)
     chat(client, [{"role": "user", "content": f"{NAME} called."}], headers=h)
-    assert harness.upstream_requests[1]["messages"][-1]["content"] == "[[PERSON_2]] called."
+    assert harness.upstream_requests[1]["messages"][-1]["content"] == "<PERSON_2> called."
 
 
 def test_tool_call_arguments_are_rehydrated(client, harness) -> None:
@@ -204,7 +202,7 @@ def test_tool_call_arguments_are_rehydrated(client, harness) -> None:
                 "type": "function",
                 "function": {
                     "name": "send_sms",
-                    "arguments": json.dumps({"to": "[[CONTACT_1]]", "text": "Hi [[PERSON_1]]"}),
+                    "arguments": json.dumps({"to": "<CONTACT_1>", "text": "Hi <PERSON_1>"}),
                 },
             }
         ],
@@ -219,8 +217,8 @@ def test_reasoning_content_hidden_unless_requested_and_content_trimmed(client, h
     harness.entities = {NAME: ("PERSON", "mask", "")}
 
     def reply(p):
-        body = completion("\n\nHello [[PERSON_1]]")
-        body["choices"][0]["message"]["reasoning_content"] = "The user [[PERSON_1]] wants..."
+        body = completion("\n\nHello <PERSON_1>")
+        body["choices"][0]["message"]["reasoning_content"] = "The user <PERSON_1> wants..."
         return body
 
     harness.upstream_reply = reply
@@ -239,9 +237,9 @@ def test_generalization_and_protection_levels(make_client, harness) -> None:
     text = f"{NAME} is 34 years old."
 
     for level, expected in [
-        (ProtectionLevel.BALANCED, "[[PERSON_1]] is in their 30s."),
-        (ProtectionLevel.STRICT, "[[PERSON_1]] is [[QUASI_IDENTIFIER_1]]."),
-        (ProtectionLevel.MINIMAL, "[[PERSON_1]] is 34 years old."),
+        (ProtectionLevel.BALANCED, "<PERSON_1> is in their 30s."),
+        (ProtectionLevel.STRICT, "<PERSON_1> is <QUASI_IDENTIFIER_1>."),
+        (ProtectionLevel.MINIMAL, "<PERSON_1> is 34 years old."),
     ]:
         client = make_client(protection_level=level)
         r = chat(client, [{"role": "user", "content": text}])
@@ -253,7 +251,7 @@ def test_generalization_that_leaks_original_falls_back_to_mask(client, harness) 
     harness.entities = {"Gangnam": ("LOCATION", "generalize", "near Gangnam station")}
     r = chat(client, [{"role": "user", "content": "I live in Gangnam."}])
     assert r.status_code == 200
-    assert harness.upstream_requests[0]["messages"][-1]["content"] == "I live in [[LOCATION_1]]."
+    assert harness.upstream_requests[0]["messages"][-1]["content"] == "I live in <LOCATION_1>."
 
 
 def test_passthrough_fields(client, harness) -> None:

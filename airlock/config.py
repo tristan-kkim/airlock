@@ -16,6 +16,14 @@ class ProtectionLevel(StrEnum):
     MINIMAL = "minimal"
 
 
+class ReviewMode(StrEnum):
+    """When Airlock stops and asks the client to confirm proposed redactions (HTTP 409)."""
+
+    ALWAYS = "always"
+    UNCERTAIN = "uncertain"  # only when LLM-only spans, discarded spans or semantic cues exist
+    NEVER = "never"
+
+
 DEFAULT_LOCAL_BASE_URL = "http://127.0.0.1:8081/v1"
 DEFAULT_LOCAL_MODEL = "nemotron-3-nano-4b"
 # Nebius Token Factory, OpenAI-compatible. Auth: `Authorization: Bearer $NEBIUS_API_KEY`.
@@ -45,7 +53,10 @@ class Settings:
     local_model: str = DEFAULT_LOCAL_MODEL
     local_api_key: str | None = None
     local_disable_thinking: bool = True
-    local_timeout_s: float = 60.0
+    local_timeout_s: float = 30.0
+    # Sampling for the local detector, per the local-model spike (temp 0 hit repetition loops).
+    local_temperature: float = 0.6
+    local_top_p: float = 0.95
 
     nebius_api_key: str | None = None
     upstream_base_url: str = DEFAULT_UPSTREAM_BASE_URL
@@ -63,6 +74,8 @@ class Settings:
     audit_hash_key_file: str = "./.airlock/audit_hash.key"
 
     protection_level: ProtectionLevel = ProtectionLevel.BALANCED
+    review_mode: ReviewMode = ReviewMode.NEVER
+    review_ttl_s: float = 600.0
     canaries: tuple[str, ...] = field(default_factory=tuple)
 
     host: str = "127.0.0.1"
@@ -88,6 +101,14 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
             f"AIRLOCK_PROTECTION_LEVEL must be strict|balanced|minimal, got {level_raw!r}"
         ) from exc
 
+    review_raw = (env.get("AIRLOCK_REVIEW") or "never").strip().lower()
+    try:
+        review = ReviewMode(review_raw)
+    except ValueError as exc:
+        raise ValueError(
+            f"AIRLOCK_REVIEW must be always|uncertain|never, got {review_raw!r}"
+        ) from exc
+
     canaries = tuple(c.strip() for c in (env.get("AIRLOCK_CANARIES") or "").split(",") if c.strip())
 
     return Settings(
@@ -95,7 +116,9 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         local_model=env.get("AIRLOCK_LOCAL_MODEL") or DEFAULT_LOCAL_MODEL,
         local_api_key=env.get("AIRLOCK_LOCAL_API_KEY") or None,
         local_disable_thinking=_bool(env.get("AIRLOCK_LOCAL_DISABLE_THINKING"), True),
-        local_timeout_s=_float(env.get("AIRLOCK_LOCAL_TIMEOUT_S"), 60.0),
+        local_timeout_s=_float(env.get("AIRLOCK_LOCAL_TIMEOUT_S"), 30.0),
+        local_temperature=_float(env.get("AIRLOCK_LOCAL_TEMPERATURE"), 0.6),
+        local_top_p=_float(env.get("AIRLOCK_LOCAL_TOP_P"), 0.95),
         nebius_api_key=env.get("NEBIUS_API_KEY") or None,
         upstream_base_url=(
             env.get("AIRLOCK_UPSTREAM_BASE_URL") or DEFAULT_UPSTREAM_BASE_URL
@@ -115,6 +138,7 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         audit_hash_key=env.get("AIRLOCK_AUDIT_HASH_KEY") or None,
         audit_hash_key_file=env.get("AIRLOCK_AUDIT_HASH_KEY_FILE") or "./.airlock/audit_hash.key",
         protection_level=level,
+        review_mode=review,
         canaries=canaries,
         host=env.get("AIRLOCK_HOST") or "127.0.0.1",
         port=int(env.get("AIRLOCK_PORT") or 8787),

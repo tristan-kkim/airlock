@@ -2,7 +2,7 @@
 
 **A local privacy airlock between your apps and cloud AI.**
 
-Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request leaves your machine, a small model running locally finds what is private, the vault swaps it for placeholders, and a deterministic gate checks the exact outbound bytes. The large cloud model does the reasoning on the sanitized text. The answer is restored locally, and every request leaves an audit record of exactly what the cloud saw.
+Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request leaves your machine, deterministic detectors and a small local model find what is private, the vault swaps it for placeholders, and a deterministic gate checks the exact outbound bytes. The large cloud model does the reasoning on the sanitized text. The answer is restored locally, and every request leaves an audit record of exactly what the cloud saw.
 
 > The small local model does not solve the task. It only decides what is private. The big cloud model does the reasoning.
 
@@ -10,7 +10,7 @@ Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request 
 
 People and companies avoid cloud AI mainly because of leakage: names, customer data, health details, credentials pasted into a prompt. Local-only models avoid the leak, but they are much weaker than frontier models. Airlock splits the job:
 
-- **On device:** NVIDIA Nemotron-3-Nano-4B proposes sensitive spans. Regex and entropy detectors add a deterministic floor for secrets and Korean identifiers.
+- **On device:** regex and entropy detectors mask secrets and identifiers first. NVIDIA Nemotron-3-Nano-4B then proposes semantic spans (names, organizations, health details, quasi-identifiers) on the partially masked text, and deterministic Korean rules back it up where the small model is weak. Optionally, you confirm the redactions before anything is sent.
 - **In the cloud:** Nemotron 3 Ultra on Nebius Token Factory answers the sanitized request.
 - **Between them:** a gate written in plain code, not a prompt. A model never gets to say "this is fine."
 
@@ -23,12 +23,13 @@ flowchart LR
     App["Any app<br/>(OpenAI SDK, base_url = localhost)"] -->|request| Detect
 
     subgraph Local["Your machine"]
-        Detect["Detector<br/>Nemotron-3-Nano-4B (JSON schema)<br/>+ regex / entropy + vault terms"]
-        Vault[("Vault<br/>original ↔ [[PERSON_1]]<br/>SQLite, local only")]
+        Detect["Detect<br/>1. regex / entropy / vault terms<br/>2. mask them, then Nemotron-3-Nano-4B<br/>3. Korean rules + span verification"]
+        Review{{"Review (optional)<br/>HTTP 409 → POST /review/id"}}
+        Vault[("Vault<br/>original ↔ #60;PERSON_1#62;<br/>SQLite, local only")]
         Gate{"Deterministic gate<br/>originals, declared terms,<br/>canaries, secret patterns"}
-        Rehydrate["Rehydrate<br/>[[PERSON_1]] → original"]
+        Rehydrate["Rehydrate<br/>#60;PERSON_1#62; → original"]
         Audit[("Audit log<br/>exact outbound payload,<br/>hashes only")]
-        Detect --> Vault --> Gate
+        Detect --> Review --> Vault --> Gate
         Gate -. record .-> Audit
     end
 
@@ -45,17 +46,22 @@ flowchart LR
 
 Request flow for `POST /v1/chat/completions`:
 
-1. **Detect.** Every text slot (message content, text parts, tool-call arguments) goes through the regex and entropy detectors, exact matching against the vault (your declared terms and this conversation's earlier originals), and the local LLM detector with a JSON-schema-constrained output. The prompt lives in [`airlock/prompts/detector.md`](airlock/prompts/detector.md).
-2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. Each original gets a typed placeholder (`[[PERSON_1]]`, `[[SECRET_1]]`, ...) or, for quasi-identifiers, a generalization ("in their 30s"). Within a conversation, the same original always maps to the same placeholder.
+1. **Detect.** Every text slot (message content, text parts, tool-call arguments) goes through these steps, in order:
+   1. **Deterministic spans first:** regex and entropy detectors, exact and variant matching against the vault (your declared terms and this conversation's earlier originals), and base64 blobs that hide a known value.
+   2. **Mask before the model:** those spans are replaced by local tokens (`<SECRET_1>`) in the copy the local model reads. The model never receives raw secrets, cannot echo them, and has less to copy.
+   3. **Korean semantic rules** ([`airlock/detect/ko_rules.py`](airlock/detect/ko_rules.py)) propose spans the small model often misses in Korean: uniqueness cues (`유일한 여성 부사장`, `the only male nurse`), health terms in a sentence about a person (`공황장애 진단을 받았`), company and institution suffixes (`새론다움물류`, `㈜누리소프트`, `한빛병원`), and names before titles (`박지훈 고객`, `문태오 대리`). Each rule has negative lists (public figures, famous companies, generic words like `유일한 방법`, `초등학교`, `국회의원`) and never fires inside a placeholder.
+   4. **Local model:** Nemotron-3-Nano-4B reads the masked draft with a JSON-schema-constrained output (temperature 0.6, top_p 0.95, thinking off, output cap sized to the input). The prompt lives in [`airlock/prompts/detector.md`](airlock/prompts/detector.md).
+   5. **Verify:** a model span whose text does not occur in the original (after the vault's normalization) is discarded, so hallucinated IDs never become redactions. Discard counts are recorded in the audit record.
+2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. Each original gets a typed placeholder (`<PERSON_1>`, `<SECRET_1>`, ...) or, for health details and quasi-identifiers, a generalization ("in their 30s"). A generalization is rejected, and the span masked instead, when it still contains the original, a digit run or rare word from it, a proper noun, text in another language, or junk. Within a conversation, the same original always maps to the same placeholder.
 3. **Gate.** The final outbound JSON is walked string by string, keys and numbers included. If any vault original, declared term, canary, or high-confidence secret or ID pattern is still present, or if the request contains content Airlock cannot inspect (images), the request is blocked with HTTP 422. "Present" covers variants, not only exact text:
    - letter case, full-width characters, and zero-width or other invisible format characters
    - inserted spaces or punctuation (`새론 다움물류` matches `새론다움물류`)
    - numbers written with separators, spaced-out digits, or Korean, Hanja or English numerals (`공일공 이삼사오 …`)
    - values hidden inside JSON strings (tool-call arguments), percent-encoding, or base64/base64url, up to two layers deep
 
-   The vault matcher uses the same normalized views, so a variant is usually masked rather than blocked. If the local model is down or returns unusable output, the request is also blocked. Airlock fails closed.
-4. **Upstream.** The exact bytes that passed the gate go to Token Factory. If the primary model returns 5xx or reports itself unavailable, Airlock retries once on the fallback model. That attempt is also audited.
-5. **Rehydrate.** Placeholders in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine.
+   The vault matcher uses the same normalized views, so a variant is usually masked rather than blocked. If the local model is down, times out, or malfunctions (prose instead of JSON, invalid JSON, output cut off at the token cap, a repetition loop), the request is also blocked after at most one resample of a short malformed answer. Airlock fails closed.
+4. **Upstream.** The exact bytes that passed the gate go to Token Factory. When placeholders are present, a one-line system note says: "Tokens like <PERSON_1> are placeholders for private values; copy them exactly." If the primary model returns 5xx or reports itself unavailable, Airlock retries once on the fallback model. That attempt is also audited.
+5. **Rehydrate.** Placeholders in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
 6. **Audit.** One record per request stores the outbound payloads verbatim, detections as SHA-256 hashes, the gate decision, and timings.
 
 ## Quickstart
@@ -79,7 +85,7 @@ uv run airlock serve   # http://127.0.0.1:8787
 
 See [`scripts/local_model/serve.sh`](scripts/local_model/serve.sh) for downloading the model and serving it.
 
-Open <http://127.0.0.1:8787/> for the demo UI. It has three panes: **What you typed**, **What the cloud saw**, and **Answer (rehydrated)**, plus the gate decision and detections.
+Open <http://127.0.0.1:8787/> for the demo UI. It has three panes: **What you typed**, **What the cloud saw**, and **Answer (rehydrated)**, plus the gate decision and detections. With **Review redactions before sending** on, it first lists every proposed redaction with a before/after preview; uncheck the ones you want sent as written, add anything that was missed, then **Send**.
 
 Use it from any OpenAI client:
 
@@ -108,8 +114,8 @@ Airlock is built around a division of labour between two NVIDIA open models.
 
 | Role | Model | Where it runs | Why this model |
 |---|---|---|---|
-| Privacy detector, search rewriter, result re-ranker | **NVIDIA Nemotron-3-Nano-4B** (`nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF`, Q4_K_M) | On your machine via llama.cpp | Small enough to run on a laptop, and it follows a JSON schema reliably. It sees raw private text, so it must never leave the device. Reasoning is disabled per request (`chat_template_kwargs.enable_thinking=false`) to keep latency low. |
-| Reasoning over the sanitized request | **NVIDIA Nemotron 3 Ultra** (`nvidia/Nemotron-3-Ultra-550b-a55b`) | **Nebius Token Factory** (OpenAI-compatible API) | A frontier-class open model for the real task. It only ever receives placeholders and generalizations, and in our tests it keeps `[[PERSON_1]]`-style placeholders intact, including in Korean output. |
+| Privacy detector, search rewriter, result re-ranker | **NVIDIA Nemotron-3-Nano-4B** (`nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF`, Q4_K_M) | On your machine via llama.cpp | Small enough to run on a laptop, and it follows a JSON schema reliably. It sees private text (with pattern-detected secrets already masked), so it must never leave the device. Reasoning is disabled per request (`chat_template_kwargs.enable_thinking=false`) to keep latency low. |
+| Reasoning over the sanitized request | **NVIDIA Nemotron 3 Ultra** (`nvidia/Nemotron-3-Ultra-550b-a55b`) | **Nebius Token Factory** (OpenAI-compatible API) | A frontier-class open model for the real task. It only ever receives placeholders and generalizations, and it keeps `<PERSON_1>`-style placeholders intact, including in Korean output. |
 | Fallback | **NVIDIA Nemotron 3 Super** (`nvidia/nemotron-3-super-120b-a12b`) | Nebius Token Factory | Used once, automatically, when Ultra returns 5xx or is unavailable. `reasoning_effort` is dropped for this model because it rejects that field. Its `reasoning_content` is hidden from clients unless they opt in. |
 
 Token Factory is on the execution path of every allowed chat request: `POST https://api.tokenfactory.nebius.com/v1/chat/completions` with `Authorization: Bearer $NEBIUS_API_KEY`. Airlock forwards `tools`, `tool_choice`, `reasoning_effort` and `stream` unchanged. It does not rely on upstream `response_format: json_schema`.
@@ -137,6 +143,8 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_AUDIT_HASH_KEY` | none | HMAC key for audit hashes; if unset, one is generated at the key file |
 | `AIRLOCK_AUDIT_HASH_KEY_FILE` | `./.airlock/audit_hash.key` | Where the generated key is stored (mode 600) |
 | `AIRLOCK_PROTECTION_LEVEL` | `balanced` | `strict`, `balanced` or `minimal` (see below) |
+| `AIRLOCK_REVIEW` | `never` | `always`, `uncertain` or `never`: when to stop and ask for confirmation (see review mode) |
+| `AIRLOCK_LOCAL_TIMEOUT_S` | `30` | Local detector timeout; a timeout blocks the request |
 | `AIRLOCK_CANARIES` | none | Comma-separated tripwire strings that must never leave |
 | `AIRLOCK_HOST` / `AIRLOCK_PORT` | `127.0.0.1` / `8787` | Bind address |
 | `AIRLOCK_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Accepted `Host` headers (DNS-rebinding protection); `*` disables |
@@ -161,15 +169,47 @@ OpenAI-compatible request and response, streaming included. Airlock-specific hea
 
 Forwarded fields: `messages`, `tools`, `tool_choice`, `parallel_tool_calls`, `reasoning_effort`, `stream`, `stream_options`, `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `n`, `stop`, `seed`, `presence_penalty`, `frequency_penalty`, `response_format`, `logprobs`, `top_logprobs`. Everything else (`user`, `metadata`, ...) is dropped. `model` is always replaced by `AIRLOCK_UPSTREAM_MODEL`.
 
+- Request `x-airlock-review: required`: return proposed redactions for confirmation instead of sending (see below).
+
 Blocked requests return HTTP 422:
 
 ```json
 {"error": {"type": "airlock_blocked", "reasons": ["declared_term:PERSON:6e0aeb4d2ed5"], "request_id": "req_..."}}
 ```
 
-Reason codes: `vault_original`, `declared_term`, `canary`, `secret_pattern:<rule>`, `uninspectable_content:<part type>`, `local_detector_unavailable:<error>`, and for search also `local_rewriter_unavailable:<error>`, `rewrite_empty`, `rewrite_contains_placeholder`. Reasons carry the first 12 hex characters of the value's keyed hash (see the audit section), never the text.
+Reason codes: `vault_original`, `declared_term`, `canary`, `secret_pattern:<rule>`, `uninspectable_content:<part type>`, `local_detector_unavailable:<error>` (connection failure or HTTP error), `local_detector_malformed:<kind>` with kind `prose`, `invalid_json`, `schema`, `length`, `repetition` or `timeout`, and for search also `local_rewriter_unavailable:<error>`, `rewrite_empty`, `rewrite_contains_placeholder`. Reasons carry the first 12 hex characters of the value's keyed hash (see the audit section), never the text.
 
 Other errors: `400 invalid_request_error`, `415` (non-JSON POST), `502 airlock_upstream_error`, `503 airlock_not_configured`.
+
+### Review mode: HTTP 409 and `POST /review/{review_id}`
+
+The local detector is a proposer, and on Korean semantic spans it is far from perfect. Review mode puts the user in the loop before anything is sent. It is triggered by the request header `x-airlock-review: required`, or by `AIRLOCK_REVIEW`:
+
+- `always`: every chat request is held for review.
+- `uncertain`: only when the local model found a span no deterministic detector confirmed, when spans or generalizations were discarded, or when a Korean quasi-identifier or health rule fired.
+- `never` (default): send directly.
+
+A held request returns HTTP 409 and nothing is written to the vault or sent upstream:
+
+```json
+{"error": {"type": "airlock_review_required", "review_id": "rev_...", "reasons": ["llm_only_spans"],
+  "proposed": [{"span_id": "s1", "type": "PERSON", "action": "mask", "text": "문태오",
+                "replacement": "<PERSON_1>", "preview_before": "…동료 문태오 대리가…",
+                "preview_after": "…동료 <PERSON_1> 대리가…", "source": "llm", "sources": ["llm", "rule"],
+                "confidence": 0.85, "locked": false}],
+  "request_id": "req_...", "expires_in_s": 600}}
+```
+
+The previews contain the originals. They are a response to the local client only and never go upstream. `confidence` is a heuristic (higher when independent detectors agree), not a calibrated probability. `locked` marks spans that the gate enforces anyway (vault terms, high-confidence secret patterns): rejecting one makes the gate block.
+
+Continue with:
+
+```json
+POST /review/rev_...
+{"approve": ["s1"], "reject": ["s2"], "add": [{"text": "Nightjar", "type": "PROJECT"}]}
+```
+
+Spans not listed are approved. The response is the normal chat completion (or 422 if the gate blocks), and its audit record carries `meta.review` counts. A review id works once and expires after 10 minutes; `POST /vault/reset` discards pending reviews.
 
 ### `POST /v1/search`
 
@@ -188,9 +228,14 @@ Returns `{"request_id", "outbound_query", "results": [{"title", "url", "content"
   "outbound": [{"destination": "upstream", "payload": {"model": "...", "messages": ["..."]}}],
   "gate": {"decision": "allow", "reasons": []},
   "timings_ms": {"detect": 212.4, "gate": 0.8, "upstream": 1530.2, "rehydrate": 0.1, "total": 1745.0},
-  "meta": {"stream": false, "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b", "fallback": false}
+  "meta": {"stream": false, "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b", "fallback": false,
+           "detector": {"pattern_spans": 1, "masked_before_llm": 1, "rule_spans": 2, "llm_calls": 1,
+                        "llm_proposed": 3, "llm_kept": 2, "llm_discarded_ungrounded": 1,
+                        "llm_discarded_invalid": 0, "generalize_rejected": 0, "semantic_cues": 1, "...": 0}}
 }
 ```
+
+`meta.detector` holds counts only: how many spans each detector produced, how many the local model proposed and how many were discarded as ungrounded or invalid, and how many generalizations were rejected. A held request is recorded with `gate.decision` `review`.
 
 `text_sha256` is **HMAC-SHA256** of the original under the local audit key (`AIRLOCK_AUDIT_HASH_KEY`, or the generated `.airlock/audit_hash.key`). The field name is kept for compatibility. To check whether a value you know was detected, compute `hmac.new(key, value.encode(), hashlib.sha256).hexdigest()`. The key is never served over HTTP. `action` is `mask`, `generalize`, or `keep` (detected but intentionally left, under `minimal`). `outbound` holds one entry per payload that was sent, so a fallback produces two. `GET /audit?limit=50` lists recent records.
 
@@ -224,7 +269,8 @@ Status, version, protection level, model names, and whether keys are configured.
 
 **What it does not protect against.** Please read this before relying on it.
 
-- **Detector misses.** If the local model and the regexes both fail to recognise something (an unusual name, an internal project described in plain words), and you did not declare it, it is sent. The gate only enforces what is known. Declare your own name, employer, and key project names with `/vault/terms`.
+- **Detector misses.** If the local model, the regexes and the Korean rules all fail to recognise something (an unusual name, an internal project described in plain words), and you did not declare it, it is sent. The gate only enforces what is known. Declare your own name, employer, and key project names with `/vault/terms`, and use review mode for sensitive work. In our local-model spike, Nemotron-3-Nano-4B alone found 70% of Korean semantic spans (11% of Korean quasi-identifiers), against 93% in English; the Korean rules exist to narrow that gap and are measured on a small probe set that was also used to tune the prompt, so treat any number as optimistic.
+- **Rule false positives.** The Korean rules prefer to over-mask. A private-sounding company name, a name before a title, or a health term in a personal sentence may be masked even when it is harmless. Review mode lets you undo this.
 - **Paraphrase and inference.** Airlock removes strings, not meaning. "My wife, the only female neurosurgeon at the hospital in our small town" contains no name and may still identify someone. Generalization of quasi-identifiers reduces this; it does not eliminate it.
 - **Combining requests.** The provider sees many sanitized requests from the same account and may link them.
 - **Non-text content.** Images, audio, and files are not inspected, so requests containing them are blocked rather than sent.
@@ -243,8 +289,11 @@ airlock/
   config.py         env configuration
   detect/llm.py     local model client + LLM span detector (fail-closed errors)
   detect/patterns.py Korean-aware PII regexes, secret patterns, entropy check
+  detect/ko_rules.py deterministic Korean/English semantic rules (quasi-identifiers, health, orgs, names)
+  detect/verify.py  grounding check for model spans, generalization leak check
   detect/spans.py   span model, term matching, overlap resolution
-  pipeline.py       detection -> policy -> vault substitution for chat payloads
+  placeholders.py   <TYPE_N> syntax, lenient matching for rehydration
+  pipeline.py       patterns -> masked local model -> rules -> verification -> vault substitution
   vault.py          original <-> placeholder mappings, declared terms (SQLite)
   gate.py           deterministic allow/block on the exact outbound payload
   textnorm.py       normalized views (compact, digits, decoded) with raw offset maps

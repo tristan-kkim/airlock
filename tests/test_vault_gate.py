@@ -26,21 +26,21 @@ def test_term_matching_boundaries() -> None:
 def test_vault_same_original_same_placeholder() -> None:
     vault = Vault(":memory:")
     s = vault.session("c1")
-    assert s.mask("Tristan Kim", "PERSON").outbound == "[[PERSON_1]]"
-    assert s.mask("tristan kim", "PERSON").outbound == "[[PERSON_1]]"
-    assert s.mask("Jane Doe", "PERSON").outbound == "[[PERSON_2]]"
-    assert s.mask("010-1234-5678", "CONTACT").outbound == "[[CONTACT_1]]"
+    assert s.mask("Tristan Kim", "PERSON").outbound == "<PERSON_1>"
+    assert s.mask("tristan kim", "PERSON").outbound == "<PERSON_1>"
+    assert s.mask("Jane Doe", "PERSON").outbound == "<PERSON_2>"
+    assert s.mask("010-1234-5678", "CONTACT").outbound == "<CONTACT_1>"
     # A fresh session object for the same conversation sees the same mappings.
     again = vault.session("c1")
-    assert again.mask("Jane Doe", "PERSON").outbound == "[[PERSON_2]]"
+    assert again.mask("Jane Doe", "PERSON").outbound == "<PERSON_2>"
     assert again.original_for("PERSON_1") == "Tristan Kim"
     # Other conversations are independent.
-    assert vault.session("c2").mask("Jane Doe", "PERSON").outbound == "[[PERSON_1]]"
+    assert vault.session("c2").mask("Jane Doe", "PERSON").outbound == "<PERSON_1>"
 
 
 def test_gate_blocks_vault_original_anywhere() -> None:
     payload = {
-        "messages": [{"role": "user", "content": "hello [[PERSON_1]]"}],
+        "messages": [{"role": "user", "content": "hello <PERSON_1>"}],
         "tools": [{"function": {"description": "look up TRISTAN KIM"}}],
     }
     decision = gate.check(
@@ -66,7 +66,7 @@ def test_gate_normalizes_fullwidth_and_catches_secrets() -> None:
 
 
 def test_gate_allows_clean_payload() -> None:
-    payload = {"messages": [{"role": "user", "content": "Summarize [[PERSON_1]]'s annual report"}]}
+    payload = {"messages": [{"role": "user", "content": "Summarize <PERSON_1>'s annual report"}]}
     decision = gate.check(
         payload, hasher=HASH, protected=[gate.Protected("Ann", "PERSON", "vault_original")]
     )
@@ -82,16 +82,17 @@ def test_parse_spans_drops_hallucinations() -> None:
             {"text": "Acme", "type": "NOT_A_TYPE", "action": "mask", "replacement": ""},
         ]
     }
-    spans = parse_spans(data, "Jane works at Acme")
-    assert [s.text for s in spans] == ["Jane"]
+    result = parse_spans(data, "Jane works at Acme")
+    assert [s.text for s in result.spans] == ["Jane"]
+    assert (result.proposed, result.discarded_ungrounded, result.discarded_invalid) == (4, 1, 2)
 
 
 def test_extract_json_tolerates_think_and_fences() -> None:
     assert extract_json('<think>hmm</think>\n```json\n{"spans": []}\n```') == {"spans": []}
     try:
         extract_json("no json here")
-    except LocalModelBadOutput:
-        pass
+    except LocalModelBadOutput as exc:
+        assert exc.kind == "prose"
     else:
         raise AssertionError("expected LocalModelBadOutput")
 
@@ -100,8 +101,8 @@ def test_rehydrate_text_and_tool_arguments() -> None:
     vault = Vault(":memory:")
     s = vault.session("c")
     s.mask('Kim "The Boss" Lee', "PERSON")
-    assert rehydrate_text("Hi [[PERSON_1]] and [PERSON_1] and [[PERSON_9]]", s) == (
-        'Hi Kim "The Boss" Lee and Kim "The Boss" Lee and [[PERSON_9]]'
+    assert rehydrate_text("Hi <PERSON_1> and [PERSON_1] and <PERSON_9>", s) == (
+        'Hi Kim "The Boss" Lee and Kim "The Boss" Lee and <PERSON_9>'
     )
-    args = rehydrate_arguments('{"to": "[[PERSON_1]]"}', s)
+    args = rehydrate_arguments('{"to": "<PERSON_1>"}', s)
     assert json.loads(args) == {"to": 'Kim "The Boss" Lee'}

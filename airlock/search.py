@@ -12,7 +12,7 @@ import httpx
 from airlock import gate
 from airlock.audit import AuditRecord
 from airlock.config import Settings
-from airlock.detect.llm import LocalModel, LocalModelError, load_prompt
+from airlock.detect.llm import LocalModel, LocalModelError, block_reason, load_prompt
 from airlock.detect.spans import contains_placeholder, normalize
 from airlock.pipeline import Detection, Sanitizer, dedupe_detections
 from airlock.vault import Vault
@@ -123,7 +123,7 @@ class PrivateSearch:
                 protected += result.protected
                 detections += result.detections
         except LocalModelError as exc:
-            raise SearchBlocked([f"local_detector_unavailable:{type(exc).__name__}"]) from exc
+            raise SearchBlocked([block_reason(exc)]) from exc
         finally:
             record.stop("detect")
         detections = dedupe_detections(detections)
@@ -142,7 +142,7 @@ class PrivateSearch:
             )
             rewritten = str(data.get("query", "") if isinstance(data, dict) else "").strip()
         except LocalModelError as exc:
-            raise SearchBlocked([f"local_rewriter_unavailable:{type(exc).__name__}"]) from exc
+            raise SearchBlocked([block_reason(exc, "local_rewriter")]) from exc
         finally:
             record.stop("rewrite")
         rewritten = re.sub(r"\s+", " ", rewritten).strip().strip('"')[:400]

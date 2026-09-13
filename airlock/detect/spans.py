@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Literal
 
+from airlock.placeholders import STRICT_RE
+from airlock.placeholders import contains_placeholder as _contains_placeholder
 from airlock.textnorm import fuzzy_find
 
 SPAN_TYPES: tuple[str, ...] = (
@@ -23,14 +25,23 @@ SPAN_TYPES: tuple[str, ...] = (
     "QUASI_IDENTIFIER",
 )
 
-Source = Literal["llm", "regex", "vault", "entropy"]
+# vault: declared terms and earlier conversation mappings; regex/entropy: deterministic patterns;
+# rule: deterministic Korean/English semantic rules; llm: the local model; user: added in review.
+Source = Literal["llm", "regex", "vault", "entropy", "rule", "user"]
 Action = Literal["mask", "generalize", "keep"]
 
 # Lower value wins ties between equally long overlapping spans.
-_SOURCE_PRIORITY: dict[str, int] = {"vault": 0, "regex": 1, "entropy": 2, "llm": 3}
+_SOURCE_PRIORITY: dict[str, int] = {
+    "vault": 0,
+    "user": 1,
+    "regex": 2,
+    "entropy": 3,
+    "rule": 4,
+    "llm": 5,
+}
 _ACTION_PRIORITY: dict[str, int] = {"mask": 0, "generalize": 1, "keep": 2}
 
-PLACEHOLDER_RE = re.compile(r"\[\[\s*([A-Z][A-Z_]*_\d+)\s*\]\]")
+PLACEHOLDER_RE = STRICT_RE  # <TYPE_N>, or legacy [[TYPE_N]]
 MIN_SPAN_CHARS = 2
 
 
@@ -137,4 +148,4 @@ def resolve_overlaps(placements: list[Placement]) -> list[Placement]:
 
 
 def contains_placeholder(text: str) -> bool:
-    return bool(PLACEHOLDER_RE.search(text)) or "[[" in text or "]]" in text
+    return _contains_placeholder(text)

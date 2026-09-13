@@ -1,27 +1,22 @@
-"""Map placeholders in upstream responses back to the local originals."""
+"""Map placeholders in upstream responses back to the local originals.
+
+Matching is lenient about brackets and case (see `airlock.placeholders`), but only keys that
+exist in this conversation's vault are replaced, so `List<T_1>` or a stray `[x]` is untouched.
+"""
 
 from __future__ import annotations
 
 import copy
 import json
-import re
 from typing import Any
 
+from airlock import placeholders
 from airlock.vault import VaultSession
-
-# Canonical [[KEY]] plus the single-bracket form some models produce ([KEY]).
-_DOUBLE = re.compile(r"\[\[\s*([A-Z][A-Z_]*_\d+)\s*\]\]")
-_SINGLE = re.compile(r"(?<!\[)\[([A-Z][A-Z_]*_\d+)\](?!\])")
 
 
 def rehydrate_text(text: str, session: VaultSession, *, json_escape: bool = False) -> str:
-    def sub(m: re.Match[str]) -> str:
-        original = session.original_for(m.group(1))
-        if original is None:
-            return m.group(0)  # unknown placeholder: leave untouched
-        return json.dumps(original, ensure_ascii=False)[1:-1] if json_escape else original
-
-    return _SINGLE.sub(sub, _DOUBLE.sub(sub, text))
+    transform = (lambda s: json.dumps(s, ensure_ascii=False)[1:-1]) if json_escape else str
+    return placeholders.rehydrate(text, session.original_for, transform)
 
 
 def _walk(obj: Any, session: VaultSession) -> Any:
@@ -70,11 +65,8 @@ def _rehydrate_message(
         fc["arguments"] = rehydrate_arguments(fc["arguments"], session)
 
 
-_PARTIAL = re.compile(r"\[\[?\s*[A-Z0-9_]*\s*\]?")
-
-
 class StreamRehydrator:
-    """Rehydrates a text stream whose chunks may split a placeholder ("[[PER" + "SON_1]]").
+    """Rehydrates a text stream whose chunks may split a placeholder ("<PER" + "SON_1>").
 
     Text is released as soon as it cannot be the start of a placeholder; a possible partial
     placeholder at the end of the buffer is held back until the next chunk decides it.
@@ -87,16 +79,13 @@ class StreamRehydrator:
 
     def feed(self, text: str) -> str:
         self.buffer += text
-        start = self.buffer.rfind("[")
-        if start > 0 and self.buffer[start - 1] == "[":
-            start -= 1
-        if start != -1:
-            tail = self.buffer[start:]
-            if len(tail) <= self.max_hold and _PARTIAL.fullmatch(tail):
-                ready, self.buffer = self.buffer[:start], tail
+        buf = self.buffer
+        for i in range(max(0, len(buf) - self.max_hold), len(buf)):
+            if buf[i] in placeholders.OPENER_CHARS and placeholders.PARTIAL_RE.fullmatch(buf, i):
+                ready, self.buffer = buf[:i], buf[i:]
                 return rehydrate_text(ready, self.session)
-        ready, self.buffer = self.buffer, ""
-        return rehydrate_text(ready, self.session)
+        self.buffer = ""
+        return rehydrate_text(buf, self.session)
 
     def flush(self) -> str:
         ready, self.buffer = self.buffer, ""

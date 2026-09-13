@@ -38,10 +38,12 @@ async def check_local(settings: Settings, client: httpx.AsyncClient) -> list[Che
         return [Check("fail", "local server", f"{settings.local_base_url} ({type(exc).__name__})")]
     checks = [Check("ok", "local server", f"{settings.local_base_url} models={ids}")]
     try:
-        spans = await LLMDetector(local, settings.protection_level).detect(
-            "Please email Jane Doe at jane.doe@example.com about the Q3 invoice."
+        result = await LLMDetector(local, settings.protection_level).detect(
+            "Please email Jane Doe at <CONTACT_1> about the Q3 invoice."
         )
-        checks.append(Check("ok", "local detector", f"{len(spans)} span(s) on a synthetic probe"))
+        checks.append(
+            Check("ok", "local detector", f"{len(result.spans)} span(s) on a synthetic probe")
+        )
     except LocalModelError as exc:
         checks.append(Check("fail", "local detector", type(exc).__name__))
     return checks

@@ -9,6 +9,6 @@ Rules:
 - Keep the generic topic, technology, product, law, or medical concept so the results stay useful. Public, well-known entities (a public company, a law, a drug name, a city) may stay if they are the topic itself and are not tied to the user's identity.
 - Prefer neutral, encyclopedic phrasing. Do not add intent the user did not have.
 - Write the query in the language that will give the best results; English is usually fine.
-- Maximum 20 words. Do not include quotes, placeholders like [[PERSON_1]], or explanations.
+- Maximum 20 words. Do not include quotes, placeholders like <PERSON_1>, or explanations.
 
 Reply with JSON only: {"query": "..."}

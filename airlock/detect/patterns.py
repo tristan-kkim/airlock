@@ -50,6 +50,16 @@ def _account_ok(value: str) -> bool:
     return not _rrn_ok(value)
 
 
+def _password_like(value: str) -> bool:
+    """A concrete password, not a word: Latin letters plus digits or symbols, no Hangul."""
+    value = value.rstrip(".,!?)")  # "The password is incorrect." is not a password
+    return (
+        bool(re.search(r"[A-Za-z]", value))
+        and bool(re.search(r"[\d\W_]", value))
+        and not re.search(r"[가-힣]", value)
+    )
+
+
 @dataclass(frozen=True)
 class Rule:
     name: str
@@ -170,6 +180,18 @@ RULES: tuple[Rule, ...] = (
         ),
         group=1,
         priority=11,
+    ),
+    Rule(
+        "password_phrase",
+        "SECRET",
+        re.compile(
+            r"(?:password|passwd|passcode|비밀번호|패스워드|암호)\s*(?:is|was|:|=|가|는|은|이)?\s*"
+            r"[\"'“‘]?([^\s\"'“”‘’,;]{6,64})",
+            re.IGNORECASE,
+        ),
+        group=1,
+        validator=_password_like,
+        priority=12,
     ),
     # ---- Korean identifiers ----
     Rule(

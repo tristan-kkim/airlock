@@ -131,7 +131,7 @@ def test_inserted_space_variant_is_masked_with_the_same_placeholder(client, harn
         assert term not in sent
     assert "새론 다움물류" not in sent and "다움물류" not in sent
     org = sent.split("고객사 ")[1].split("에 보낼")[0]
-    assert org.startswith("[[ORG_") and sent.count(org) == 2
+    assert org.startswith("<ORG_") and sent.count(org) == 2
 
 
 def test_variants_masked_in_tool_call_arguments_and_base64(client, harness) -> None:
@@ -173,16 +173,15 @@ def test_vault_reset_and_delete_terms(client, harness) -> None:
     h = {"x-airlock-conversation-id": "c"}
     client.post("/v1/chat/completions", json=body, headers=h)
     sent = harness.upstream_requests[-1]["messages"][-1]["content"]
-    assert sent == "[[PERSON_1]] works at [[PERSON_2]]"  # terms default to type PERSON
+    assert sent == "<PERSON_1> works at <PERSON_2>"  # terms default to type PERSON
 
     r = client.post("/vault/reset", json={})
     assert r.json() == {"reset": True, "terms_removed": 2, "mappings_removed": 2}
     harness.entities = {}
     client.post("/v1/chat/completions", json=body, headers=h)
-    # Both the declared term and the earlier conversation mapping are gone.
-    assert (
-        harness.upstream_requests[-1]["messages"][-1]["content"] == body["messages"][0]["content"]
-    )
+    # Both the declared term and the earlier conversation mapping are gone: the company name is
+    # now only caught by the Korean organization-suffix rule, numbered afresh.
+    assert harness.upstream_requests[-1]["messages"][-1]["content"] == "Jane Park works at <ORG_1>"
 
 
 def test_audit_hash_key_file_is_created_private_and_stable(make_client, tmp_path) -> None:

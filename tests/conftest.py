@@ -36,7 +36,9 @@ def make_settings(**overrides: Any) -> Settings:
     return base.with_overrides(**overrides)
 
 
-def completion(content: str | None, tool_calls: list[dict] | None = None) -> dict[str, Any]:
+def completion(
+    content: str | None, tool_calls: list[dict] | None = None, finish_reason: str = "stop"
+) -> dict[str, Any]:
     message: dict[str, Any] = {"role": "assistant", "content": content}
     if tool_calls:
         message["tool_calls"] = tool_calls
@@ -45,7 +47,7 @@ def completion(content: str | None, tool_calls: list[dict] | None = None) -> dic
         "object": "chat.completion",
         "created": 1,
         "model": "nvidia/nemotron-3-ultra",
-        "choices": [{"index": 0, "message": message, "finish_reason": "stop"}],
+        "choices": [{"index": 0, "message": message, "finish_reason": finish_reason}],
     }
 
 
@@ -55,6 +57,12 @@ class Harness:
     entities: dict[str, tuple[str, str, str]] = field(default_factory=dict)
     local_down: bool = False
     local_garbage: bool = False
+    local_timeout: bool = False
+    # Raw detector output override, and the finish_reason the fake local server reports.
+    local_content: Callable[[str], str] | None = None
+    local_finish: str = "stop"
+    # Spans returned whether or not they occur in the draft (simulated hallucinations).
+    extra_spans: list[dict[str, str]] = field(default_factory=list)
     rewrite: Callable[[str, str | None], str] = lambda q, c: "generic query"
     upstream_reply: Callable[[dict[str, Any]], dict[str, Any]] = lambda p: completion("ok")
     tavily_results: list[dict[str, Any]] = field(
@@ -72,19 +80,25 @@ class Harness:
     def _local(self, request: httpx.Request) -> httpx.Response:
         if self.local_down:
             raise httpx.ConnectError("connection refused", request=request)
+        if self.local_timeout:
+            raise httpx.ReadTimeout("timed out", request=request)
         body = json.loads(request.content)
         self.local_requests.append(body)
         system = body["messages"][0]["content"]
         user = body["messages"][1]["content"]
         if self.local_garbage:
             content = "I cannot help with that."
-        elif "privacy detector" in system:
-            spans = [
-                {"text": t, "type": typ, "action": act, "replacement": rep}
-                for t, (typ, act, rep) in self.entities.items()
-                if t in user
-            ]
-            content = json.dumps({"spans": spans})
+        elif "privacy gate of Airlock" in system:
+            if self.local_content is not None:
+                content = self.local_content(user)
+            else:
+                spans = [
+                    {"text": t, "type": typ, "action": act, "replacement": rep}
+                    for t, (typ, act, rep) in self.entities.items()
+                    if t in user
+                ]
+                content = json.dumps({"spans": spans + self.extra_spans}, ensure_ascii=False)
+            return httpx.Response(200, json=completion(content, finish_reason=self.local_finish))
         elif "search rewriter" in system:
             data = json.loads(user)
             content = json.dumps({"query": self.rewrite(data["query"], data["private_context"])})

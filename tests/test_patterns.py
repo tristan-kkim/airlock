@@ -40,6 +40,21 @@ def test_rules_detect(text: str, rule: str, value: str | None) -> None:
         assert found[rule] == value
 
 
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("회사 VPN 비밀번호가 Haneul#2024!! 인데 너무 약한지", "Haneul#2024!!"),
+        ("My Gmail password is BlueHeron!872 and I reuse it", "BlueHeron!872"),
+        ("The password is incorrect.", None),
+        ("비밀번호는 8자리 이상, 특수문자 포함", None),
+        ("Your password must be 12 characters", None),
+        ("password is <SECRET_1>", None),
+    ],
+)
+def test_password_phrase(text: str, value: str | None) -> None:
+    assert rules(text).get("password_phrase") == value
+
+
 def test_openai_key_value_is_exact() -> None:
     key = "sk-proj-abcDEF1234567890abcdef12"
     assert rules(f"OPENAI_API_KEY={key}")["openai_style_key"] == key

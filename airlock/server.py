@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import secrets
+import time
+from collections import OrderedDict
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import resources
 from typing import Any, Literal
 
@@ -17,10 +20,11 @@ from pydantic import BaseModel, Field
 
 from airlock import __version__, gate
 from airlock.audit import AuditLog, AuditRecord
-from airlock.config import Settings, load_settings
-from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError
+from airlock.config import ReviewMode, Settings, load_settings
+from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError, block_reason
+from airlock.detect.spans import Span, normalize
 from airlock.hashing import Hasher, hasher_for
-from airlock.pipeline import PayloadError, Sanitizer, conversation_id_for
+from airlock.pipeline import ChatAnalysis, PayloadError, Sanitizer, conversation_id_for
 from airlock.rehydrate import (
     REASONING_FIELDS,
     StreamRehydrator,
@@ -35,6 +39,53 @@ REQUEST_ID_HEADER = "x-airlock-request-id"
 CONVERSATION_HEADER = "x-airlock-conversation-id"
 # Opt-in: forward the model's reasoning_content to the client (rehydrated). Off by default.
 REASONING_HEADER = "x-airlock-include-reasoning"
+# "required": stop before sending and return proposed redactions (HTTP 409) for confirmation.
+REVIEW_HEADER = "x-airlock-review"
+
+
+@dataclass
+class PendingReview:
+    """A request waiting for the user's decision. In memory only; holds the raw body."""
+
+    body: dict[str, Any]
+    conversation_id: str
+    analysis: ChatAnalysis
+    proposals: list[dict[str, Any]]
+    include_reasoning: bool
+    created: float = field(default_factory=time.monotonic)
+
+
+class ReviewStore:
+    def __init__(self, ttl_s: float, max_items: int = 256):
+        self.ttl_s = ttl_s
+        self.max_items = max_items
+        self._items: OrderedDict[str, PendingReview] = OrderedDict()
+
+    def _expire(self) -> None:
+        now = time.monotonic()
+        for key in [k for k, v in self._items.items() if now - v.created > self.ttl_s]:
+            del self._items[key]
+
+    def put(self, pending: PendingReview) -> str:
+        self._expire()
+        review_id = "rev_" + secrets.token_hex(12)
+        self._items[review_id] = pending
+        while len(self._items) > self.max_items:
+            self._items.popitem(last=False)
+        return review_id
+
+    def get(self, review_id: str) -> PendingReview | None:
+        self._expire()
+        return self._items.get(review_id)
+
+    def pop(self, review_id: str) -> PendingReview | None:
+        self._expire()
+        return self._items.pop(review_id, None)
+
+    def clear(self) -> int:
+        n = len(self._items)
+        self._items.clear()
+        return n
 
 
 @dataclass
@@ -48,6 +99,7 @@ class Services:
     upstream: Upstream
     search: PrivateSearch
     hasher: Hasher
+    reviews: ReviewStore
 
     async def aclose(self) -> None:
         await self.http.aclose()
@@ -67,7 +119,10 @@ def build_services(
     upstream = Upstream(settings, http)
     hasher = hasher_for(settings)
     search = PrivateSearch(settings, local, sanitizer, Tavily(settings, http), hasher)
-    return Services(settings, http, vault, audit, local, sanitizer, upstream, search, hasher)
+    reviews = ReviewStore(settings.review_ttl_s)
+    return Services(
+        settings, http, vault, audit, local, sanitizer, upstream, search, hasher, reviews
+    )
 
 
 class SearchRequest(BaseModel):
@@ -79,6 +134,17 @@ class SearchRequest(BaseModel):
 class TermsDeleteRequest(BaseModel):
     terms: list[str] = Field(min_length=1, max_length=500)
     kind: Literal["sensitive", "canary"] | None = None
+
+
+class ReviewAddition(BaseModel):
+    text: str = Field(min_length=2, max_length=500)
+    type: str = Field(default="PERSON", pattern=r"^[A-Z][A-Z_]{1,30}$")
+
+
+class ReviewDecision(BaseModel):
+    approve: list[str] = Field(default_factory=list, max_length=500)
+    reject: list[str] = Field(default_factory=list, max_length=500)
+    add: list[ReviewAddition] = Field(default_factory=list, max_length=100)
 
 
 class TermsRequest(BaseModel):
@@ -249,33 +315,34 @@ def create_app(
             "search_configured": bool(settings.tavily_api_key),
         }
 
-    @app.post("/v1/chat/completions")
-    async def chat_completions(request: Request):
-        record = AuditRecord("chat")
-        try:
-            body = await request.json()
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return _error(400, "invalid_request_error", "body must be JSON", record.request_id)
-        if not isinstance(body, dict):
-            return _error(400, "invalid_request_error", "body must be an object", record.request_id)
+    def review_reasons(request: Request, analysis: ChatAnalysis, preview_stats) -> list[str]:
+        if (request.headers.get(REVIEW_HEADER) or "").strip().lower() == "required":
+            return ["requested"]
+        mode = settings.review_mode
+        if mode is ReviewMode.ALWAYS:
+            return ["always"]
+        if mode is ReviewMode.UNCERTAIN:
+            return services.sanitizer.review_triggers(analysis, preview_stats)
+        return []
 
-        conversation_id = request.headers.get(CONVERSATION_HEADER) or conversation_id_for(body)
-        session = services.vault.session(conversation_id)
-
-        record.start("detect")
-        try:
-            sanitized = await services.sanitizer.sanitize_chat(body, session)
-        except PayloadError as exc:
-            return _error(400, "invalid_request_error", str(exc), record.request_id)
-        except LocalModelError as exc:
-            # Fail closed: without the local detector nothing leaves the machine.
-            reasons = [f"local_detector_unavailable:{type(exc).__name__}"]
-            record.gate = {"decision": "block", "reasons": reasons}
-            services.audit.write(record)
-            return _blocked(record, reasons)
-        finally:
-            record.stop("detect")
+    async def finish_chat(
+        record: AuditRecord,
+        body: dict[str, Any],
+        analysis: ChatAnalysis,
+        session: VaultSession,
+        conversation_id: str,
+        include_reasoning: bool,
+        *,
+        rejected: list[str] | None = None,
+        added: list[Span] | None = None,
+    ):
+        record.start("substitute")
+        sanitized = services.sanitizer.build_chat(
+            body, analysis, session, rejected=rejected or [], added=added or []
+        )
+        record.stop("substitute")
         record.detections = [d.audit(services.hasher) for d in sanitized.detections]
+        record.meta["detector"] = sanitized.stats.as_dict()
         originals = [p.text for p in sanitized.protected]
 
         record.start("gate")
@@ -297,12 +364,10 @@ def create_app(
                 503, "airlock_not_configured", "NEBIUS_API_KEY is not set", record.request_id
             )
 
-        include_reasoning = _truthy(request.headers.get(REASONING_HEADER))
         streaming = bool(sanitized.payload.get("stream"))
-        record.meta = {
-            "stream": streaming,
-            "conversation_id_hmac": services.hasher(conversation_id),
-        }
+        record.meta.update(
+            {"stream": streaming, "conversation_id_hmac": services.hasher(conversation_id)}
+        )
         headers = {REQUEST_ID_HEADER: record.request_id, CONVERSATION_HEADER: conversation_id}
 
         record.start("upstream")
@@ -341,6 +406,122 @@ def create_app(
         record.stop("rehydrate")
         services.audit.write(record, originals)
         return JSONResponse(answer, headers=headers)
+
+    @app.post("/v1/chat/completions")
+    async def chat_completions(request: Request):
+        record = AuditRecord("chat")
+        try:
+            body = await request.json()
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return _error(400, "invalid_request_error", "body must be JSON", record.request_id)
+        if not isinstance(body, dict):
+            return _error(400, "invalid_request_error", "body must be an object", record.request_id)
+
+        conversation_id = request.headers.get(CONVERSATION_HEADER) or conversation_id_for(body)
+        session = services.vault.session(conversation_id)
+        include_reasoning = _truthy(request.headers.get(REASONING_HEADER))
+
+        record.start("detect")
+        try:
+            analysis = await services.sanitizer.analyze_chat(body, session)
+        except PayloadError as exc:
+            return _error(400, "invalid_request_error", str(exc), record.request_id)
+        except LocalModelError as exc:
+            # Fail closed: without a working local detector nothing leaves the machine.
+            reasons = [block_reason(exc)]
+            record.gate = {"decision": "block", "reasons": reasons}
+            services.audit.write(record)
+            return _blocked(record, reasons)
+        finally:
+            record.stop("detect")
+
+        wants_review = settings.review_mode is not ReviewMode.NEVER or (
+            request.headers.get(REVIEW_HEADER)
+        )
+        if wants_review:
+            proposals, preview_stats = services.sanitizer.propose(body, analysis, session)
+            reasons = review_reasons(request, analysis, preview_stats)
+            if reasons:
+                return hold_for_review(
+                    record, body, analysis, proposals, preview_stats, reasons,
+                    conversation_id, include_reasoning,
+                )  # fmt: skip
+        return await finish_chat(
+            record, body, analysis, session, conversation_id, include_reasoning
+        )
+
+    def hold_for_review(
+        record: AuditRecord,
+        body: dict[str, Any],
+        analysis: ChatAnalysis,
+        proposals: list[dict[str, Any]],
+        preview_stats,
+        reasons: list[str],
+        conversation_id: str,
+        include_reasoning: bool,
+    ) -> JSONResponse:
+        review_id = services.reviews.put(
+            PendingReview(body, conversation_id, analysis, proposals, include_reasoning)
+        )
+        record.gate = {"decision": "review", "reasons": [f"review_required:{r}" for r in reasons]}
+        record.meta.update({"detector": preview_stats.as_dict(), "review_id": review_id})
+        record.detections = []
+        services.audit.write(record, [p["text"] for p in proposals])
+        return JSONResponse(
+            {
+                "error": {
+                    "type": "airlock_review_required",
+                    "message": "Confirm the proposed redactions: POST /review/{review_id}",
+                    "review_id": review_id,
+                    "reasons": reasons,
+                    "proposed": proposals,
+                    "request_id": record.request_id,
+                    "expires_in_s": int(settings.review_ttl_s),
+                }
+            },
+            status_code=409,
+            headers={REQUEST_ID_HEADER: record.request_id, CONVERSATION_HEADER: conversation_id},
+        )
+
+    @app.post("/review/{review_id}")
+    async def submit_review(review_id: str, decision: ReviewDecision):
+        pending = services.reviews.get(review_id)
+        if pending is None:
+            return _error(404, "airlock_review_not_found", "unknown or expired review_id")
+        ids = {p["span_id"] for p in pending.proposals}
+        unknown = sorted((set(decision.approve) | set(decision.reject)) - ids)
+        if unknown:
+            return _error(400, "invalid_request_error", f"unknown span_id: {', '.join(unknown)}")
+        both = set(decision.approve) & set(decision.reject)
+        if both:
+            return _error(400, "invalid_request_error", "a span_id is both approved and rejected")
+        services.reviews.pop(review_id)
+
+        rejected = [p["text"] for p in pending.proposals if p["span_id"] in decision.reject]
+        # A user-added span cannot be rejected by the same decision.
+        added_norms = {normalize(a.text) for a in decision.add}
+        rejected = [r for r in rejected if normalize(r) not in added_norms]
+        added = [Span(text=a.text.strip(), type=a.type, source="user") for a in decision.add]
+
+        record = AuditRecord("chat")
+        record.meta["review"] = {
+            "review_id": review_id,
+            "proposed": len(pending.proposals),
+            "approved": len(pending.proposals) - len(rejected),
+            "rejected": len(rejected),
+            "added": len(added),
+        }
+        session = services.vault.session(pending.conversation_id)
+        return await finish_chat(
+            record,
+            pending.body,
+            pending.analysis,
+            session,
+            pending.conversation_id,
+            pending.include_reasoning,
+            rejected=rejected,
+            added=added,
+        )
 
     @app.post("/v1/search")
     async def private_search(req: SearchRequest):
@@ -393,6 +574,7 @@ def create_app(
         # Clears declared terms, canaries, all conversation mappings and the in-memory detector
         # cache (which holds raw text). Audit records are kept.
         services.sanitizer.detector.clear_cache()
+        services.reviews.clear()
         return {"reset": True, **services.vault.reset()}
 
     return app

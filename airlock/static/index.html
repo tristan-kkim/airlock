@@ -21,6 +21,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--bg); color: var(--ink);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
   header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px;
@@ -72,6 +73,31 @@
   .result { padding: 8px 0; border-top: 1px dashed var(--line); }
   .result a { color: var(--accent); }
   .terms-list { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin: 0 0 0 4px; }
+  .toggle input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+  .review { margin: 16px 0; border-color: var(--accent); }
+  .review header { all: unset; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .review h2 { margin: 0; font-size: 16px; }
+  .review .hint { color: var(--muted); font-size: 13px; }
+  .review ul { list-style: none; margin: 12px 0 0; padding: 0; }
+  .review li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .review li:first-child { border-top: 0; }
+  .review li.off .after { text-decoration: line-through; opacity: .55; }
+  .review li input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; margin: 3px 0 0; grid-row: span 2; }
+  .review .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+  .chip { border-radius: 999px; padding: 1px 8px; background: var(--code-bg); color: var(--muted); border: 1px solid var(--line); }
+  .chip.type { background: var(--ph-bg); color: var(--ph-ink); border-color: transparent; font-family: var(--mono); }
+  .chip.gen { background: var(--gen-bg); color: var(--gen-ink); border-color: transparent; }
+  .review .previews { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 14px; }
+  @media (max-width: 700px) { .review .previews { grid-template-columns: 1fr; } .review .arrow { display: none; } }
+  .review .arrow { color: var(--muted); }
+  .review .previews > span { min-width: 0; overflow-wrap: anywhere; }
+  .review mark { background: var(--bad-bg); color: var(--bad); border-radius: 3px; padding: 0 2px; }
+  .review .after mark { background: var(--ph-bg); color: var(--ph-ink); font-family: var(--mono); font-size: .9em; }
+  .review .add { display: grid; grid-template-columns: minmax(0, 1fr) 190px auto; gap: 8px; margin-top: 12px; }
+  @media (max-width: 700px) { .review .add { grid-template-columns: 1fr; } }
+  select { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  .review .empty-list { color: var(--muted); font-style: italic; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -96,6 +122,7 @@
       <div class="row">
         <button id="send">Send through Airlock</button>
         <button id="reset" class="ghost">New conversation</button>
+        <label class="toggle" id="review-toggle"><input type="checkbox" id="review-on" checked> Review redactions before sending</label>
         <span class="meta" id="status"></span>
       </div>
       <div class="samples" id="samples"></div>
@@ -105,6 +132,28 @@
       <input type="text" id="term" placeholder="e.g. Hanbit Labs">
       <div class="row"><button id="add-term" class="ghost">Add term</button></div>
       <div class="terms-list" id="terms">Stored only in the local vault.</div>
+    </div>
+  </section>
+
+  <section class="card review" id="review" hidden aria-live="polite">
+    <header>
+      <h2>Review before sending</h2>
+      <span class="hint">Nothing has left this machine. Checked items are redacted; uncheck to send a value as written.</span>
+    </header>
+    <ul id="review-list"></ul>
+    <div class="add">
+      <input type="text" id="add-text" placeholder="Something else to redact (exact text)">
+      <select id="add-type" aria-label="Type">
+        <option>PERSON</option><option>ORG</option><option>CONTACT</option><option>ID_NUMBER</option>
+        <option>FINANCIAL</option><option>SECRET</option><option>LOCATION</option><option>HEALTH</option>
+        <option>QUASI_IDENTIFIER</option>
+      </select>
+      <button id="add-span" class="ghost">Add</button>
+    </div>
+    <div class="row">
+      <button id="review-send">Send</button>
+      <button id="review-cancel" class="ghost">Cancel</button>
+      <span class="meta" id="review-status"></span>
     </div>
   </section>
 
@@ -126,18 +175,25 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const mark = (s) => esc(s).replace(/\[\[[A-Z][A-Z_]*_\d+\]\]/g, (m) => `<span class="ph">${m}</span>`);
+  const mark = (s) => esc(s).replace(/&lt;[A-Z][A-Z_]*_\d+&gt;|\[\[[A-Z][A-Z_]*_\d+\]\]/g, (m) => `<span class="ph">${m}</span>`);
+  const highlight = (s, needle) => {
+    const text = String(s ?? ""), i = needle ? text.indexOf(needle) : -1;
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + `<mark>${esc(needle)}</mark>` + esc(text.slice(i + needle.length));
+  };
   const newConv = () => "ui-" + (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
 
   let mode = "chat";
   let history = [];
   let conversation = newConv();
+  let pending = null; // { reviewId, messages, proposed, added }
 
   const samples = {
     chat: [
       ["Medical (EN)", "Hi, I'm Jane Park (jane.park@example.com, 010-2345-6789). I'm 34 years old and was just diagnosed with type 1 diabetes at Hanbit Clinic. Draft a short note to my manager asking for flexible hours."],
       ["Secrets (EN)", "Why does this fail? DATABASE_URL=postgres://admin:hunter22@db.internal:5432/prod and OPENAI_API_KEY=sk-proj-Zx8Qw3Er5Ty7Ui9Op1As2Df4"],
       ["계좌·주민번호 (KO)", "김민수(주민번호 900101-1234567)에게 신한은행 110-234-567890 계좌로 월세 85만원을 보내야 해. 집주인에게 보낼 정중한 문자를 써줘."],
+      ["준식별자·건강 (KO)", "판교 새론다움물류에서 유일한 여성 부사장인데, 문태오 팀장님이 공황장애 진단을 받아서 병가를 냈어. 팀 공지 초안 써줘."],
     ],
     search: [
       ["Layoff question", "Can my employer fire me without severance?", "I'm Minji Lee, a senior analyst at Seoul Mirae Bank, employee ID 20231187. HR told me on Friday my role is cut."],
@@ -163,6 +219,7 @@
     $("input-label").textContent = m === "chat" ? "Message" : "Search query";
     $("answer-title").textContent = m === "chat" ? "Answer (rehydrated)" : "Results (re-ranked locally)";
     $("reset").hidden = m !== "chat";
+    $("review-toggle").hidden = m !== "chat";
     renderSamples();
   }
 
@@ -216,24 +273,15 @@
     $("send").disabled = true; $("status").textContent = "Detecting locally…";
     try {
       if (mode === "chat") {
+        hideReview();
         const messages = [...history, { role: "user", content: text }];
         $("pane-typed").innerHTML = messages.map((m) => `<div class="msg"><span class="role">${esc(m.role)}</span>${esc(m.content)}</div>`).join("");
+        const headers = { "content-type": "application/json", "x-airlock-conversation-id": conversation };
+        if ($("review-on").checked) headers["x-airlock-review"] = "required";
         const r = await fetch("/v1/chat/completions", {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-airlock-conversation-id": conversation },
-          body: JSON.stringify({ model: "airlock", messages }),
+          method: "POST", headers, body: JSON.stringify({ model: "airlock", messages }),
         });
-        const data = await r.json();
-        const id = r.headers.get("x-airlock-request-id") || data?.error?.request_id;
-        if (r.ok) {
-          const answer = data.choices?.[0]?.message?.content ?? "";
-          $("pane-answer").textContent = answer;
-          history = [...messages, { role: "assistant", content: answer }];
-          $("input").value = "";
-        } else {
-          $("pane-answer").innerHTML = `<span class="empty">${esc(data.error?.type)}: ${esc(data.error?.message || "request blocked before leaving this machine")}</span>`;
-        }
-        await loadAudit(id);
+        await handleChat(r, messages);
       } else {
         const context = $("context").value.trim() || null;
         $("pane-typed").innerHTML = `<div class="msg"><span class="role">query</span>${esc(text)}</div>` +
@@ -260,6 +308,95 @@
     }
   }
 
+  async function handleChat(r, messages) {
+    const data = await r.json();
+    const id = r.headers.get("x-airlock-request-id") || data?.error?.request_id;
+    if (r.status === 409 && data?.error?.type === "airlock_review_required") {
+      showReview(data.error, messages);
+      $("pane-cloud").innerHTML = `<span class="empty">Waiting for your review. Nothing has been sent.</span>`;
+      $("pane-answer").innerHTML = `<span class="empty">Confirm the redactions below to send.</span>`;
+      $("gate").hidden = true; $("details").hidden = true;
+      return;
+    }
+    if (r.ok) {
+      const answer = data.choices?.[0]?.message?.content ?? "";
+      $("pane-answer").textContent = answer;
+      history = [...messages, { role: "assistant", content: answer }];
+      $("input").value = "";
+    } else {
+      $("pane-answer").innerHTML = `<span class="empty">${esc(data.error?.type)}: ${esc(data.error?.message || "request blocked before leaving this machine")}</span>`;
+    }
+    await loadAudit(id);
+  }
+
+  function showReview(err, messages) {
+    pending = { reviewId: err.review_id, messages, proposed: err.proposed || [], added: [] };
+    renderReview();
+    $("review").hidden = false;
+    $("review-status").textContent = (err.reasons || []).length ? `why: ${err.reasons.join(", ")}` : "";
+    $("review-send").focus({ preventScroll: true });
+    $("review").scrollIntoView({ block: "nearest" });
+  }
+
+  function hideReview() { pending = null; $("review").hidden = true; }
+
+  function renderReview() {
+    const list = $("review-list");
+    list.innerHTML = "";
+    const items = [...pending.proposed, ...pending.added];
+    if (!items.length) {
+      list.innerHTML = `<li class="empty-list">No redactions proposed. Add one below or send as is.</li>`;
+      return;
+    }
+    for (const p of items) {
+      const li = document.createElement("li");
+      const box = document.createElement("input");
+      box.type = "checkbox"; box.checked = p.keep !== false; box.disabled = !!p.locked;
+      box.setAttribute("aria-label", `Redact ${p.type}`);
+      box.onchange = () => { p.keep = box.checked; li.classList.toggle("off", !box.checked); };
+      li.classList.toggle("off", p.keep === false);
+      const conf = typeof p.confidence === "number" ? ` · ${Math.round(p.confidence * 100)}%` : "";
+      const source = p.user ? "added by you" : `${(p.sources || [p.source]).join(" + ")}${conf}`;
+      const after = p.user ? `<mark>&lt;${esc(p.type)}_…&gt;</mark>` : highlight(p.preview_after, p.replacement);
+      const before = p.user ? esc(p.text) : highlight(p.preview_before, p.text);
+      li.innerHTML = `<div class="chips"><span class="chip type">${esc(p.type)}</span>` +
+        `<span class="chip ${p.action === "generalize" ? "gen" : ""}">${esc(p.action || "mask")}</span>` +
+        `<span class="chip">${esc(source)}</span>${p.locked ? `<span class="chip">always redacted</span>` : ""}</div>` +
+        `<div class="previews"><span class="before">${before}</span><span class="arrow">→</span><span class="after">${after}</span></div>`;
+      li.prepend(box);
+      list.appendChild(li);
+    }
+  }
+
+  function addSpan() {
+    const text = $("add-text").value.trim();
+    if (!pending || text.length < 2) return;
+    pending.added.push({ user: true, text, type: $("add-type").value, action: "mask", keep: true });
+    $("add-text").value = "";
+    renderReview();
+  }
+
+  async function sendReview() {
+    if (!pending) return;
+    const approve = pending.proposed.filter((p) => p.keep !== false).map((p) => p.span_id);
+    const reject = pending.proposed.filter((p) => p.keep === false).map((p) => p.span_id);
+    const add = pending.added.filter((p) => p.keep !== false).map((p) => ({ text: p.text, type: p.type }));
+    const { reviewId, messages } = pending;
+    $("review-send").disabled = true; $("review-status").textContent = "Sending…";
+    try {
+      const r = await fetch(`/review/${encodeURIComponent(reviewId)}`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approve, reject, add }),
+      });
+      hideReview();
+      await handleChat(r, messages);
+    } catch (e) {
+      $("review-status").textContent = "Error: " + e.message;
+    } finally {
+      $("review-send").disabled = false;
+    }
+  }
+
   async function addTerm() {
     const term = $("term").value.trim();
     if (!term) return;
@@ -274,8 +411,12 @@
   $("tab-search").onclick = () => setMode("search");
   $("send").onclick = send;
   $("add-term").onclick = addTerm;
+  $("review-send").onclick = sendReview;
+  $("review-cancel").onclick = () => { hideReview(); $("pane-answer").innerHTML = `<span class="empty">Cancelled. Nothing was sent.</span>`; };
+  $("add-span").onclick = addSpan;
+  $("add-text").addEventListener("keydown", (e) => { if (e.key === "Enter") addSpan(); });
   $("reset").onclick = () => {
-    history = []; conversation = newConv();
+    history = []; conversation = newConv(); hideReview();
     for (const p of ["pane-typed", "pane-cloud", "pane-answer"]) $(p).innerHTML = `<span class="empty">New conversation.</span>`;
     $("gate").hidden = true; $("details").hidden = true;
   };
