@@ -352,7 +352,7 @@ numbers are directly comparable.
 | `raw` | 8801 | pass-through; the upper bound | n/a |
 | `regex` | 8802 | the regex rules of `mock_airlock.py`, without the simulated LLM or the gate | RRN and dashed mobile numbers only |
 | `presidio_ko` | 8803 | Microsoft Presidio 2.2.364 analyzer + anonymizer. Lines with Hangul go to a Korean pipeline (spaCy `ko_core_news_sm`, KLUE labels mapped, Presidio's five KR ID recognizers, which ship disabled, plus e-mail, KR/US phone, card, IBAN, IP, crypto, SSN and URL recognizers); other lines go to Presidio's full English registry with `en_core_web_sm`. Organizations are added to the spaCy recognizer for both. Score threshold 0. | partial: NER from spaCy, no Korean bank, card or address patterns |
-| `gliner_pii` | 8804 | `nvidia/gliner-PII` (570M span NER, the NeMo Guardrails PII backend), threshold 0.3, 50 labels in two prompts of 25, overlapping windows | none officially (English-only training); run unchanged |
+| `gliner_pii` | 8804 | `nvidia/gliner-PII` (570M span NER, the NeMo Guardrails PII backend), threshold 0.3, 50 labels in two prompts of 25, overlapping windows | none officially (English-only training); run unchanged. It flags many Korean spans anyway, often under unrelated labels |
 
 Shared plumbing (`baselines/common.py`) gives every masking baseline the same generous treatment,
 so the comparison is about detectors: chat `content` and tool-call `arguments` are masked (JSON
@@ -365,6 +365,7 @@ their over-block rate is 0 by construction.
 eval/run_baselines.sh                 # all four, 3 passes each, then compare.py
 PASSES=10 eval/run_baselines.sh raw   # one baseline, more passes
 uv run eval/compare.py                # rebuild results/COMPARISON.md from what exists
+uv run eval/compare.py --extra ../other-worktree/eval/results/baseline-<commit>   # add a run
 ```
 
 `run_baselines.sh` starts each server with `uv run` (each file has a PEP 723 header, so its

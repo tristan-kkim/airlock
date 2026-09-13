@@ -34,7 +34,10 @@ KOREAN_SUPPORT = {
     "regex": "Korean RRN and dashed mobile patterns only; no names",
     "presidio_ko": "Korean NER from spaCy ko_core_news (KLUE labels) plus Presidio's 5 KR ID "
     "recognizers (disabled by default upstream); no Korean bank/card/address patterns",
-    "gliner_pii": "none officially: trained on English-only Nemotron-PII, run unchanged",
+    "gliner_pii": "none officially: trained on English-only Nemotron-PII, run unchanged. It still "
+    "flags many Korean spans, often under unrelated labels (in qid-ko-01 the age became PASSWORD "
+    "and the company RELIGIOUS_BELIEF), so its Korean leak rate is low but benign masking and "
+    "over-redaction are high; see the by-language table",
 }
 COLUMNS = [
     ("leak_rate", "Leak rate"),
@@ -67,10 +70,11 @@ def load_json(path: Path) -> dict[str, Any] | None:
         return None
 
 
-def discover(results: Path) -> list[tuple[str, Path]]:
+def discover(results: Path, extra: list[Path] | None = None) -> list[tuple[str, Path]]:
+    dirs = [*sorted(results.glob("baseline-*")), *(extra or [])]
     found = {
         p.name.removeprefix("baseline-"): p
-        for p in sorted(results.glob("baseline-*"))
+        for p in dirs
         if p.is_dir() and (p / "summary.json").exists()
     }
     ordered = [(n, found.pop(n)) for n in BASELINES if n in found]
@@ -81,8 +85,8 @@ def label_for(name: str) -> str:
     return LABELS.get(name, f"airlock (live, {name})")
 
 
-def build(results: Path) -> str:
-    runs = discover(results)
+def build(results: Path, extra: list[Path] | None = None) -> str:
+    runs = discover(results, extra)
     has_airlock = any(name not in BASELINES for name, _ in runs)
     lines = [
         "# Leak comparison: Airlock vs local baselines",
@@ -119,6 +123,23 @@ def build(results: Path) -> str:
         lines.append(
             f"| airlock (live, {AIRLOCK_PLACEHOLDER}) | {pending} |" + " |" * (len(COLUMNS) + 3)
         )
+
+    lines += [
+        "",
+        "## By language",
+        "",
+        "Low leakage from over-masking is not protection that keeps answers useful, so the "
+        "false-positive side is shown per language too.",
+        "",
+        "| System | Leak ko | Leak en | Quasi re-id ko | Quasi re-id en | Benign masked ko "
+        "| Benign masked en | Over-redaction ko | Over-redaction en |",
+        "|---|" + "---:|" * 8,
+    ]
+    for name, _ in runs:
+        by_lang = summaries[name].get("by_lang", {})
+        keys = ("leak_rate", "quasi_reid_rate", "benign_false_positive_rate", "over_redaction_rate")
+        cells = [pct(by_lang.get(lang, {}).get(k)) for k in keys for lang in ("ko", "en")]
+        lines.append(f"| {label_for(name)} | " + " | ".join(cells) + " |")
 
     cats = sorted({c for s in summaries.values() for c in s.get("by_category", {})})
     if cats:
@@ -202,9 +223,16 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--results", type=Path, default=EVAL_DIR / "results")
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument(
+        "--extra",
+        type=Path,
+        action="append",
+        default=None,
+        help="another baseline-<name> run directory to include (for example from a worktree)",
+    )
     args = ap.parse_args(argv)
     out = args.out or args.results / "COMPARISON.md"
-    out.write_text(build(args.results), encoding="utf-8")
+    out.write_text(build(args.results, args.extra), encoding="utf-8")
     print(f"wrote {out}")
 
 
