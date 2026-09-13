@@ -42,6 +42,9 @@ from airlock.detect.ko_rules import (
     _PUBLIC_FIGURES,
     _SURNAMES,
 )
+from airlock.detect.ko_rules import (
+    _TITLE_WORDS as _TITLE_STEMS,
+)
 from airlock.detect.llm import LocalModel, LocalModelMalformed, load_prompt
 from airlock.detect.patterns import _looks_like_secret, _password_like, detect_patterns
 from airlock.detect.spans import (
@@ -349,6 +352,8 @@ def ko_name(text: str, min_syllables: int = 2) -> str | None:
     for _ in range(2):
         stripped = _KO_NAME_TAIL.sub("", name)
         removed = name[len(stripped) :]
+        if stripped != name and (stripped in _NAME_STOPWORDS or stripped in _PUBLIC_FIGURES):
+            return None  # "이장이" is 이장 + 이, not a name
         # 정다은 ends in 은: a one-syllable particle only goes when a 3+ syllable name remains.
         if len(stripped) >= 3 or (len(stripped) == 2 and (len(removed) >= 2 or removed in "님씨")):
             name = stripped
@@ -358,6 +363,10 @@ def ko_name(text: str, min_syllables: int = 2) -> str | None:
         return None
     if name in _NAME_STOPWORDS or name in _PUBLIC_FIGURES:
         return None
+    if name[-1] in "이가은는을를의과와도만" and (
+        name[:-1] in _NAME_STOPWORDS or name[:-1] in _TITLE_STEMS
+    ):
+        return None  # "이장이", "사장님" + particle: a title with a particle, not a name
     return name
 
 

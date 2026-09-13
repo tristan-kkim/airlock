@@ -154,6 +154,7 @@ Vietnam: Hanoi Ho_Chi_Minh_City
 Singapore: Singapore
 """
 
+US_STATE_CODES = _US_STATES
 EN_PARENT: dict[str, str] = {
     name.replace("_", " "): region.replace("_", " ")
     for name, region in _parse_children(_EN_CITIES).items()

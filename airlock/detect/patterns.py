@@ -288,6 +288,16 @@ RULES: tuple[Rule, ...] = (
         priority=25,
     ),
     Rule(
+        "street_address",
+        "LOCATION",
+        re.compile(
+            r"(?<![\w-])\d{1,6}\s+(?:[A-Z][a-z'’]+\s+){1,3}(?:Street|St|Lane|Ln|Avenue|Ave|Road|Rd|"
+            r"Drive|Dr|Boulevard|Blvd|Way|Court|Ct|Place|Pl|Terrace|Circle|Parkway|Pkwy)\b\.?"
+            r"(?:,?\s*(?:Apt|Apartment|Unit|Suite|Ste|#)\.?\s*[\w-]+)?"
+        ),
+        priority=25,
+    ),
+    Rule(
         # Ticket, case and document IDs: JIRA-4821, HFS-40418, CV-26-004417, Q5F6-0648.
         "ticket_id",
         "ID_NUMBER",

@@ -158,6 +158,21 @@ def test_search_context_value_is_masked_in_the_query() -> None:
             ["I'm an architect at"],
         ),
         (
+            "I'm the former CFO of a 30-person brewery in Cobalt Springs, Colorado.",
+            ["Cobalt Springs"],
+            ["a town in Colorado"],
+        ),
+        (
+            "경북 새내군에서 사과 농사짓는 부부고 남편이 전직 변호사야.",
+            ["새내군"],
+            ["경상북도의 한 군 지역"],
+        ),
+        (
+            "ER nurse at the only trauma center in Port Aldine, and I run marathons.",
+            ["Port Aldine"],
+            ["a local trauma center"],
+        ),
+        (
             "I work at Nettlefield Pharmacy Group's Tulsa plant and turned 52 in March.",
             ["Tulsa", "turned 52"],
             ["plant in Oklahoma", "in their 50s"],
@@ -186,6 +201,9 @@ def test_org_unit_role_link(text, gone, kept) -> None:
         "The sales team at a SaaS company usually has SDRs and AEs. Explain the roles.",
         "연구실 안전 수칙 알려줘.",
         "I'm 34 and a nurse. What stretches help back pain?",
+        "What is the weather like in Austin, Texas in May?",
+        "양평군 맛집 추천해줘.",
+        "Our only option in Denver is the downtown clinic.",
     ],
 )
 def test_benign_org_unit_text_is_untouched(text) -> None:
@@ -554,6 +572,7 @@ def test_honorific_is_not_doubled_on_rehydration(client, harness) -> None:
          "경기도 성남시 분당구 은행나무샘길 88, 111동 2304호", "kr_address"),
         ("현관 비밀번호 38966240.", "38966240", "code_after_cue"),
         ("OTP 030846 입력", "030846", "code_after_cue"),
+        ("Ship-to: 315 Larkspur Lane, Tucson, AZ.", "315 Larkspur Lane", "street_address"),
         ("병원 앱 비밀번호 yD4mB4vMBn는 메모용", "yD4mB4vMBn", "code_after_cue"),
     ],
 )  # fmt: skip

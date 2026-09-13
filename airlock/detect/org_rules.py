@@ -536,6 +536,14 @@ _EN_ONLY_IN_PLACE = re.compile(
 )
 
 
+_EN_CITY_STATE = re.compile(
+    r"\b(?P<prep>in|near|outside|from|to)\s+(?P<city>(?:[A-Z][\w'’\-]*\s){0,2}[A-Z][\w'’\-]*),\s*"
+    r"(?P<state>" + "|".join(sorted(regions.EN_REGIONS | set(regions.US_STATE_CODES), key=len,
+                                    reverse=True)) + r")\b"
+)  # fmt: skip
+_EN_FIRST_PERSON = re.compile(r"\b(?:I|I'm|I've|my|me|we|our|us)\b")
+
+
 def place_candidates(text: str) -> list[Candidate]:
     """A small place a person lives or works in: `경북 새내군`, `the only X in Port Aldine`."""
     from airlock.detect.ko_rules import _KO_PERSON_CUE
@@ -562,6 +570,16 @@ def place_candidates(text: str) -> list[Candidate]:
             top = regions.ko_container(m.group("top") or "")
             ko = f"{top}의 한 {noun}" if top else f"한 {noun}"
         out.append(Candidate(m.start(), m.end(), "place", ko, "a small town", "ko_small_place"))
+    for m in _EN_CITY_STATE.finditer(text):
+        s0, s1 = _sentence_of(text, m.start())
+        if not _EN_FIRST_PERSON.search(text[s0:s1]):
+            continue
+        state = regions.US_STATE_CODES.get(m.group("state"), m.group("state"))
+        if m.group("city") in regions.EN_REGIONS:
+            continue
+        start = m.start("city")
+        out.append(Candidate(start, m.end("state"), "place", "한 지역", f"a town in {state}",
+                             "en_city_state"))  # fmt: skip
     for m in _EN_ONLY_IN_PLACE.finditer(text):
         place = m.group("place").strip()
         top = regions.en_container(place)
