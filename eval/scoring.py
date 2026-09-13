@@ -20,6 +20,8 @@ from collections.abc import Iterable, Iterator
 from typing import Any
 from urllib.parse import unquote
 
+import protected
+
 HARNESS_VERSION = "1.0.0"
 
 # --------------------------------------------------------------------------------------------
@@ -379,6 +381,13 @@ def score_case(case: dict[str, Any], record: dict[str, Any]) -> dict[str, Any]:
             "reidentified": max_found >= k,
         }
 
+    identity_set = set(protected.identity_values(case))
+    identity_value_leaked = any(v["hits"] for v in values if v["value"] in identity_set)
+    identity_quasi = bool(
+        quasi
+        and any(protected.quasi_identifies(case, f) for f in quasi["per_destination"].values())
+    )
+
     must_keep = case.get("must_keep") or []
     if hays:
         missing = [m for m in must_keep if not any(h.find(m, KEEP_VARIANTS) for _, h in hays)]
@@ -402,6 +411,8 @@ def score_case(case: dict[str, Any], record: dict[str, Any]) -> dict[str, Any]:
         "canary_leaked": any(v["hits"] for v in values if v["is_canary"]),
         "quasi": quasi,
         "leaked": value_leaked or bool(quasi and quasi["reidentified"]),
+        "has_identity": protected.has_identity(case),
+        "identity_leaked": identity_value_leaked or identity_quasi,
         "values": values,
         "must_keep_total": len(must_keep),
         "must_keep_missing": missing,
@@ -439,6 +450,7 @@ def compute_metrics(scored: list[dict[str, Any]]) -> dict[str, Any]:
     eligible = [s for s in ok if s["n_values"] or s["quasi"]]
     with_canary = [s for s in ok if s["canary_count"]]
     with_quasi = [s for s in ok if s["quasi"]]
+    with_identity = [s for s in ok if s.get("has_identity")]
     keep_scored = [s for s in ok if s["must_keep_missing"] is not None and s["must_keep_total"]]
 
     outcomes = Counter(v["outcome"] for s in ok for v in s["values"])
@@ -460,6 +472,9 @@ def compute_metrics(scored: list[dict[str, Any]]) -> dict[str, Any]:
         "canary_leak_rate": _rate(sum(s["canary_leaked"] for s in with_canary), len(with_canary)),
         "quasi_reid_rate": _rate(
             sum(s["quasi"]["reidentified"] for s in with_quasi), len(with_quasi)
+        ),
+        "identity_leak_rate": _rate(
+            sum(bool(s.get("identity_leaked")) for s in with_identity), len(with_identity)
         ),
         "block_rate": _rate(sum(s["blocked"] for s in ok), len(ok)),
         "block_rate_sensitive": _rate(sum(s["blocked"] for s in sensitive), len(sensitive)),
@@ -631,6 +646,7 @@ _HEADLINE = [
     ("exact_leak_rate", "Leak rate (exact-string hits only)", "pct"),
     ("canary_leak_rate", "Canary leak rate", "pct"),
     ("quasi_reid_rate", "Quasi-identifier re-identification rate", "pct"),
+    ("identity_leak_rate", "Identity leak (any identity item or identifying quasi set)", "pct"),
     ("gate_save_rate", "Gate save rate (upper bound: request-level)", "pct"),
     ("gate_save_rate_attributed", "Gate save rate (lower bound: hash-attributed)", "pct"),
     ("detector_miss_rate", "Values that got past the detectors", "pct"),

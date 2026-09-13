@@ -11,6 +11,14 @@
     "GHS 18,400",
     "Tema Harbour Logistics"
   ],
+  "fact_classes": {
+    "Samuel Mensah": "identity",
+    "GWF081244917": "identity",
+    "Accra": "situation",
+    "Kofi Asante": "identity",
+    "GHS 18,400": "situation",
+    "Tema Harbour Logistics": "identity"
+  },
   "private_situation": "Samuel Mensah from Accra, a clerk at Tema Harbour Logistics, had his UK Standard Visitor visa refused because his bank statements showed an unexplained large deposit and his employment letter was not verified, while planning to visit his brother Kofi Asante.",
   "answer_rubric": [
     "Explains the refusal grounds in the letter (unexplained funds, genuine visitor doubts, employment evidence)",

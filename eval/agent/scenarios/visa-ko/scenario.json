@@ -11,6 +11,14 @@
     "제주",
     "E-0031"
   ],
+  "fact_classes": {
+    "최유진": "identity",
+    "S308924417": "identity",
+    "메이플리지 칼리지": "situation",
+    "2,300만원": "situation",
+    "제주": "situation",
+    "E-0031": "situation"
+  },
   "private_situation": "최유진이 메이플리지 칼리지 유학을 위해 신청한 캐나다 학생비자(study permit)가 재정 증빙 부족과 귀국 의사 불충분을 이유로 거절되었다.",
   "answer_rubric": [
     "거절 사유(재정 능력, 귀국 의사·본국 유대관계)를 문서에 근거해 설명한다",

@@ -11,6 +11,14 @@
     "Hannah Liu",
     "December 4"
   ],
+  "fact_classes": {
+    "Corvane Analytics": "identity",
+    "Tessellate Health AI": "situation",
+    "Project Bluefin": "identity",
+    "$185 million": "situation",
+    "Hannah Liu": "identity",
+    "December 4": "situation"
+  },
   "private_situation": "Corvane Analytics is secretly evaluating the acquisition of the clinical documentation AI startup Tessellate Health AI for about $185 million under the code name Project Bluefin, with a board vote planned for December 4.",
   "answer_rubric": [
     "Describes the clinical documentation or ambient scribe AI market (size, growth or key trends)",

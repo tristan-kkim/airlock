@@ -11,6 +11,14 @@
     "30-day",
     "Riverside branch"
   ],
+  "fact_classes": {
+    "Kelsey Moran": "identity",
+    "Northgate Community Credit Union": "identity",
+    "NCCU-5512": "identity",
+    "Tom Albrecht": "identity",
+    "30-day": "situation",
+    "Riverside branch": "identity"
+  },
   "private_situation": "Kelsey Moran, a member services representative at the Riverside branch of Northgate Community Credit Union, received a final written warning and a 30-day performance improvement plan after attendance issues that overlapped with her intermittent medical leave.",
   "answer_rubric": [
     "Explains what a PIP and final written warning usually mean and that at-will employment still applies",

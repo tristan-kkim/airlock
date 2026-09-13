@@ -11,6 +11,14 @@
     "Unit 3B",
     "Alder Street"
   ],
+  "fact_classes": {
+    "Priya Raman": "identity",
+    "Ridgeline Property Management": "situation",
+    "CV-26-004417": "identity",
+    "$14,380": "situation",
+    "Unit 3B": "identity",
+    "Alder Street": "identity"
+  },
   "private_situation": "Priya Raman, a former tenant of Unit 3B on Alder Street, is being sued by Ridgeline Property Management for $14,380 in unpaid rent and damages (case CV-26-004417) and was just served.",
   "answer_rubric": [
     "Explains the answer deadline stated in the summons and the risk of a default judgment",

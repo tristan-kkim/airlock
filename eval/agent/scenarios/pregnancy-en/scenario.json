@@ -11,6 +11,14 @@
     "October 19",
     "Senior Project Architect"
   ],
+  "fact_classes": {
+    "Elena Voss": "identity",
+    "Quarry Lane Architects": "identity",
+    "14 weeks": "situation",
+    "March 19, 2027": "situation",
+    "October 19": "situation",
+    "Senior Project Architect": "identity"
+  },
   "private_situation": "Elena Voss accepted a Senior Project Architect offer at Quarry Lane Architects starting October 19 with a 90-day probation while 14 weeks pregnant (due March 19, 2027) and has not told the employer.",
   "answer_rubric": [
     "States there is no legal duty to disclose pregnancy and that pregnancy discrimination is prohibited (Pregnancy Discrimination Act, Pregnant Workers Fairness Act)",

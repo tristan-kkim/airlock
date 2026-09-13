@@ -11,6 +11,14 @@
     "SRP-88410236",
     "4417"
   ],
+  "fact_classes": {
+    "Jordan Castellano": "identity",
+    "Summit Recovery Partners": "situation",
+    "Lakeshore Bank": "situation",
+    "$7,912.44": "situation",
+    "SRP-88410236": "identity",
+    "4417": "identity"
+  },
   "private_situation": "Jordan Castellano received a collection letter from Summit Recovery Partners for a $7,912.44 Lakeshore Bank credit card debt with no payment since 2019 and suspects it is time-barred.",
   "answer_rubric": [
     "Explains the FDCPA debt validation right and the 30-day window to dispute in writing",

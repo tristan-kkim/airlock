@@ -56,6 +56,7 @@ from airlock.config import load_settings  # noqa: E402
 from airlock.server import build_services  # noqa: E402
 
 import attack  # noqa: E402
+import protected  # noqa: E402
 
 SCENARIOS_DIR = AGENT_EVAL_DIR / "scenarios"
 RESULTS_DIR = AGENT_EVAL_DIR / "results"
@@ -96,6 +97,10 @@ def validate_scenario(s: dict) -> list[str]:
     for fact in s.get("private_facts") or []:
         if fact not in corpus:
             problems.append(f"{s.get('id')}: private fact not in docs: {fact!r}")
+    try:
+        protected.scenario_fact_classes(s)
+    except ValueError as exc:
+        problems.append(f"fact_classes: {exc}")
     for fact in s.get("private_facts") or []:
         if fact in s.get("question", ""):
             problems.append(f"{s.get('id')}: private fact appears in the question: {fact!r}")

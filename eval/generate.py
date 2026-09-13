@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from protected import classify_case  # noqa: E402
 from scoring import Haystack  # noqa: E402
 
 SEED = 20261030
@@ -2806,6 +2807,10 @@ def generate() -> dict[str, str]:
         big, small = (PER_CATEGORY + 1) // 2, PER_CATEGORY // 2
         n_ko, n_en = (big, small) if ci % 2 == 0 else (small, big)
         cases = build_category(cat, n_ko, n_en)
+        for c in cases:
+            # Identity vs situation classification (eval/protected.py). Consumes no randomness, so
+            # every other field is byte-identical to the dataset before this field existed.
+            c["protected"] = classify_case(c)
         validate(cases)
         files[f"{cat}.jsonl"] = "".join(json.dumps(c, ensure_ascii=False) + "\n" for c in cases)
     all_cases = [json.loads(line) for text in files.values() for line in text.splitlines()]
