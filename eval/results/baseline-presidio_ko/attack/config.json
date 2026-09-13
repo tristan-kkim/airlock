@@ -1,5 +1,5 @@
 {
-  "attack_version": "1.0.0",
+  "attack_version": "1.1.0",
   "results_dir": "baseline-presidio_ko",
   "target_label": "baseline:presidio_ko",
   "base_url": "https://api.tokenfactory.nebius.com/v1",
@@ -23,5 +23,16 @@
   "finished_at": "2026-09-13T16:22:03.808005+00:00",
   "failures": {
     "attacker_unparsed": 0
-  }
+  },
+  "situation_backfill": [
+    {
+      "at": "2026-09-13T19:49:18.023660+00:00",
+      "usage": {
+        "prompt_tokens": 58927,
+        "completion_tokens": 9999,
+        "calls": 106
+      },
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+    }
+  ]
 }

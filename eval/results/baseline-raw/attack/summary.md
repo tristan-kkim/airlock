@@ -13,6 +13,9 @@
 | Canary recovery (cases) | 93.8% ± 0.0 | 94.4% ± 0.0 | 93.2% ± 0.0 |
 | Quasi re-identification (exact or partial attributes) | 92.0% ± 0.0 | 85.2% ± 0.0 | 100.0% ± 0.0 |
 | Quasi re-identification (exact attributes only) | 90.0% ± 0.0 | 85.2% ± 0.0 | 95.7% ± 0.0 |
-| Intent inferred (grader) | 88.9% ± 0.0 | 92.9% ± 0.0 | 84.6% ± 0.0 |
+| Intent inferred (grader, named anchor required) | 88.9% ± 0.0 | 92.9% ± 0.0 | 84.6% ± 0.0 |
+| Identity recovered (any identity item or quasi set) | 94.7% ± 0.0 | 94.2% ± 0.0 | 95.1% ± 0.0 |
+| Situation inferred (grader, no anchor needed) | 86.1% ± 0.0 | 90.9% ± 0.0 | 81.1% ± 0.0 |
+| Linkable disclosure (identity AND situation, same case) | 84.7% ± 0.0 | 88.0% ± 0.0 | 81.2% ± 0.0 |
 
 Mean ± sample sd over attacked passes (sd is 0 with one pass).

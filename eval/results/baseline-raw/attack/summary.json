@@ -70,6 +70,36 @@
       "values": [
         0.8888888888888888
       ]
+    },
+    "attack_identity_recovery_rate": {
+      "n": 1,
+      "mean": 0.9466019417475728,
+      "std": 0.0,
+      "min": 0.9466019417475728,
+      "max": 0.9466019417475728,
+      "values": [
+        0.9466019417475728
+      ]
+    },
+    "situation_inference_rate": {
+      "n": 1,
+      "mean": 0.8611111111111112,
+      "std": 0.0,
+      "min": 0.8611111111111112,
+      "max": 0.8611111111111112,
+      "values": [
+        0.8611111111111112
+      ]
+    },
+    "linkable_disclosure_rate": {
+      "n": 1,
+      "mean": 0.8469387755102041,
+      "std": 0.0,
+      "min": 0.8469387755102041,
+      "max": 0.8469387755102041,
+      "values": [
+        0.8469387755102041
+      ]
     }
   },
   "by_lang": {
@@ -143,6 +173,36 @@
         "values": [
           0.8461538461538461
         ]
+      },
+      "attack_identity_recovery_rate": {
+        "n": 1,
+        "mean": 0.9509803921568627,
+        "std": 0.0,
+        "min": 0.9509803921568627,
+        "max": 0.9509803921568627,
+        "values": [
+          0.9509803921568627
+        ]
+      },
+      "situation_inference_rate": {
+        "n": 1,
+        "mean": 0.8113207547169812,
+        "std": 0.0,
+        "min": 0.8113207547169812,
+        "max": 0.8113207547169812,
+        "values": [
+          0.8113207547169812
+        ]
+      },
+      "linkable_disclosure_rate": {
+        "n": 1,
+        "mean": 0.8125,
+        "std": 0.0,
+        "min": 0.8125,
+        "max": 0.8125,
+        "values": [
+          0.8125
+        ]
       }
     },
     "ko": {
@@ -215,6 +275,36 @@
         "values": [
           0.9285714285714286
         ]
+      },
+      "attack_identity_recovery_rate": {
+        "n": 1,
+        "mean": 0.9423076923076923,
+        "std": 0.0,
+        "min": 0.9423076923076923,
+        "max": 0.9423076923076923,
+        "values": [
+          0.9423076923076923
+        ]
+      },
+      "situation_inference_rate": {
+        "n": 1,
+        "mean": 0.9090909090909091,
+        "std": 0.0,
+        "min": 0.9090909090909091,
+        "max": 0.9090909090909091,
+        "values": [
+          0.9090909090909091
+        ]
+      },
+      "linkable_disclosure_rate": {
+        "n": 1,
+        "mean": 0.88,
+        "std": 0.0,
+        "min": 0.88,
+        "max": 0.88,
+        "values": [
+          0.88
+        ]
       }
     }
   },
@@ -229,11 +319,17 @@
       "attack_quasi_reid_rate_exact": 0.9,
       "attack_intent_inference_rate": 0.8888888888888888,
       "intent_cases": 27,
-      "intent_ungraded": 0
+      "intent_ungraded": 0,
+      "attack_identity_recovery_rate": 0.9466019417475728,
+      "situation_inference_rate": 0.8611111111111112,
+      "linkable_disclosure_rate": 0.8469387755102041,
+      "situation_cases": 108,
+      "linkable_cases": 98,
+      "situation_ungraded": 0
     }
   ],
   "config": {
-    "attack_version": "1.0.0",
+    "attack_version": "1.1.0",
     "results_dir": "baseline-raw",
     "target_label": "baseline:raw",
     "base_url": "https://api.tokenfactory.nebius.com/v1",
@@ -257,6 +353,17 @@
     "finished_at": "2026-09-13T16:19:43.291009+00:00",
     "failures": {
       "attacker_unparsed": 0
-    }
+    },
+    "situation_backfill": [
+      {
+        "at": "2026-09-13T19:48:45.026691+00:00",
+        "usage": {
+          "prompt_tokens": 63464,
+          "completion_tokens": 10389,
+          "calls": 107
+        },
+        "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+      }
+    ]
   }
 }

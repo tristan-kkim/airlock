@@ -1,0 +1,28 @@
+{
+  "attack_version": "1.1.0",
+  "results_dir": "baseline-f0ba569",
+  "target_label": "baseline f0ba569: Nano-4B Q4 + Ultra",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "estimate": {
+    "attacker_calls": 241,
+    "grader_calls": 25,
+    "situation_grader_calls": 106,
+    "prompt_tokens_est": 268156,
+    "completion_tokens_max": 387700
+  },
+  "started_at": "2026-09-13T19:54:39.308632+00:00",
+  "usage": {
+    "prompt_tokens": 239567,
+    "completion_tokens": 73921
+  },
+  "finished_at": "2026-09-13T19:57:26.734962+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

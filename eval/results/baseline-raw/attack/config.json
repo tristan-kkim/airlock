@@ -1,5 +1,5 @@
 {
-  "attack_version": "1.0.0",
+  "attack_version": "1.1.0",
   "results_dir": "baseline-raw",
   "target_label": "baseline:raw",
   "base_url": "https://api.tokenfactory.nebius.com/v1",
@@ -23,5 +23,16 @@
   "finished_at": "2026-09-13T16:19:43.291009+00:00",
   "failures": {
     "attacker_unparsed": 0
-  }
+  },
+  "situation_backfill": [
+    {
+      "at": "2026-09-13T19:48:45.026691+00:00",
+      "usage": {
+        "prompt_tokens": 63464,
+        "completion_tokens": 10389,
+        "calls": 107
+      },
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+    }
+  ]
 }
