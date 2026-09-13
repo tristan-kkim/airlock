@@ -532,3 +532,36 @@ def test_truncated_finish_arguments_are_salvaged() -> None:
     assert salvage_answer('{"answer": "Line one\\nLine \\"two\\"') == 'Line one\nLine "two"'
     assert salvage_answer('{"answer": "complete"}') == "complete"
     assert salvage_answer("{}") == ""
+
+
+def test_name_inside_a_longer_span_in_one_document_is_masked_alone_in_another(
+    make_agent_client, agent
+) -> None:
+    """Overlap resolution keeps the longer quasi-identifier; the name still appears elsewhere."""
+    agent.h.entities = {}
+    phrase = "the only night nurse Mira Solberg"
+
+    def detect(user: str) -> str:
+        if phrase in user:
+            spans = [
+                {"text": phrase, "type": "QUASI_IDENTIFIER", "action": "mask", "replacement": ""},
+                {"text": "Mira Solberg", "type": "PERSON", "action": "mask", "replacement": ""},
+            ]
+        else:
+            spans = []
+        return json.dumps({"spans": spans})
+
+    agent.h.local_content = detect
+    agent.h.upstream_reply = script(
+        tool_reply(
+            call("read_local_doc", {"doc_id": "doc-1"}, 1),
+            call("read_local_doc", {"doc_id": "doc-2"}, 2),
+        ),
+        tool_reply(call("finish", {"answer": "ok"})),
+    )
+    client = make_agent_client()
+    docs = [("a.md", f"Report: {phrase} was late."), ("b.md", "Signed, Mira Solberg.")]
+    events = run_events(client, docs=docs)
+    assert final_of(events)["status"] == "finished"
+    wire = b"".join(agent.h.upstream_raw).decode()
+    assert "Solberg" not in wire

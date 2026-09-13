@@ -42,6 +42,7 @@ from airlock.agent_settings import AgentSettings
 from airlock.audit import AuditLog, AuditRecord
 from airlock.config import Settings
 from airlock.detect.llm import LocalModelError, block_reason, load_prompt
+from airlock.detect.spans import Span
 from airlock.egress import EgressEvent, EgressPolicy
 from airlock.hashing import Hasher
 from airlock.pipeline import Detection, PayloadError, Sanitizer, dedupe_detections
@@ -508,15 +509,17 @@ class AgentRunner:
     async def _sanitize_turn(
         self, body: dict[str, Any], session: VaultSession
     ) -> tuple[dict[str, Any], list[Any], list[str], list[Detection]]:
-        """Sanitize the whole history; converge once if a value was detected in only some slots.
+        """Sanitize the whole history; converge once if a value was masked in only some slots.
 
-        Detection runs per text slot, and a new mapping reaches other slots only on the next
-        sanitization. A turn with several new tool results can therefore hold a value that was
-        masked in one document but missed in another, which the gate would block. One more pass
-        applies this turn's mappings to every slot (the detector cache makes it cheap). The gate
-        still decides on the final payload.
+        Detection runs per text slot. A turn with several new tool results can hold a value that
+        was detected in one document but missed in another, or a name that lost overlap
+        resolution to a longer span in one document and appears alone in another. The gate
+        would block such a turn. One more pass masks every known original in every slot: the
+        vault mappings created by the first pass, plus each protected original as an added span
+        (the detector cache makes this cheap). The gate still decides on the final payload.
         """
-        sanitized = await self.sanitizer.sanitize_chat(body, session)
+        analysis = await self.sanitizer.analyze_chat(body, session)
+        sanitized = self.sanitizer.build_chat(body, analysis, session)
         first = gate.check(
             sanitized.payload,
             sanitized.protected,
@@ -524,7 +527,13 @@ class AgentRunner:
             extra_reasons=sanitized.extra_reasons,
         )
         if not first.allowed and all(r.startswith("vault_original:") for r in first.reasons):
-            sanitized = await self.sanitizer.sanitize_chat(body, session)
+            known = [
+                Span(text=p.text, type=p.type, source="vault")
+                for p in sanitized.protected
+                if p.code == "vault_original"
+            ]
+            analysis = await self.sanitizer.analyze_chat(body, session)
+            sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
         return (
             sanitized.payload,
             sanitized.protected,
