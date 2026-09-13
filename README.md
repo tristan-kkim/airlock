@@ -173,7 +173,28 @@ Masking is recomputed for the whole history on every turn. When one turn adds se
 
 The attacker is Nemotron 3 Ultra with the [`eval/attack.py`](eval/attack.py) prompt, which sees only what left the machine. Each run is attacked twice: once over all hops, and once over the Tavily queries alone (the MosaicLeaks threat model). Private facts are matched deterministically in the attacker's output, and a strict grader decides whether the attacker inferred the private situation. A blind grader scores the final answer against the rubric from 1 to 5.
 
-<!-- AGENT_EVAL_TABLE -->
+Results: 16 scenarios × 2 modes × 3 passes, Nemotron-3-Nano-4B judge ([`eval/agent/results/demo/`](eval/agent/results/demo/) has the full summary, per-scenario table and sample traces):
+
+| Metric | Unguarded agent | Airlock |
+|---|---:|---:|
+| Private facts recovered, all hops | 87.2% ± 7.8 | **41.3% ± 4.2** |
+| Private situation inferred, all hops (strict grader) | 89.6% ± 7.2 | 89.6% ± 3.6 |
+| Private facts recovered, search queries only | 4.9% ± 1.6 | **0.7% ± 0.6** |
+| Private situation inferred, search queries only | 8.3% ± 3.6 | 4.2% ± 7.2 |
+| Answer utility (1-5, blind rubric grader) | 4.44 ± 0.12 | 4.71 ± 0.18 |
+| Searches rewritten / blocked | 0% / 0% | 93.2% / 4.9% |
+| Steps per run | 6.2 | 6.6 |
+| Latency per run, median | 23 s | 367 s |
+
+Mean ± sample sd across passes. How to read it:
+
+- **Documents are where agents leak most, and masking halves it.** Unguarded, the attacker recovered 87% of the private facts (names, organizations, case and account numbers, amounts, dates). Through Airlock, 41% remain, and those are detector misses. Nemotron-3-Nano-4B sometimes returns no spans at all for plain English business text: in the English M&A memo every private fact reached the cloud model in 2 of 3 passes. By language, 38% remain in Korean (where the deterministic Korean rules help) and 44% in English.
+- **The situation is still visible to the cloud model.** 90% in both modes. The planning model has to read "a layoff notice with a 21-day release" to help, and the facts the detector missed give the grader the named anchor it needs. Airlock removes identity, not the topic of your documents.
+- **Search queries.** With a neutral system prompt, Nemotron 3 Ultra's own queries were already fairly generic (5% of facts, 8% of situations; 7% and 17% in Korean). Unguarded queries included, for example, `Maple Ridge College DLI O0000000E-0031 Business Administration Diploma designated learning institution` and `위로금 3개월분 통상임금 1650만원 적정성 퇴직금 계산`. Airlock rewrote 93% of queries, blocked 5%, and cut fact recovery from queries to 0.7%. The remaining 4.2% situation matches are 2 of 48 runs where fully generic queries (`study permit refusal reasons and reapplication process in Canada`) were enough for the grader, which accepts a country as the anchor. This scenario set does not reproduce a MosaicLeaks-scale query leak: the search guard removed a small leak, it did not close a large one.
+- **No utility cost measured.** Rewritten or blocked searches did not lower rubric scores. Low scores occurred in both modes: answers about the wrong case or target, one degenerate answer, and one run per mode that ended without an answer. The M&A scenario in Korean scored low in both modes.
+- **Latency is not representative.** The local model shared the GPU with two other llama-servers and decoded at about 4-7 tokens/s (about 33 alone). Guarded runs spend most of their time detecting spans in whole documents on every turn.
+- **The attacker is a lower bound.** On 4 unguarded runs and 1 Airlock run whose outbound payloads contained every private fact verbatim, it recovered none: it summarized the public search results instead, or continued the agent's tool calls. The run also exposed agent bugs (cross-slot masking blocks, empty `finish` arguments). They were fixed, and the affected runs were discarded and rerun; `config.json` lists them.
+
 
 ### Threat model for agent mode
 
