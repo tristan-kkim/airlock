@@ -23,8 +23,11 @@ def new_request_id() -> str:
     return "req_" + uuid.uuid4().hex
 
 
+Destination = Literal["upstream", "tavily", "http_tool"]
+
+
 class AuditRecord:
-    def __init__(self, kind: Literal["chat", "search"], request_id: str | None = None):
+    def __init__(self, kind: Literal["chat", "search", "agent"], request_id: str | None = None):
         self.request_id = request_id or new_request_id()
         self.created_at = datetime.now(UTC).isoformat()
         self.kind = kind
@@ -33,6 +36,8 @@ class AuditRecord:
         self.gate: dict[str, Any] = {"decision": "block", "reasons": ["not_evaluated"]}
         self.timings_ms: dict[str, float] = {}
         self.meta: dict[str, Any] = {}
+        # Agent runs: one entry per egress hop (see airlock.egress). Empty for chat and search.
+        self.hops: list[dict[str, Any]] = []
         self._t0 = time.perf_counter()
         self._marks: dict[str, float] = {}
 
@@ -45,13 +50,13 @@ class AuditRecord:
             elapsed = (time.perf_counter() - began) * 1000
             self.timings_ms[name] = round(self.timings_ms.get(name, 0.0) + elapsed, 2)
 
-    def add_outbound(self, destination: Literal["upstream", "tavily"], payload: Any) -> None:
+    def add_outbound(self, destination: Destination, payload: Any) -> None:
         self.outbound.append({"destination": destination, "payload": payload})
 
     def to_dict(self) -> dict[str, Any]:
         timings = dict(self.timings_ms)
         timings["total"] = round((time.perf_counter() - self._t0) * 1000, 2)
-        return {
+        data = {
             "request_id": self.request_id,
             "created_at": self.created_at,
             "kind": self.kind,
@@ -61,20 +66,36 @@ class AuditRecord:
             "timings_ms": timings,
             "meta": self.meta,
         }
+        if self.hops:
+            data["hops"] = self.hops
+        return data
 
 
 def scrub(record: dict[str, Any], originals: list[str]) -> dict[str, Any]:
     """Defense in depth: redact any original that slipped into gate reasons or detection labels.
 
-    Outbound payloads are left verbatim (they are the evidence and already passed the gate).
+    Outbound payloads are left verbatim (they are the evidence and already passed the gate). For
+    agent hops, everything except the hop's `payload` is scrubbed.
     """
-    targets = {"gate": record.get("gate"), "detections": record.get("detections")}
+    hops = record.get("hops") or []
+    targets = {
+        "gate": record.get("gate"),
+        "detections": record.get("detections"),
+        "hops": [{k: v for k, v in hop.items() if k != "payload"} for hop in hops],
+    }
     blob = json.dumps(targets, ensure_ascii=False)
     for original in sorted({o for o in originals if len(o.strip()) >= 2}, key=len, reverse=True):
         encoded = json.dumps(original.strip(), ensure_ascii=False)[1:-1]
         if normalize(original) in normalize(blob):
             blob = term_pattern(encoded).sub("[REDACTED]", blob)
-    return {**record, **json.loads(blob)}
+    cleaned = json.loads(blob)
+    out = {**record, "gate": cleaned["gate"], "detections": cleaned["detections"]}
+    if hops:
+        out["hops"] = [
+            {**hop_clean, **({"payload": hop["payload"]} if "payload" in hop else {})}
+            for hop, hop_clean in zip(hops, cleaned["hops"], strict=True)
+        ]
+    return out
 
 
 class AuditLog:
