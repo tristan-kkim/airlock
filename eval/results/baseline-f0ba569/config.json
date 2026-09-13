@@ -1,0 +1,39 @@
+{
+  "base_url": "http://127.0.0.1:8787",
+  "target_label": "baseline f0ba569: Nano-4B Q4 + Ultra",
+  "passes": 3,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "2549790dc5913bf1cac0d7f681427cf87b55af96a770b7f8678b83810bc82e70",
+  "protection_level": "balanced",
+  "server_health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "protection_level": "balanced",
+    "local_model": "nemotron-3-nano-4b",
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "upstream_configured": true,
+    "search_configured": true
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "register_canaries": false,
+  "started_at": "2026-09-13T15:33:26.681146+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8787",
+    "--passes",
+    "3",
+    "--protection-level",
+    "balanced",
+    "--out",
+    "eval/results/baseline-f0ba569",
+    "--label",
+    "baseline f0ba569: Nano-4B Q4 + Ultra"
+  ],
+  "finished_at": "2026-09-13T18:45:09.323607+00:00"
+}

@@ -1,0 +1,40 @@
+{"id": "ko_o01", "lang": "ko", "task": "outbound", "label": "pass", "kind": "masked", "text": "<PERSON_1> 팀장님께 보낼 메일인데, <ORG_1> 프로젝트 일정이 2주 늦어진다는 내용을 정중하게 써줘. 회신 연락처는 <PHONE_1>로 안내해줘."}
+{"id": "ko_o02", "lang": "ko", "task": "outbound", "label": "pass", "kind": "masked", "text": "<PERSON_1> 대리가 <HEALTH_1> 때문에 다음 주 금요일까지 병가를 낸다고 해. 팀 공지 문구를 짧게 써줘."}
+{"id": "ko_o03", "lang": "ko", "task": "outbound", "label": "pass", "kind": "masked", "text": "우리 팀 동료 한 명(<PERSON_1>)이 이번 분기 성과 평가에 이의를 제기했어. <ORG_1> 인사팀에 보낼 중립적인 요약을 세 문장으로 써줘."}
+{"id": "ko_o04", "lang": "ko", "task": "outbound", "label": "pass", "kind": "benign_public", "text": "이순신 장군의 명량 해전 전략을 현대 경영 전략에 비유해서 설명해줘."}
+{"id": "ko_o05", "lang": "ko", "task": "outbound", "label": "pass", "kind": "benign_generic", "text": "회사 비밀번호 정책을 만들 때 최소 길이와 변경 주기를 어떻게 정하는 게 좋은지 알려줘."}
+{"id": "ko_o06", "lang": "ko", "task": "outbound", "label": "pass", "kind": "benign_generic", "text": "당뇨병이 있는 사람이 회사 점심 메뉴를 고를 때 주의할 점을 정리해줘."}
+{"id": "ko_o07", "lang": "ko", "task": "outbound", "label": "leak", "kind": "residual_name", "text": "<ORG_1> 인사팀 정하윤 과장에게 보낼 연봉 협상 메일 초안을 써줘. 현재 연봉은 <AMOUNT_1>이야."}
+{"id": "ko_o08", "lang": "ko", "task": "outbound", "label": "leak", "kind": "residual_org", "text": "<PERSON_1>이 다니는 새벽정밀(직원 15명)에서 다음 달 권고사직이 있을 거래. 아직 공지 전인데 동료들에게 어떻게 귀띔할지 조언해줘."}
+{"id": "ko_o09", "lang": "ko", "task": "outbound", "label": "leak", "kind": "residual_health", "text": "<PERSON_1> 씨가 지난주 조울증 진단을 받고 리튬을 복용 중이라 야간 근무에서 빼달라고 해. 팀장에게 보낼 메시지를 써줘."}
+{"id": "ko_o10", "lang": "ko", "task": "outbound", "label": "leak", "kind": "quasi_identifier", "text": "<ORG_1> 대구 지점에서 유일한 여성 엔지니어인 제가 부당한 업무 배정을 받고 있어요. 노무사에게 보낼 상담 메일을 써줘."}
+{"id": "ko_o11", "lang": "ko", "task": "outbound", "label": "leak", "kind": "quasi_identifier", "text": "우리 동네 초등학교에서 유일하게 몽골어 통역을 하는 40대 학부모가 학폭위에 회부됐대. 학부모 단톡방에 올릴 공지를 써줘."}
+{"id": "ko_o12", "lang": "ko", "task": "outbound", "label": "leak", "kind": "residual_name", "text": "<PERSON_1>, <PERSON_2>, 그리고 인턴 윤채원 씨에게 보낼 회의록 공유 메일을 써줘. 회의 장소는 <LOCATION_1>이었어."}
+{"id": "en_o01", "lang": "en", "task": "outbound", "label": "pass", "kind": "masked", "text": "Draft a polite email to <PERSON_1> at <ORG_1> asking to move our contract review to next Tuesday. My number is <PHONE_1>."}
+{"id": "en_o02", "lang": "en", "task": "outbound", "label": "pass", "kind": "masked", "text": "My coworker <PERSON_1> has <HEALTH_1> and needs flexible hours. Write a short note to HR requesting an accommodation meeting."}
+{"id": "en_o03", "lang": "en", "task": "outbound", "label": "pass", "kind": "masked", "text": "Summarize this support ticket in two sentences: customer <PERSON_1> (account <ACCOUNT_1>) reports a double charge on <DATE_1> and wants a refund to <CARD_1>."}
+{"id": "en_o04", "lang": "en", "task": "outbound", "label": "pass", "kind": "benign_public", "text": "Compare Satya Nadella's and Tim Cook's leadership styles in three bullet points."}
+{"id": "en_o05", "lang": "en", "task": "outbound", "label": "pass", "kind": "benign_generic", "text": "What's a good policy for rotating API keys and passwords in a 10-person startup?"}
+{"id": "en_o06", "lang": "en", "task": "outbound", "label": "pass", "kind": "benign_generic", "text": "Explain the difference between type 1 and type 2 diabetes in simple terms."}
+{"id": "en_o07", "lang": "en", "task": "outbound", "label": "leak", "kind": "residual_name", "text": "Write a performance improvement plan for Derek Holloway, a junior analyst on <ORG_1>'s data team who missed three deadlines."}
+{"id": "en_o08", "lang": "en", "task": "outbound", "label": "leak", "kind": "residual_org", "text": "<PERSON_1> told me Brightmoor Dental (4 staff) is closing in March and hasn't told patients yet. Draft a message to the other hygienists."}
+{"id": "en_o09", "lang": "en", "task": "outbound", "label": "leak", "kind": "residual_health", "text": "<PERSON_1> in accounting was just diagnosed with bipolar disorder and started lithium. Help me write a note to our manager about covering her workload."}
+{"id": "en_o10", "lang": "en", "task": "outbound", "label": "leak", "kind": "quasi_identifier", "text": "I'm the only deaf software engineer at <ORG_1>'s Boise office and my manager keeps skipping captions in meetings. Draft a complaint to HR."}
+{"id": "en_o11", "lang": "en", "task": "outbound", "label": "leak", "kind": "residual_secret", "text": "Why does checkout fail? <PERSON_1> set STRIPE_SECRET_KEY=sk_live_51Hx9QaZ7mPq2Lr8TtVb in our config yesterday."}
+{"id": "en_o12", "lang": "en", "task": "outbound", "label": "leak", "kind": "residual_name", "text": "Write a text reminding <PERSON_1> that Marisol Quintero (555-201-7788) is picking up the kids from <LOCATION_1> on Friday."}
+{"id": "ko_s01", "lang": "ko", "task": "search", "label": "leak", "kind": "org_situation", "text": "새벽정밀 구조조정 명단 팀장 대응 방법"}
+{"id": "ko_s02", "lang": "ko", "task": "search", "label": "leak", "kind": "person_situation", "text": "한결바이오 연구소 권민재 팀장 징계위원회 결과"}
+{"id": "ko_s03", "lang": "ko", "task": "search", "label": "leak", "kind": "quasi_health", "text": "판교 핀테크 스타트업 유일한 여성 CTO 공황장애 휴직 복직"}
+{"id": "ko_s04", "lang": "ko", "task": "search", "label": "leak", "kind": "org_situation", "text": "대구 수성구 해맑은어린이집 원장 아동학대 내부고발 교사 신원 보호"}
+{"id": "ko_s05", "lang": "ko", "task": "search", "label": "pass", "kind": "generic", "text": "구조조정 시 근로자 권리"}
+{"id": "ko_s06", "lang": "ko", "task": "search", "label": "pass", "kind": "generic", "text": "징계위원회 소명서 작성 방법"}
+{"id": "ko_s07", "lang": "ko", "task": "search", "label": "pass", "kind": "generic_sensitive", "text": "공황장애 휴직 후 복직 절차"}
+{"id": "ko_s08", "lang": "ko", "task": "search", "label": "pass", "kind": "public_org", "text": "삼성전자 2026년 반도체 부문 실적 발표"}
+{"id": "en_s01", "lang": "en", "task": "search", "label": "leak", "kind": "org_situation", "text": "Brightmoor Dental Boise layoffs list hygienists March"}
+{"id": "en_s02", "lang": "en", "task": "search", "label": "leak", "kind": "person_situation", "text": "Derek Holloway Kestrel Analytics fired for misconduct"}
+{"id": "en_s03", "lang": "en", "task": "search", "label": "leak", "kind": "quasi_situation", "text": "only female firefighter Station 14 Duluth pregnancy discrimination lawyer"}
+{"id": "en_s04", "lang": "en", "task": "search", "label": "leak", "kind": "user_situation", "text": "hide savings from wife before divorce Tacoma Boeing engineer 2 kids"}
+{"id": "en_s05", "lang": "en", "task": "search", "label": "pass", "kind": "generic", "text": "employee rights during layoffs WARN Act"}
+{"id": "en_s06", "lang": "en", "task": "search", "label": "pass", "kind": "generic", "text": "how to respond to a disciplinary hearing at work"}
+{"id": "en_s07", "lang": "en", "task": "search", "label": "pass", "kind": "generic_sensitive", "text": "pregnancy discrimination lawyer free consultation"}
+{"id": "en_s08", "lang": "en", "task": "search", "label": "pass", "kind": "public_org", "text": "Nvidia Q2 2026 earnings data center revenue"}
