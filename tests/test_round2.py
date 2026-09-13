@@ -667,3 +667,15 @@ def test_titles_do_not_cross_lines_and_surrogates_avoid_request_originals() -> N
     text = "Employer: Northgate Community Credit Union\nManager: Tom Albrecht\nRole: Teller"
     assert not [c for c in org_rules.candidates(text) if "\n" in text[c.start : c.end]]
     assert surrogate.collides("Larkmoor Community Credit Union", [], ["Credit Union"], [])
+
+
+def test_surrogate_details_that_answers_repeat_stay_true() -> None:
+    card = gen("5106 1241 9510 7109", "FINANCIAL")
+    assert card.endswith("7109") and card != "5106 1241 9510 7109"
+    assert not set(gen("Imani Vasquez-Hale", "PERSON").split()[0:1]) & {"Felix", "Nadia", "Ingrid"}
+    vault = Vault(":memory:")
+    session = vault.session("c")
+    session.surrogate("Linden Vale Clinic", "ORG", "Duskwood Foxglove Clinic")
+    assert (
+        rehydrate_text("You tested at Duskwood Foxglove.", session) == "You tested at Linden Vale."
+    )

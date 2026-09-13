@@ -85,8 +85,8 @@ EN_FIRST = tuple(
         """
         Avery Jordan Casey Morgan Riley Quinn Harper Rowan Emerson Parker Reese Hayden
         Dakota Skyler Elliot Marlowe Sawyer Blake Cameron Devon Ellis Finley Greer Hollis
-        Jules Kendall Lane Micah Noel Oakley Peyton Reagan Sage Tatum Wren Adrian Nadia
-        Tobias Leona Felix Ingrid Dorian Celia Milo Vera Silas Hazel Linus Thea
+        Jules Kendall Lane Micah Noel Oakley Peyton Reagan Sage Tatum Wren Arden Blair
+        Carey Drew Emery Frankie Jamie Kai Logan Marley Oakes Remy Robin Rory Shawn Taylor
         """
     )
 )
@@ -319,6 +319,15 @@ def _shape(original: str, rng: random.Random, keep_prefix: bool = True) -> str:
     return "".join(out)
 
 
+def _keep_last_digits(value: str, original: str, n: int) -> str:
+    want = re.sub(r"\D", "", original)[-n:]
+    out = list(value)
+    positions = [i for i, ch in enumerate(out) if ch.isdigit()][-n:]
+    for i, d in zip(positions, want, strict=True):
+        out[i] = d
+    return "".join(out)
+
+
 def _luhn_ok(digits: str) -> bool:
     total = 0
     for i, ch in enumerate(reversed(digits)):
@@ -381,8 +390,13 @@ def _financial(original: str, rng: random.Random) -> str | None:
         return f"{iban.group(1)}00{body}"  # check digits 00 are never valid
     if not re.fullmatch(r"[\d\s-]{6,40}", t) or len(compact) < 6:
         return None
+    card = 13 <= len(re.sub(r"\D", "", t)) <= 19
     for _ in range(10):
         value = re.sub(r"\d", lambda _m: str(rng.randrange(10)), t)
+        if card:
+            # Keep the last four digits (displayable under PCI DSS): an answer that says "the card
+            # ending in 7109" must stay true after rehydration.
+            value = _keep_last_digits(value, t, 4)
         digits = re.sub(r"\D", "", value)
         if 13 <= len(digits) <= 19 and _luhn_ok(digits):
             continue  # a surrogate card number must fail Luhn
@@ -529,7 +543,7 @@ def fix_particle(original: str, following: str) -> tuple[int, str] | None:
 class Alias:
     surrogate: str
     original: str
-    person_part: bool = False
+    part: bool = False  # a name's first or last token, or an organization without its suffix
 
 
 def aliases(pairs: Iterable[tuple[str, str, str]]) -> list[Alias]:
@@ -544,7 +558,21 @@ def aliases(pairs: Iterable[tuple[str, str, str]]) -> list[Alias]:
             for sp, op in ((st[-1], ot[-1]), (st[0], ot[0])):
                 if len(sp) >= 3 and normalize(sp) not in seen:
                     seen.add(normalize(sp))
-                    out.append(Alias(sp, op, person_part=True))
+                    out.append(Alias(sp, op, part=True))
+    for s, o, t in pairs:
+        if t != "ORG":
+            continue
+        # "Duskwood Foxglove Clinic" written as "Duskwood Foxglove": the stem maps to the stem.
+        for suffixes in (EN_ORG_SUFFIXES, KO_ORG_SUFFIXES):
+            suffix = next((x for x in suffixes if s.endswith(x) and o.endswith(x)), None)
+            if suffix is None:
+                continue
+            ss, os_ = s[: -len(suffix)].strip(), o[: -len(suffix)].strip()
+            long_enough = len(ss) >= 3 if re.search(r"[가-힣]", ss) else len(ss) >= 4
+            if ss and os_ and long_enough and normalize(ss) not in seen:
+                seen.add(normalize(ss))
+                out.append(Alias(ss, os_, part=True))
+            break
     return sorted(out, key=lambda a: -len(a.surrogate))
 
 
@@ -557,7 +585,7 @@ def rehydrate(
     found: list[tuple[int, int, Alias]] = []
     for alias in aliases(pairs):
         for start, end in find_term(text, alias.surrogate):
-            if alias.person_part and re.search(r"[가-힣]", alias.surrogate):
+            if alias.part and re.search(r"[가-힣]", alias.surrogate) and len(alias.surrogate) < 3:
                 continue
             if any(start < e and s < end for s, e, _ in found):
                 continue
