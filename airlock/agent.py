@@ -516,7 +516,7 @@ class AgentRunner:
         resolution to a longer span in one document and appears alone in another. The gate
         would block such a turn. One more pass masks every known original in every slot: the
         vault mappings created by the first pass, plus each protected original as an added span
-        (the detector cache makes this cheap). The gate still decides on the final payload.
+        (no second model call). The gate still decides on the final payload.
         """
         analysis = await self.sanitizer.analyze_chat(body, session)
         sanitized = self.sanitizer.build_chat(body, analysis, session)
@@ -532,7 +532,8 @@ class AgentRunner:
                 for p in sanitized.protected
                 if p.code == "vault_original"
             ]
-            analysis = await self.sanitizer.analyze_chat(body, session)
+            # Reuse this turn's analysis: a fresh one would query the local model again on
+            # differently masked text and could surface new spans after other slots were built.
             sanitized = self.sanitizer.build_chat(body, analysis, session, added=known)
         return (
             sanitized.payload,
