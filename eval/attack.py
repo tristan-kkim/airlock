@@ -45,7 +45,8 @@ import os
 import re
 import sys
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -57,9 +58,13 @@ sys.path.insert(0, str(EVAL_DIR))
 import protected  # noqa: E402
 import scoring  # noqa: E402
 
-ATTACK_VERSION = "1.1.0"
+ATTACK_VERSION = "1.2.0"
 DEFAULT_BASE_URL = "https://api.tokenfactory.nebius.com/v1"
-DEFAULT_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
+ULTRA = "nvidia/Nemotron-3-Ultra-550b-a55b"
+SUPER = "nvidia/nemotron-3-super-120b-a12b"
+LIGHTNING = "nvidia/Nemotron-3_5-Lightning"
+NANO = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+DEFAULT_MODEL = ULTRA  # the upstream answer model; judge roles have their own defaults below
 MAX_OUTPUT_TOKENS = 1500
 REASONING_OUTPUT_TOKENS = 6000  # reasoning tokens count against max_tokens
 GRADER_MAX_TOKENS = 200
@@ -67,6 +72,188 @@ GRADER_MAX_TOKENS = 200
 
 def max_tokens_for(reasoning: str) -> int:
     return MAX_OUTPUT_TOKENS if reasoning in ("", "none") else REASONING_OUTPUT_TOKENS
+
+
+# --------------------------------------------------------------------------------------------
+# Models: prices, per-model request adapters and per-role defaults
+# --------------------------------------------------------------------------------------------
+
+# Token Factory list prices, USD per 1M tokens (input, output).
+MODEL_PRICES: dict[str, tuple[float, float]] = {
+    ULTRA: (1.00, 3.00),
+    SUPER: (0.30, 0.90),
+    LIGHTNING: (0.06, 0.24),
+    NANO: (0.06, 0.24),
+}
+
+# Scoring roles and the environment variable that overrides each one's model.
+ROLE_ENV: dict[str, str] = {
+    "attack": "AIRLOCK_ATTACK_MODEL",
+    "grader": "AIRLOCK_GRADER_MODEL",
+    "utility": "AIRLOCK_UTILITY_MODEL",
+    "distortion_confirm": "AIRLOCK_DISTORTION_CONFIRM_MODEL",
+}
+# Defaults per role. See eval/results/JUDGE_CALIBRATION.md for how they were chosen.
+DEFAULT_ROLE_MODELS: dict[str, str] = {
+    "attack": ULTRA,
+    "grader": ULTRA,
+    "utility": ULTRA,
+    "distortion_confirm": ULTRA,
+}
+
+
+def role_model(role: str, env: Mapping[str, str] | None = None) -> str:
+    """The model for a scoring role: its environment variable if set, else the default."""
+    env = os.environ if env is None else env
+    return env.get(ROLE_ENV[role]) or DEFAULT_ROLE_MODELS[role]
+
+
+@dataclass(frozen=True)
+class ModelAdapter:
+    """How to ask one model for schema-shaped JSON.
+
+    json_mode: `json_schema` (the server enforces the schema) or `json_object` (JSON mode, with
+    the schema spelled out in the prompt; for models that ignore json_schema).
+    reasoning: `reasoning_effort` (sent as given, as Ultra accepts `none`/`low`) or
+    `thinking_kwarg` (the model rejects reasoning_effort; thinking is switched with
+    `chat_template_kwargs.enable_thinking`: off for `none` or empty, on otherwise).
+    """
+
+    json_mode: str = "json_schema"
+    reasoning: str = "reasoning_effort"
+
+
+MODEL_ADAPTERS: dict[str, ModelAdapter] = {
+    ULTRA.lower(): ModelAdapter("json_schema", "reasoning_effort"),
+    # Super ignores json_schema (it answers `match=true`) and rejects every reasoning_effort.
+    SUPER.lower(): ModelAdapter("json_object", "thinking_kwarg"),
+    # Without the kwarg Lightning writes its thinking into `content`.
+    LIGHTNING.lower(): ModelAdapter("json_schema", "thinking_kwarg"),
+    NANO.lower(): ModelAdapter("json_schema", "thinking_kwarg"),
+}
+
+
+def adapter_for(model: str) -> ModelAdapter:
+    return MODEL_ADAPTERS.get(model.lower(), ModelAdapter())
+
+
+def reasoning_on(reasoning: str | None) -> bool:
+    return bool(reasoning) and reasoning != "none"
+
+
+def schema_note(schema: dict[str, Any]) -> str:
+    return (
+        "\n\nReply with one compact JSON object (no indentation) matching this schema:\n"
+        + json.dumps(schema, separators=(",", ":"))
+    )
+
+
+def build_request(
+    model: str,
+    messages: list[dict[str, str]],
+    name: str,
+    schema: dict[str, Any],
+    reasoning: str,
+    max_tokens: int,
+    json_mode: str | None = None,
+    extra_note: str = "",
+) -> dict[str, Any]:
+    """The chat/completions body for one schema-shaped call, adapted to the model."""
+    adapter = adapter_for(model)
+    mode = json_mode or adapter.json_mode
+    body: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0,
+        "max_tokens": max_tokens,
+    }
+    if mode == "json_schema":
+        body["response_format"] = response_format(name, schema)
+    else:
+        body["response_format"] = {"type": "json_object"}
+    if mode != "json_schema" or extra_note:
+        note = (schema_note(schema) if mode != "json_schema" else "") + extra_note
+        body["messages"] = [
+            *messages[:-1],
+            {"role": messages[-1]["role"], "content": messages[-1]["content"] + note},
+        ]
+    if adapter.reasoning == "reasoning_effort":
+        if reasoning:
+            body["reasoning_effort"] = reasoning
+    else:
+        body["chat_template_kwargs"] = {"enable_thinking": reasoning_on(reasoning)}
+    return body
+
+
+_THINK_BLOCK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def clean_content(message: dict[str, Any]) -> str:
+    """The answer text of a chat message without reasoning.
+
+    `reasoning_content` / `reasoning` are separate fields and never part of the answer. Some
+    models inline `<think>...</think>` or start content with blank lines; both are removed.
+    """
+    text = message.get("content") or ""
+    text = _THINK_BLOCK.sub("", text)
+    if "</think>" in text:
+        text = text.rsplit("</think>", 1)[1]
+    return text.strip()
+
+
+_JSON_TYPES: dict[str, Callable[[Any], bool]] = {
+    "object": lambda v: isinstance(v, dict),
+    "array": lambda v: isinstance(v, list),
+    "string": lambda v: isinstance(v, str),
+    "boolean": lambda v: isinstance(v, bool),
+    "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+    "number": lambda v: isinstance(v, int | float) and not isinstance(v, bool),
+}
+
+
+def schema_errors(value: Any, schema: dict[str, Any], path: str = "$") -> list[str]:
+    """Violations of the subset of JSON Schema the eval uses (type, properties, required, items).
+
+    Extra properties are tolerated: every consumer ignores unknown keys, and a retry for them
+    would only cost tokens.
+    """
+    kind = schema.get("type")
+    check = _JSON_TYPES.get(kind) if isinstance(kind, str) else None
+    if check and not check(value):
+        return [f"{path}: expected {kind}"]
+    errors: list[str] = []
+    if kind == "object":
+        for key in schema.get("required") or []:
+            if key not in value:
+                errors.append(f"{path}.{key}: missing")
+        for key, sub in (schema.get("properties") or {}).items():
+            if key in value:
+                errors += schema_errors(value[key], sub, f"{path}.{key}")
+    elif kind == "array" and isinstance(schema.get("items"), dict):
+        for i, item in enumerate(value):
+            errors += schema_errors(item, schema["items"], f"{path}[{i}]")
+    return errors
+
+
+def reply_errors(text: str | None, schema: dict[str, Any]) -> list[str]:
+    obj = parse_json_object(text)
+    if obj is None:
+        return ["reply is not a JSON object"]
+    return schema_errors(obj, schema)
+
+
+def usage_cost(model: str, usage: Mapping[str, Any] | None) -> float | None:
+    """USD for one usage record at list prices, or None for a model without a known price."""
+    price = MODEL_PRICES.get(model) or next(
+        (p for m, p in MODEL_PRICES.items() if m.lower() == model.lower()), None
+    )
+    if price is None:
+        return None
+    usage = usage or {}
+    return (
+        int(usage.get("prompt_tokens") or 0) * price[0]
+        + int(usage.get("completion_tokens") or 0) * price[1]
+    ) / 1_000_000
 
 
 # (messages, schema name, schema, reasoning_effort, max_tokens) -> {content, usage, error?}
@@ -638,6 +825,14 @@ def read_env_key(name: str = "NEBIUS_API_KEY") -> str | None:
 
 
 def make_llm(client: httpx.AsyncClient, model: str, retries: int = 4) -> LLM:
+    """A schema-shaped JSON call to `model` through its request adapter.
+
+    The reply is validated locally against the schema. If it does not parse or validate (for
+    example constrained decoding degenerated into whitespace, or a JSON-mode model dropped a
+    field), the call is retried once in JSON mode with the schema and the errors spelled out in
+    the prompt. The result carries `model`, and `retried_after` when the retry happened.
+    """
+
     async def call(
         messages: list[dict[str, str]],
         name: str,
@@ -645,32 +840,26 @@ def make_llm(client: httpx.AsyncClient, model: str, retries: int = 4) -> LLM:
         reasoning: str,
         max_tokens: int,
     ) -> dict[str, Any]:
-        body: dict[str, Any] = {
-            "model": model,
-            "messages": messages,
-            "temperature": 0,
-            "max_tokens": max_tokens,
-            "response_format": response_format(name, schema),
-        }
-        if reasoning:
-            body["reasoning_effort"] = reasoning
+        body = build_request(model, messages, name, schema, reasoning, max_tokens)
         result = await post(body)
-        if result.get("error") or parse_json_object(result["content"]) is not None:
+        if result.get("error"):
             return result
-        # Constrained decoding occasionally degenerates into whitespace until max_tokens. Retry
-        # once in plain JSON mode with the schema spelled out in the prompt.
-        fallback = {**body, "response_format": {"type": "json_object"}}
-        fallback["messages"] = [
-            *messages[:-1],
-            {
-                "role": messages[-1]["role"],
-                "content": messages[-1]["content"]
-                + "\n\nReply with one compact JSON object (no indentation) matching this schema:\n"
-                + json.dumps(schema, separators=(",", ":")),
-            },
-        ]
-        retry = await post(fallback)
-        retry["retried_after"] = {"content_tail": result["content"][-80:], "usage": result["usage"]}
+        errors = reply_errors(result["content"], schema)
+        if not errors:
+            return result
+        note = (
+            "\nYour previous reply was not valid for this schema ("
+            + "; ".join(errors[:3])
+            + "). Reply with the JSON object only."
+        )
+        retry = await post(
+            build_request(model, messages, name, schema, reasoning, max_tokens, "json_object", note)
+        )
+        retry["retried_after"] = {
+            "content_tail": result["content"][-80:],
+            "errors": errors[:3],
+            "usage": result["usage"],
+        }
         return retry
 
     async def post(body: dict[str, Any]) -> dict[str, Any]:
@@ -684,19 +873,29 @@ def make_llm(client: httpx.AsyncClient, model: str, retries: int = 4) -> LLM:
                 if resp.status_code == 200:
                     data = resp.json()
                     msg = (data.get("choices") or [{}])[0].get("message") or {}
-                    return {"content": msg.get("content") or "", "usage": data.get("usage") or {}}
+                    return {
+                        "content": clean_content(msg),
+                        "usage": data.get("usage") or {},
+                        "model": model,
+                    }
                 last = f"HTTP {resp.status_code}: {resp.text[:200]}"
                 if resp.status_code not in (408, 409, 429) and resp.status_code < 500:
                     break
             await asyncio.sleep(2**attempt)
-        return {"content": "", "usage": {}, "error": last}
+        return {"content": "", "usage": {}, "error": last, "model": model}
 
     return call
 
 
 async def attack_one(
-    case: dict[str, Any], record: dict[str, Any], llm: LLM, opts: argparse.Namespace
+    case: dict[str, Any],
+    record: dict[str, Any],
+    llm: LLM,
+    opts: argparse.Namespace,
+    grader_llm: LLM | None = None,
 ) -> dict[str, Any]:
+    """Attack one stored request with `llm`; grade intent and situation with `grader_llm`."""
+    grader_llm = grader_llm or llm
     outbound = (record.get("audit") or {}).get("outbound") or []
     row: dict[str, Any] = {
         "case_id": case["id"],
@@ -721,6 +920,7 @@ async def attack_one(
         parsed = parse_json_object(reply.get("content"))
         attack = normalize_attack(parsed)
     row["attacker"] = {
+        "model": reply.get("model"),
         "raw": reply.get("content"),
         "parsed_ok": parsed is not None,
         "reasoning": reasoning,
@@ -734,7 +934,7 @@ async def attack_one(
     if case.get("category") == "intent_leak_search" and (
         attack["private_situation"].strip() or attack["person_attributes"]
     ):
-        grade = await llm(
+        grade = await grader_llm(
             grader_messages(case, attack),
             "grade",
             GRADER_SCHEMA,
@@ -743,6 +943,7 @@ async def attack_one(
         )
         intent_match = parse_grade(grade.get("content"))
         row["grader"] = {
+            "model": grade.get("model"),
             "raw": grade.get("content"),
             "match": intent_match,
             "usage": grade.get("usage"),
@@ -753,7 +954,9 @@ async def attack_one(
     row["intent_match"] = intent_match
     situation_match = None
     if protected.case_protection(case)["situation_sensitive"]:
-        situation_match = await grade_situation(case, attack, row, llm, opts.grader_reasoning)
+        situation_match = await grade_situation(
+            case, attack, row, grader_llm, opts.grader_reasoning
+        )
     row["situation_match"] = situation_match
     row["score"] = score_attack(case, attack, intent_match, situation_match)
     return row
@@ -774,12 +977,22 @@ async def grade_situation(
     )
     match = parse_grade(grade.get("content"))
     row["situation_grader"] = {
+        "model": grade.get("model"),
         "raw": grade.get("content"),
         "match": match,
         "usage": grade.get("usage"),
         "error": grade.get("error"),
     }
     return match
+
+
+GRADER_PARTS = ("grader", "situation_grader")
+
+
+def run_cost(usage_by_role: dict[str, dict[str, Any]]) -> float | None:
+    """USD at list prices over roles, or None if any role's model has no known price."""
+    costs = [usage_cost(u["model"], u) for u in usage_by_role.values()]
+    return None if any(c is None for c in costs) else round(sum(costs), 6)
 
 
 def iter_usage(obj: Any):
@@ -790,6 +1003,9 @@ def iter_usage(obj: Any):
                 yield value
             else:
                 yield from iter_usage(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            yield from iter_usage(value)
 
 
 def rescore_row(case: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
@@ -825,12 +1041,15 @@ def render_markdown(summary: dict[str, Any], config: dict[str, Any]) -> str:
     lines = [
         f"# Adversary inference: {config.get('target_label') or config.get('results_dir')}",
         "",
-        f"- attacker: `{config['model']}` (reasoning_effort `{config['attacker_reasoning']}`)",
-        f"- grader: `{config['model']}` (reasoning_effort `{config['grader_reasoning']}`)",
+        f"- attacker: `{config.get('attack_model') or config['model']}` "
+        f"(reasoning `{config['attacker_reasoning']}`)",
+        f"- graders: `{config.get('grader_model') or config['model']}` "
+        f"(reasoning `{config['grader_reasoning']}`)",
         f"- attacked passes: {summary['passes']} of the proxy run; cases per pass: "
         f"{summary['per_pass'][0]['cases'] if summary['per_pass'] else 0}",
         f"- tokens used: prompt {config.get('usage', {}).get('prompt_tokens', 'n/a')}, "
-        f"completion {config.get('usage', {}).get('completion_tokens', 'n/a')}",
+        f"completion {config.get('usage', {}).get('completion_tokens', 'n/a')}"
+        + (f", about ${config['cost_usd']:.2f} at list prices" if config.get("cost_usd") else ""),
         "",
         "| Metric | All | ko | en |",
         "|---|---:|---:|---:|",
@@ -876,7 +1095,8 @@ async def run_attack(opts: argparse.Namespace) -> Path:
     print(
         f"attack estimate for {run_dir.name}: {est['attacker_calls']} attacker + "
         f"{est['grader_calls']} grader calls, ~{est['prompt_tokens_est']:,} prompt tokens, "
-        f"<= {est['completion_tokens_max']:,} completion tokens",
+        f"<= {est['completion_tokens_max']:,} completion tokens "
+        f"(attacker {opts.attack_model}, graders {opts.grader_model})",
         file=sys.stderr,
     )
     if opts.dry_run:
@@ -893,7 +1113,9 @@ async def run_attack(opts: argparse.Namespace) -> Path:
         "results_dir": run_dir.name,
         "target_label": source_config.get("target_label"),
         "base_url": opts.base_url,
-        "model": opts.model,
+        "model": opts.attack_model,  # kept for older readers (compare.py): the attacker
+        "attack_model": opts.attack_model,
+        "grader_model": opts.grader_model,
         "attacker_reasoning": opts.attacker_reasoning,
         "grader_reasoning": opts.grader_reasoning,
         "passes": len(jobs_per_pass),
@@ -905,11 +1127,16 @@ async def run_attack(opts: argparse.Namespace) -> Path:
     headers = {"Authorization": f"Bearer {key}"}
     timeout = httpx.Timeout(opts.timeout, connect=15.0)
     usage = {"prompt_tokens": 0, "completion_tokens": 0}
+    usage_by_role = {
+        role: {"model": model, "prompt_tokens": 0, "completion_tokens": 0}
+        for role, model in (("attack", opts.attack_model), ("grader", opts.grader_model))
+    }
     scored_passes = []
     async with httpx.AsyncClient(
         base_url=opts.base_url, headers=headers, timeout=timeout
     ) as client:
-        llm = make_llm(client, opts.model)
+        llm = make_llm(client, opts.attack_model)
+        grader_llm = make_llm(client, opts.grader_model)
         sem = asyncio.Semaphore(opts.concurrency)
         for pass_no, jobs in enumerate(jobs_per_pass, start=1):
             done = 0
@@ -919,7 +1146,7 @@ async def run_attack(opts: argparse.Namespace) -> Path:
             async def one(case, record, pass_no=pass_no, total=total):
                 nonlocal done
                 async with sem:
-                    row = await attack_one(case, record, llm, opts)
+                    row = await attack_one(case, record, llm, opts, grader_llm)
                 done += 1
                 if done % 25 == 0 or done == total:
                     print(f"  attack pass {pass_no}: {done}/{total}", file=sys.stderr)
@@ -927,15 +1154,19 @@ async def run_attack(opts: argparse.Namespace) -> Path:
 
             rows = await asyncio.gather(*(one(c, r) for c, r in jobs))
             for row in rows:
-                for u in iter_usage(row):
-                    usage["prompt_tokens"] += int(u.get("prompt_tokens") or 0)
-                    usage["completion_tokens"] += int(u.get("completion_tokens") or 0)
+                for role, parts in (("attack", ("attacker",)), ("grader", GRADER_PARTS)):
+                    for u in iter_usage([row.get(k) for k in parts]):
+                        for k in ("prompt_tokens", "completion_tokens"):
+                            usage[k] += int(u.get(k) or 0)
+                            usage_by_role[role][k] += int(u.get(k) or 0)
             with (out / f"pass_{pass_no:02d}.jsonl").open("w", encoding="utf-8") as f:
                 for row in rows:
                     f.write(json.dumps(row, ensure_ascii=False) + "\n")
             scored_passes.append([row["score"] for row in rows])
             print(f"  pass {pass_no} took {time.perf_counter() - t0:.0f}s", file=sys.stderr)
     config["usage"] = usage
+    config["usage_by_role"] = usage_by_role
+    config["cost_usd"] = run_cost(usage_by_role)
     config["finished_at"] = datetime.now(UTC).isoformat()
     config["failures"] = {
         "attacker_unparsed": sum(
@@ -1013,7 +1244,7 @@ async def backfill_situation(opts: argparse.Namespace) -> None:
         async with httpx.AsyncClient(
             base_url=opts.base_url, headers={"Authorization": f"Bearer {key}"}, timeout=timeout
         ) as client:
-            llm = make_llm(client, opts.model)
+            llm = make_llm(client, opts.grader_model)
             sem = asyncio.Semaphore(opts.concurrency)
             for p in files:
                 rows = scoring_read_jsonl(p)
@@ -1045,7 +1276,12 @@ async def backfill_situation(opts: argparse.Namespace) -> None:
     config = json.loads((out / "config.json").read_text(encoding="utf-8"))
     config["attack_version"] = ATTACK_VERSION
     config.setdefault("situation_backfill", []).append(
-        {"at": datetime.now(UTC).isoformat(), "usage": usage, "model": opts.model}
+        {
+            "at": datetime.now(UTC).isoformat(),
+            "usage": usage,
+            "model": opts.grader_model,
+            "cost_usd": usage_cost(opts.grader_model, usage),
+        }
     )
     (out / "config.json").write_text(
         json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -1089,7 +1325,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--base-url", default=os.environ.get("AIRLOCK_ATTACK_BASE_URL", DEFAULT_BASE_URL)
     )
-    ap.add_argument("--model", default=os.environ.get("AIRLOCK_ATTACK_MODEL", DEFAULT_MODEL))
+    ap.add_argument(
+        "--attack-model",
+        default=None,
+        help=f"attacker model (default ${ROLE_ENV['attack']} or {DEFAULT_ROLE_MODELS['attack']})",
+    )
+    ap.add_argument(
+        "--grader-model",
+        default=None,
+        help="intent and situation grader model "
+        f"(default ${ROLE_ENV['grader']} or {DEFAULT_ROLE_MODELS['grader']})",
+    )
+    ap.add_argument(
+        "--model", default=None, help="one model for attacker and graders (overrides both)"
+    )
     ap.add_argument(
         "--attacker-reasoning", default="none", help="reasoning_effort for the attacker"
     )
@@ -1106,7 +1355,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="add situation grades to stored attack rows that lack them (grader calls only), "
         "then rescore",
     )
-    return ap.parse_args(argv)
+    opts = ap.parse_args(argv)
+    resolve_role_models(opts, {"attack_model": "attack", "grader_model": "grader"})
+    return opts
+
+
+def resolve_role_models(opts: argparse.Namespace, fields: dict[str, str]) -> None:
+    """Fill each unset role model: `--model` if given, else the role's env var or default."""
+    for field, role in fields.items():
+        if not getattr(opts, field, None):
+            setattr(opts, field, getattr(opts, "model", None) or role_model(role))
 
 
 def main(argv: list[str] | None = None) -> None:
