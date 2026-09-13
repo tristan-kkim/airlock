@@ -1,0 +1,27 @@
+{
+  "attack_version": "1.0.0",
+  "results_dir": "ensemble-A-head",
+  "target_label": "airlock 685d3c7 AIRLOCK_GLINER=off (HEAD detector)",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "estimate": {
+    "attacker_calls": 240,
+    "grader_calls": 27,
+    "prompt_tokens_est": 172859,
+    "completion_tokens_max": 365400
+  },
+  "started_at": "2026-09-13T18:52:07.988161+00:00",
+  "usage": {
+    "prompt_tokens": 176282,
+    "completion_tokens": 61221
+  },
+  "finished_at": "2026-09-13T18:54:22.996489+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

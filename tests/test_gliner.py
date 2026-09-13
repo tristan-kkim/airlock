@@ -285,6 +285,26 @@ def test_thresholds_filter_low_scores(make_client, harness, fake_gliner):
     assert "Quillmere Analytics" not in outbound(harness)
 
 
+def test_agreement_only_labels_and_korean_name_length(make_client, harness, fake_gliner):
+    fake_gliner.entities = {
+        "Port Aldine": ("city", 0.95),
+        "이관": ("last_name", 0.9),
+        "Corvenna Systems": ("company_name", 0.95),
+    }
+    client = make_client(
+        gliner=True, gliner_agreement_only="city,date_of_birth", gliner_ko_name_min_syllables=3
+    )
+    r = chat(client, "I moved to Port Aldine to join Corvenna Systems. 담당 이관 확인 부탁.")
+    assert r.status_code == 200, r.text
+    sent = outbound(harness)
+    assert "Port Aldine" in sent and "이관" in sent and "Corvenna" not in sent
+    stats = audit(client, r)["meta"]["detector"]
+    assert stats["gliner_rejected_label"] == 1 and stats["gliner_rejected_shape"] == 1
+    assert stats["gliner_candidates"] == 1
+    with pytest.raises(ValueError):
+        gliner.parse_labels("city,nonsense")
+
+
 def test_search_path_uses_the_ensemble(gliner_client, harness, fake_gliner):
     fake_gliner.entities = {"Quillmere Analytics": ("company_name", 0.97)}
     harness.rewrite = lambda q, c: "layoff rumors tech company"
@@ -329,6 +349,10 @@ def test_settings_from_environment(monkeypatch):
     s = load_settings(env_file=None)
     assert s.gliner and s.gliner_threshold == 0.55 and s.gliner_model == "/models/gliner-PII"
     assert s.gliner_adjudicate is False
+    monkeypatch.setenv("AIRLOCK_GLINER_AGREEMENT_ONLY", "city")
+    monkeypatch.setenv("AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES", "3")
+    s = load_settings(env_file=None)
+    assert s.gliner_agreement_only == "city" and s.gliner_ko_name_min_syllables == 3
     monkeypatch.delenv("AIRLOCK_GLINER")
     assert load_settings(env_file=None).gliner is False
 
