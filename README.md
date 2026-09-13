@@ -180,7 +180,7 @@ sequenceDiagram
                 A->>S: rewritten query (hop: tavily)
                 S-->>A: results
             else still revealing after one retry
-                A->>A: block this search; the agent continues without it
+                A->>A: block this search, the agent continues without it
             end
         end
     end
