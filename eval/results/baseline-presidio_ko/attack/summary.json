@@ -1,0 +1,262 @@
+{
+  "passes": 1,
+  "overall": {
+    "attack_value_recovery_rate": {
+      "n": 1,
+      "mean": 0.3141592920353982,
+      "std": 0.0,
+      "min": 0.3141592920353982,
+      "max": 0.3141592920353982,
+      "values": [
+        0.3141592920353982
+      ]
+    },
+    "attack_value_partial_rate": {
+      "n": 1,
+      "mean": 0.36430678466076694,
+      "std": 0.0,
+      "min": 0.36430678466076694,
+      "max": 0.36430678466076694,
+      "values": [
+        0.36430678466076694
+      ]
+    },
+    "attack_value_case_rate": {
+      "n": 1,
+      "mean": 0.7777777777777778,
+      "std": 0.0,
+      "min": 0.7777777777777778,
+      "max": 0.7777777777777778,
+      "values": [
+        0.7777777777777778
+      ]
+    },
+    "attack_canary_recovery_rate": {
+      "n": 1,
+      "mean": 0.7862068965517242,
+      "std": 0.0,
+      "min": 0.7862068965517242,
+      "max": 0.7862068965517242,
+      "values": [
+        0.7862068965517242
+      ]
+    },
+    "attack_quasi_reid_rate": {
+      "n": 1,
+      "mean": 0.48,
+      "std": 0.0,
+      "min": 0.48,
+      "max": 0.48,
+      "values": [
+        0.48
+      ]
+    },
+    "attack_quasi_reid_rate_exact": {
+      "n": 1,
+      "mean": 0.4,
+      "std": 0.0,
+      "min": 0.4,
+      "max": 0.4,
+      "values": [
+        0.4
+      ]
+    },
+    "attack_intent_inference_rate": {
+      "n": 1,
+      "mean": 0.6296296296296297,
+      "std": 0.0,
+      "min": 0.6296296296296297,
+      "max": 0.6296296296296297,
+      "values": [
+        0.6296296296296297
+      ]
+    }
+  },
+  "by_lang": {
+    "en": {
+      "attack_value_recovery_rate": {
+        "n": 1,
+        "mean": 0.24266666666666667,
+        "std": 0.0,
+        "min": 0.24266666666666667,
+        "max": 0.24266666666666667,
+        "values": [
+          0.24266666666666667
+        ]
+      },
+      "attack_value_partial_rate": {
+        "n": 1,
+        "mean": 0.28,
+        "std": 0.0,
+        "min": 0.28,
+        "max": 0.28,
+        "values": [
+          0.28
+        ]
+      },
+      "attack_value_case_rate": {
+        "n": 1,
+        "mean": 0.7011494252873564,
+        "std": 0.0,
+        "min": 0.7011494252873564,
+        "max": 0.7011494252873564,
+        "values": [
+          0.7011494252873564
+        ]
+      },
+      "attack_canary_recovery_rate": {
+        "n": 1,
+        "mean": 0.7534246575342466,
+        "std": 0.0,
+        "min": 0.7534246575342466,
+        "max": 0.7534246575342466,
+        "values": [
+          0.7534246575342466
+        ]
+      },
+      "attack_quasi_reid_rate": {
+        "n": 1,
+        "mean": 0.30434782608695654,
+        "std": 0.0,
+        "min": 0.30434782608695654,
+        "max": 0.30434782608695654,
+        "values": [
+          0.30434782608695654
+        ]
+      },
+      "attack_quasi_reid_rate_exact": {
+        "n": 1,
+        "mean": 0.17391304347826086,
+        "std": 0.0,
+        "min": 0.17391304347826086,
+        "max": 0.17391304347826086,
+        "values": [
+          0.17391304347826086
+        ]
+      },
+      "attack_intent_inference_rate": {
+        "n": 1,
+        "mean": 0.5384615384615384,
+        "std": 0.0,
+        "min": 0.5384615384615384,
+        "max": 0.5384615384615384,
+        "values": [
+          0.5384615384615384
+        ]
+      }
+    },
+    "ko": {
+      "attack_value_recovery_rate": {
+        "n": 1,
+        "mean": 0.40264026402640263,
+        "std": 0.0,
+        "min": 0.40264026402640263,
+        "max": 0.40264026402640263,
+        "values": [
+          0.40264026402640263
+        ]
+      },
+      "attack_value_partial_rate": {
+        "n": 1,
+        "mean": 0.46864686468646866,
+        "std": 0.0,
+        "min": 0.46864686468646866,
+        "max": 0.46864686468646866,
+        "values": [
+          0.46864686468646866
+        ]
+      },
+      "attack_value_case_rate": {
+        "n": 1,
+        "mean": 0.8571428571428571,
+        "std": 0.0,
+        "min": 0.8571428571428571,
+        "max": 0.8571428571428571,
+        "values": [
+          0.8571428571428571
+        ]
+      },
+      "attack_canary_recovery_rate": {
+        "n": 1,
+        "mean": 0.8194444444444444,
+        "std": 0.0,
+        "min": 0.8194444444444444,
+        "max": 0.8194444444444444,
+        "values": [
+          0.8194444444444444
+        ]
+      },
+      "attack_quasi_reid_rate": {
+        "n": 1,
+        "mean": 0.6296296296296297,
+        "std": 0.0,
+        "min": 0.6296296296296297,
+        "max": 0.6296296296296297,
+        "values": [
+          0.6296296296296297
+        ]
+      },
+      "attack_quasi_reid_rate_exact": {
+        "n": 1,
+        "mean": 0.5925925925925926,
+        "std": 0.0,
+        "min": 0.5925925925925926,
+        "max": 0.5925925925925926,
+        "values": [
+          0.5925925925925926
+        ]
+      },
+      "attack_intent_inference_rate": {
+        "n": 1,
+        "mean": 0.7142857142857143,
+        "std": 0.0,
+        "min": 0.7142857142857143,
+        "max": 0.7142857142857143,
+        "values": [
+          0.7142857142857143
+        ]
+      }
+    }
+  },
+  "per_pass": [
+    {
+      "cases": 243,
+      "attack_value_recovery_rate": 0.3141592920353982,
+      "attack_value_partial_rate": 0.36430678466076694,
+      "attack_value_case_rate": 0.7777777777777778,
+      "attack_canary_recovery_rate": 0.7862068965517242,
+      "attack_quasi_reid_rate": 0.48,
+      "attack_quasi_reid_rate_exact": 0.4,
+      "attack_intent_inference_rate": 0.6296296296296297,
+      "intent_cases": 27,
+      "intent_ungraded": 0
+    }
+  ],
+  "config": {
+    "attack_version": "1.0.0",
+    "results_dir": "baseline-presidio_ko",
+    "target_label": "baseline:presidio_ko",
+    "base_url": "https://api.tokenfactory.nebius.com/v1",
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "attacker_reasoning": "none",
+    "grader_reasoning": "none",
+    "passes": 1,
+    "limit": null,
+    "categories": null,
+    "estimate": {
+      "attacker_calls": 243,
+      "grader_calls": 27,
+      "prompt_tokens_est": 168548,
+      "completion_tokens_max": 369900
+    },
+    "started_at": "2026-09-13T16:19:55.938897+00:00",
+    "usage": {
+      "prompt_tokens": 176577,
+      "completion_tokens": 69322
+    },
+    "finished_at": "2026-09-13T16:22:03.808005+00:00",
+    "failures": {
+      "attacker_unparsed": 0
+    }
+  }
+}

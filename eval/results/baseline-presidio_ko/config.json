@@ -1,0 +1,45 @@
+{
+  "base_url": "http://127.0.0.1:8803",
+  "target_label": "baseline:presidio_ko",
+  "passes": 3,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "2549790dc5913bf1cac0d7f681427cf87b55af96a770b7f8678b83810bc82e70",
+  "protection_level": "baseline:presidio_ko",
+  "server_health": {
+    "status": "ok",
+    "baseline": "presidio_ko",
+    "protection_level": "baseline:presidio_ko",
+    "description": "Presidio 2.2.364 analyzer+anonymizer, spaCy ko/en NER, Korean ID recognizers",
+    "cloud_calls": false,
+    "presidio_analyzer": "2.2.364",
+    "spacy_models": {
+      "ko": "ko_core_news_sm",
+      "en": "en_core_web_sm"
+    }
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "started_at": "2026-09-13T16:19:29.402419+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8803",
+    "--passes",
+    "3",
+    "--out",
+    "eval/results/baseline-presidio_ko",
+    "--label",
+    "baseline:presidio_ko",
+    "--reset-vault",
+    "--timeout",
+    "600"
+  ],
+  "finished_at": "2026-09-13T16:19:32.444492+00:00"
+}

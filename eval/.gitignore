@@ -1,3 +1,6 @@
-# Timestamped local runs stay local; the mock demo is committed as a sample.
+# Timestamped local runs stay local; the mock demo, baseline runs and the comparison are committed.
 results/*
 !results/mock-demo/
+!results/baseline-*/
+!results/COMPARISON.md
+results/*.server.log

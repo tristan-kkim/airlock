@@ -16,9 +16,15 @@ eval/
   run.py               the harness (HTTP client, pass loop, output)
   scoring.py           scanning, per-case scoring, metrics, report rendering (pure functions)
   judge.py             optional answer-utility scoring (--judge), kept separate
+  attack.py            adversary-inference metric: an LLM attacker reads only the outbound payloads
+  compare.py           builds results/COMPARISON.md from every results/baseline-*/ directory
+  run_baselines.sh     starts each local baseline, runs the harness against it, stops it
+  baselines/           raw, regex, presidio_ko, gliner_pii: same HTTP contract, no cloud calls
   mock_airlock.py      deliberately imperfect regex-only mock of the Airlock API
   results/mock-demo/   sample 3-pass run against the mock
-  tests/               pytest: scanner, metric math, dataset guarantees, harness vs mock
+  results/baseline-*/  3-pass runs of each baseline (plus attack/ where the attacker was run)
+  tests/               pytest: scanner, metric math, dataset guarantees, harness vs mock,
+                       baseline contract conformance, attack scoring and parsing
 ```
 
 ## Quick start
@@ -40,6 +46,14 @@ uv run eval/generate.py --check
 
 # 5. Tests
 uv run --no-project --with-requirements eval/requirements.txt pytest eval/tests
+
+# 6. Baselines (local, no keys): 3 passes each, then regenerate results/COMPARISON.md
+eval/run_baselines.sh                      # or: eval/run_baselines.sh raw presidio_ko
+uv run eval/compare.py                     # table only, from whatever results exist
+
+# 7. Adversary inference over stored results (Token Factory; synthetic data only)
+uv run eval/attack.py --rescore eval/results/baseline-raw --dry-run   # token estimate
+uv run eval/attack.py --rescore eval/results/baseline-raw
 ```
 
 `run.py`, `generate.py` and `mock_airlock.py` carry PEP 723 headers, so `uv run` installs what they
@@ -59,6 +73,8 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 | `--seed`, `--no-shuffle` | 0, shuffled | case order is shuffled per pass with a seeded RNG |
 | `--category`, `--limit` | all | restrict for smoke tests |
 | `--register-canaries` | off | also declares canaries to the vault. Off by default because it hands the gate the answer. |
+| `--reset-vault` | off | `POST /vault/reset` before the first case: clears declared terms, canaries and conversation mappings |
+| `--auto-approve-review` | off | when Airlock holds a request for review (HTTP 409 `airlock_review_required`), approve every proposed redaction with `POST /review/{review_id}` and score what is then sent. Without it, a held request counts as `blocked`. |
 | `--judge`, `--judge-passes` | off, 1 | optional utility scoring, see below |
 | `--rescore DIR` | | rebuild `summary.json`/`summary.md` from a run directory |
 
@@ -76,8 +92,8 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 ## Recommended protocol for published numbers
 
 1. Start Airlock with fresh local state so earlier runs cannot help it:
-   `AIRLOCK_VAULT_PATH=:memory: AIRLOCK_AUDIT_DB=:memory:`. Declared vault terms are global and
-   persist for the life of the server. No endpoint removes them, so restart between runs.
+   `AIRLOCK_VAULT_PATH=:memory: AIRLOCK_AUDIT_DB=:memory:`, and pass `--reset-vault` (or restart
+   between runs). Declared vault terms are global and otherwise persist for the life of the server.
 2. Run at least 10 passes: `uv run eval/run.py --passes 10 --protection-level balanced`.
 3. Publish `summary.md` next to the commit hash and the dataset SHA-256 printed in it. Anyone can
    rerun, or run `--rescore` on the published `pass_*.jsonl` files and compare.
@@ -167,8 +183,10 @@ For each case, in each pass:
 
 1. `POST /vault/terms` with the case's `vault_terms` (if any).
 2. `POST /v1/chat/completions` (`messages`) or `POST /v1/search` (`query`, `context`, `max_results`).
-   A 200 response is `ok`. A 422 with `error.type == "airlock_blocked"` is `blocked`. Anything else
-   is `error`, and errored cases are excluded from every rate and counted separately.
+   A 200 response is `ok`. A 422 with `error.type == "airlock_blocked"` is `blocked`. A 409 with
+   `error.type == "airlock_review_required"` (the request was held for the user's confirmation) is
+   also `blocked`, unless `--auto-approve-review` is set. Anything else is `error`, and errored
+   cases are excluded from every rate and counted separately.
 3. `GET /audit/{request_id}`, using the `x-airlock-request-id` header or the id in the body.
 4. Scan every `outbound[].payload`.
 
@@ -231,13 +249,24 @@ All rates are computed per pass, then reported across passes as mean, sample sta
 
 ### Gate save rate
 
-The audit record gives detections as `text_sha256` values and gate reasons as strings. Airlock's
-reasons are `code:type:<first 12 hex chars of sha256>`. Every planted value in every
-request gets one of these outcomes:
+The audit record gives detections as `text_sha256` values and gate reasons as strings. Despite the
+field name, Airlock does not store a plain SHA-256: an unsalted hash of a phone number can be
+reversed by enumerating phone numbers. Both are keyed HMAC-SHA256 under a local key, taken from
+`AIRLOCK_AUDIT_HASH_KEY` or, if unset, from the key file Airlock generates on first start
+(`AIRLOCK_AUDIT_HASH_KEY_FILE`, default `.airlock/audit_hash.key`, mode 600, never served over
+HTTP). Gate reasons are `code:type:<first 12 hex chars of the HMAC>`.
+
+The harness reads the same key from the same places (run it from the repository root, or set the
+variable) and matches a value if its HMAC or its plain SHA-256 is recorded. The plain hash covers
+the mock and the baselines, which record SHA-256. If the harness cannot find Airlock's key, no
+detection is attributed: `detected_removed` becomes `removed_unattributed`, and
+`gate_save_rate_attributed` drops to 0. Leak rates do not depend on the key.
+
+Every planted value in every request gets one of these outcomes:
 
 | Outcome | Meaning |
 |---|---|
-| `detected_removed` | a detection's `text_sha256` equals the value's hash, and the value is not in the outbound payload |
+| `detected_removed` | a detection's `text_sha256` equals the value's HMAC (or SHA-256), and the value is not in the outbound payload |
 | `removed_unattributed` | not in the outbound payload and not blocked, but no detection hash matches it (usually a wider span covered it, e.g. `password: ...`) |
 | `gate_saved` | no detection hash matches it, the request was blocked, and nothing containing it was sent |
 | `missed_leaked` | no detection hash matches it, and it is in an outbound payload |
@@ -247,7 +276,8 @@ request gets one of these outcomes:
 would otherwise have been sent, the fraction the deterministic gate stopped. The report gives two
 bounds:
 
-- **Upper bound** (`gate_save_rate`): every undetected value in a blocked request counts as saved.
+- **Upper bound** (`gate_save_rate`): every undetected value in a blocked request counts as saved,
+  including requests held for review.
   This overcounts when a value was already covered by a wider span and the gate blocked for another
   reason. Airlock does not store the would-be payload of a blocked request, so this cannot be
   checked.
@@ -307,6 +337,150 @@ uv run eval/run.py --base-url http://127.0.0.1:8799 --passes 3 --out eval/result
 Request ids and latencies come from the mock's RNG and the clock. Rates, per-case tables and value
 outcomes reproduce exactly as long as the mock starts fresh.
 
+## Baselines
+
+Leak rates mean little without a reference point. `eval/baselines/` holds four small FastAPI
+servers that implement the part of the Airlock API the harness uses (`/healthz`,
+`/v1/chat/completions`, `/v1/search`, `/audit/{id}`, `/vault/terms` including `DELETE`,
+`/vault/reset`). None calls a cloud service. Each masks the request with its detector, records the
+payload it *would* send upstream or to the search API in an Airlock-shaped audit record, and
+answers with a stub. The harness scans those payloads exactly as it scans Airlock's, so the
+numbers are directly comparable.
+
+| Name | Port | What it is | Korean |
+|---|---:|---|---|
+| `raw` | 8801 | pass-through; the upper bound | n/a |
+| `regex` | 8802 | the regex rules of `mock_airlock.py`, without the simulated LLM or the gate | RRN and dashed mobile numbers only |
+| `presidio_ko` | 8803 | Microsoft Presidio 2.2.364 analyzer + anonymizer. Lines with Hangul go to a Korean pipeline (spaCy `ko_core_news_sm`, KLUE labels mapped, Presidio's five KR ID recognizers, which ship disabled, plus e-mail, KR/US phone, card, IBAN, IP, crypto, SSN and URL recognizers); other lines go to Presidio's full English registry with `en_core_web_sm`. Organizations are added to the spaCy recognizer for both. Score threshold 0. | partial: NER from spaCy, no Korean bank, card or address patterns |
+| `gliner_pii` | 8804 | `nvidia/gliner-PII` (570M span NER, the NeMo Guardrails PII backend), threshold 0.3, 50 labels in two prompts of 25, overlapping windows | none officially (English-only training); run unchanged |
+
+Shared plumbing (`baselines/common.py`) gives every masking baseline the same generous treatment,
+so the comparison is about detectors: chat `content` and tool-call `arguments` are masked (JSON
+arguments are decoded, masked leaf by leaf, re-encoded), declared vault terms are masked
+case-insensitively without word boundaries, and the search `context` stays local, as in Airlock.
+No baseline has a gate, generalization, rehydration or review step, and none ever blocks, so
+their over-block rate is 0 by construction.
+
+```bash
+eval/run_baselines.sh                 # all four, 3 passes each, then compare.py
+PASSES=10 eval/run_baselines.sh raw   # one baseline, more passes
+uv run eval/compare.py                # rebuild results/COMPARISON.md from what exists
+```
+
+`run_baselines.sh` starts each server with `uv run` (each file has a PEP 723 header, so its
+dependencies install into an isolated environment and the root `pyproject.toml` is untouched),
+waits for `/healthz`, runs `run.py --passes 3 --reset-vault --out eval/results/baseline-<name>`,
+stops the server and finally regenerates `results/COMPARISON.md`. Server logs go to
+`results/baseline-<name>.server.log` (ignored by git).
+
+`compare.py` builds one row per `results/baseline-*/` directory. Known baselines come first; any
+other name is treated as a live Airlock run at that commit (`baseline-f0ba569/` becomes
+"airlock (live, f0ba569)"). Until such a directory exists, the table keeps a placeholder row. It
+also adds per-category leak rates, the attack metrics where `attack/summary.json` exists, and each
+baseline's Korean support.
+
+Notes on the baseline setup:
+
+- The spaCy models are the small ones. The large models (`ko_core_news_lg`, `en_core_web_lg`)
+  were not measured because they could not be downloaded in reasonable time when these runs were
+  made; set `PRESIDIO_KO_MODEL` / `PRESIDIO_EN_MODEL` after installing the wheels to try them.
+- GLiNER-PII loads from `GLINER_PII_MODEL` (a Hugging Face id or a local directory). The weights
+  are 1.7 GB; if the Hub download stalls, fetch the files with `curl -C -` into a directory and
+  point the variable at it.
+- The dataset's identifiers are invalid on purpose (SSN area 666, Luhn-failing cards, wrong RRN and
+  IBAN check digits). Presidio's SSN, card, IBAN and KR ID recognizers validate checksums and
+  therefore reject many of them even when the format is recognized; on real data they would catch
+  more. Airlock's regex layer has a checksum on some rules too (card numbers are Luhn-checked), and
+  the local model and gate see these values regardless. This affects `direct_pii` and `finance`
+  most, not the NER, quasi-identifier or Korean-name gaps.
+- Every baseline detector is deterministic and cached per text, so the standard deviation across
+  passes is 0. More passes only matter for Airlock.
+
+## Adversary inference (`attack.py`)
+
+String matching cannot see a paraphrase ("early HER2+ cancer at a hospital in Maplecrest"), a
+partial value or a situation that is obvious from context. `attack.py` asks a strong LLM what it
+can recover from the outbound payloads alone.
+
+For each request in the stored results, the attacker (Token Factory,
+`nvidia/Nemotron-3-Ultra-550b-a55b`) gets only `audit.outbound[].payload` for every destination:
+not the case, the original prompt, the search context or the category. A strict JSON schema asks
+for every private value it can read or reconstruct (undoing spacing, spelled-out digits, base64
+and so on), every identifying attribute of the people involved, in the payload's own language,
+and the most likely private situation behind the request. A request that sent nothing (blocked or
+held for review) is not sent to the attacker and scores as nothing recovered.
+
+| Metric | Definition | Scoring |
+|---|---|---|
+| `attack_value_recovery_rate` | `must_not_leak` values and canaries whose full value appears in the attacker's output / all such values | deterministic: the harness scanner (all normalized variants) over each attacker string; a value in numeral words also matches its digits |
+| `attack_value_partial_rate` | same, counting partial recoveries too | a shared digit run of at least half the digits (min 4), or whole attacker words covering at least half the value (min 3 characters), or half the value's words |
+| `attack_quasi_reid_rate` | quasi-identifier cases where the attacker recovered at least `quasi_k` attributes / cases with a quasi group | deterministic: an attribute counts if a surface form is found, or all of its numbers, or half of its words (`_exact` variant: surface forms only) |
+| `attack_intent_inference_rate` | `intent_leak_search` cases whose private situation the attacker inferred / intent cases | separate grader call, binary `match`, strict rubric: the core private event **and** a specific named anchor (organization, person, team, place) from the true query and context; generic or contradicting inferences are false |
+
+Rates are computed per attacked pass and reported as mean ± sample sd across passes, like the
+harness. Outputs go to `<results dir>/attack/`: `pass_NN.jsonl` (raw attacker and grader replies,
+parsed output, scores), `config.json`, `summary.json`, `summary.md`.
+
+```bash
+uv run eval/attack.py --rescore eval/results/baseline-raw --dry-run      # estimate only
+uv run eval/attack.py --rescore eval/results/baseline-raw                # 1 pass (default)
+uv run eval/attack.py --rescore eval/results/<run> --passes 3            # first 3 proxy passes
+uv run eval/attack.py --rescore eval/results/<run> --score-only          # rescore stored replies
+```
+
+Options: `--passes N` (default 1), `--limit N`, `--category` (repeatable), `--out-name` (another
+subdirectory, for ablations), `--attacker-reasoning` / `--grader-reasoning` (default `none`),
+`--concurrency` (6), `--base-url`, `--model`. The key is `NEBIUS_API_KEY` from the environment or
+the repository `.env`; it is never printed or stored.
+
+**Data.** This sends outbound payloads to Token Factory. For the `raw` baseline the payload is the
+full synthetic prompt. That is acceptable only because every value in the dataset is fictional.
+Never run it on results produced from real prompts.
+
+**Cost.** The script prints an estimate before any call (about 1 token per 4 ASCII characters and
+1 per non-ASCII character, plus the output cap). One pass over the 243 cases of the `raw`
+baseline is estimated at about 140k prompt tokens with at most 370k completion tokens (1,500 per
+attacker call, 200 per grader call). The actual run used 175k prompt and 82k completion tokens
+(the estimate does not include retries); see `attack/config.json` `usage`. Masking baselines and
+Airlock send shorter payloads, and blocked requests cost nothing.
+
+**Robustness details.** With `reasoning_effort: none`, strict JSON decoding occasionally
+degenerates into whitespace until the token cap; such replies are retried once in `json_object`
+mode with the schema in the prompt. The attacker also sometimes returns an empty object for a
+payload that plainly names people; such replies are retried once with `reasoning_effort: low`.
+Both retries are recorded in `pass_NN.jsonl`.
+
+**Why `reasoning_effort: none`.** On the `raw` payloads of the adversarial, quasi-identifier and
+intent categories (81 requests, same prompt), `low` recovered fewer full values (70.6% vs 80.0%)
+because reasoning tokens exhausted the output cap on long obfuscated payloads, while it inferred
+more intents (77.8% vs 70.4%, 2 of 27 cases) and re-identified slightly more quasi cases (90% vs
+86%, 2 of 50), at 3.8 times the completion tokens (77k vs 20k). Neither setting was measurably better
+overall, so the cheaper one is the default. That ablation used an earlier prompt and rubric; the
+numbers in `COMPARISON.md` come from the final ones.
+
+**Limitations.**
+
+- *Attacker strength.* One model, one prompt, no reasoning by default, no web search and no
+  knowledge of the dataset's templates. A determined attacker with background knowledge or
+  retrieval (see AURA and MosaicLeaks in the landscape notes) would recover more. Treat these as
+  lower bounds on what an observer can infer, useful for comparing systems under the same attacker.
+- *Refusals and laziness.* Even with the synthetic-data note and the retry, the attacker sometimes
+  lists less than the payload shows, which lowers the `raw` reference as well. Compare systems
+  against `raw`, not against 100%.
+- *Deterministic matching.* Values and attributes must come back in a matchable surface form. An
+  attacker that translates (`청람로지스` as "Cheongram Logistics") or generalizes ("in her 50s")
+  scores as not recovered, so quasi re-identification is undercounted. Encoded forms that are
+  themselves listed as values (a base64 blob) are rarely repeated by the attacker, who reports the
+  decoded secret instead.
+- *Grader bias.* The intent grader is the same model family as the attacker and sees the true
+  context, which the attacker never saw. The rubric asks only for the core event plus one named
+  anchor, but a grader can still be stricter or looser than a human; binary outputs and the stored
+  `reason` field make it auditable. It was not calibrated against human labels.
+- *Context-only facts are out of reach by design.* Values that live only in the search `context`
+  (never sent) cannot be recovered from any system, so no system reaches 100% on those cases.
+- *Nondeterminism.* Temperature is 0, but provider-side batching can change outputs between runs;
+  run more passes for tighter estimates.
+
 ## Optional: answer utility (`--judge`)
 
 Blocking everything would leak nothing, so leak rates need a utility check. `--judge` compares
@@ -330,7 +504,8 @@ search baseline would need direct Tavily calls). Blocked cases are counted, not 
 
 ## Known limitations
 
-- **Paraphrased leaks are invisible.** Matching is by string and normalization. If Airlock or the
+- **Paraphrased leaks are invisible to the scanner.** `attack.py` (below) is the complement that
+  catches some of them. Matching is by string and normalization. If Airlock or the
   cloud-bound prompt rewrites `stage II HER2-positive breast cancer at Maplecrest General` as
   `early HER2+ cancer at a hospital in Maplecrest`, nothing is flagged even though a fragment of
   identity survived. A transliteration (`Thornbury` as `손버리`) or a translation is also missed.
@@ -343,9 +518,9 @@ search baseline would need direct Tavily calls). Blocked cases are counted, not 
   verify independently, point `AIRLOCK_UPSTREAM_BASE_URL` and `AIRLOCK_TAVILY_BASE_URL` at a
   recording proxy and compare its capture with the audit log.
 - **Gate save attribution has bounds, not a point value** (see above).
-- **Vault state leaks across cases and runs.** Declared terms are global and have no delete endpoint.
-  The dataset isolates vault names, but a long-running server still accumulates terms. Restart
-  between runs.
+- **Vault state leaks across cases in a run.** Declared terms are global. The dataset isolates vault
+  names, and `--reset-vault` clears terms before a run (`DELETE /vault/terms` removes single
+  terms), but terms declared by earlier cases in the same run stay active.
 - **Synthetic distribution.** Templates cover common patterns in Korean and English but are not a
   sample of real traffic. Rates are comparable across Airlock versions and protection levels, not
   estimates of real-world leak probability.
@@ -361,7 +536,14 @@ server:
   sends it as a harmless `x-airlock-protection-level` header, and checks `/healthz`.
 - The harness sends `x-airlock-conversation-id` so passes are independent (see the flag table).
 - `POST /vault/terms` is called with `{"terms": [...]}` only, so the server's default type is used.
+  `POST /vault/reset` is called only with `--reset-vault`.
+- A 409 `airlock_review_required` carries `review_id`, `reasons` and `proposed[].span_id`. The
+  harness records the held request's audit id; with `--auto-approve-review` it sends
+  `POST /review/{review_id}` with `{"approve": [all span_ids], "reject": [], "add": []}` and scores
+  the audit record of the request id returned by that call.
+- Placeholder syntax (`[[TYPE_N]]` or `<TYPE_N>`) does not matter to the scanner: it only looks for
+  planted values and `must_keep` strings. `judge.py` accepts either.
 - `timings_ms` keys are not fixed by the contract. Overhead is `total` minus any key matching
   `upstream|tavily|cloud|remote|provider`.
 - Gate reasons are matched by hash prefix. Any reason format that embeds the first 12 hex characters
-  of `sha256(value)` works for the lower-bound attribution.
+  of `HMAC-SHA256(key, value)` (or of `sha256(value)`) works for the lower-bound attribution.

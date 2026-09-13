@@ -5,4 +5,7 @@ extend = "../pyproject.toml"
 "generate.py" = ["E501"]
 
 [lint.isort]
-known-first-party = ["generate", "judge", "mock_airlock", "run", "scoring"]
+known-first-party = [
+  "attack", "common", "compare", "generate", "gliner_pii", "judge", "mock_airlock",
+  "presidio_ko", "raw", "regex_only", "run", "scoring",
+]

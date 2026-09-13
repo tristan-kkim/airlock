@@ -134,31 +134,15 @@ async def execute_case(
             }
             resp = await client.post("/v1/search", json=body)
         record["client_ms"] = round((time.perf_counter() - t0) * 1000, 2)
-        record["http_status"] = resp.status_code
 
-        try:
-            data = resp.json()
-        except ValueError:
-            data = None
-        request_id = resp.headers.get("x-airlock-request-id")
-        if resp.status_code == 200 and isinstance(data, dict):
-            record["status"] = "ok"
-            request_id = request_id or data.get("request_id")
-            if case["task"] == "chat":
-                choices = data.get("choices") or [{}]
-                record["answer"] = (choices[0].get("message") or {}).get("content")
-            else:
-                record["answer"] = data.get("answer")
-                record["outbound_query"] = data.get("outbound_query")
-        elif (
-            resp.status_code == 422
-            and isinstance(data, dict)
-            and (data.get("error") or {}).get("type") == "airlock_blocked"
-        ):
-            record["status"] = "blocked"
-            request_id = request_id or data["error"].get("request_id")
-            record["block_reasons"] = data["error"].get("reasons") or []
-        else:
+        request_id, data = classify_response(resp, case, record)
+        if record.get("review") and getattr(opts, "auto_approve_review", False):
+            approval = await approve_review(client, record)
+            if approval is None:
+                return record
+            resp = approval
+            request_id, data = classify_response(resp, case, record)
+        if record["status"] == "error":
             record["error"] = f"HTTP {resp.status_code}: {resp.text[:300]}"
             record["request_id"] = request_id or ((data or {}).get("error") or {}).get("request_id")
             return record
@@ -175,6 +159,9 @@ async def execute_case(
                 audit = ar.json()
                 break
             await asyncio.sleep(0.2 * (attempt + 1))
+        if audit is None and record["status"] == "blocked" and record.get("review"):
+            # Held for review and the server kept no audit record: nothing was sent.
+            audit = {"request_id": request_id, "outbound": [], "detections": [], "gate": {}}
         if audit is None:
             record["status"] = "error"
             record["error"] = f"audit record {request_id} not found"
@@ -185,6 +172,71 @@ async def execute_case(
         record["status"] = "error"
         record["error"] = f"{type(exc).__name__}: {exc}"
         return record
+
+
+def classify_response(
+    resp: httpx.Response, case: dict[str, Any], record: dict[str, Any]
+) -> tuple[str | None, Any]:
+    """Set record status from one Airlock response: ok, blocked, held for review, or error."""
+    try:
+        data = resp.json()
+    except ValueError:
+        data = None
+    record["http_status"] = resp.status_code
+    request_id = resp.headers.get("x-airlock-request-id")
+    err = (data.get("error") or {}) if isinstance(data, dict) else {}
+    if resp.status_code == 200 and isinstance(data, dict):
+        record["status"] = "ok"
+        request_id = request_id or data.get("request_id")
+        if case["task"] == "chat":
+            choices = data.get("choices") or [{}]
+            record["answer"] = (choices[0].get("message") or {}).get("content")
+        else:
+            record["answer"] = data.get("answer")
+            record["outbound_query"] = data.get("outbound_query")
+    elif resp.status_code == 422 and err.get("type") == "airlock_blocked":
+        record["status"] = "blocked"
+        request_id = request_id or err.get("request_id")
+        record["block_reasons"] = err.get("reasons") or []
+    elif resp.status_code == 409 and err.get("type") == "airlock_review_required":
+        # Held for human review: nothing was sent. Counted as a block unless
+        # --auto-approve-review approves the proposed redactions (see approve_review).
+        record["status"] = "blocked"
+        request_id = request_id or err.get("request_id")
+        record["block_reasons"] = [f"review_required:{r}" for r in err.get("reasons") or []] or [
+            "review_required"
+        ]
+        record["review"] = {
+            "review_id": err.get("review_id"),
+            "held_request_id": request_id,
+            "span_ids": [p.get("span_id") for p in err.get("proposed") or [] if p.get("span_id")],
+        }
+    else:
+        record["status"] = "error"
+    return request_id, data
+
+
+async def approve_review(
+    client: httpx.AsyncClient, record: dict[str, Any]
+) -> httpx.Response | None:
+    """Approve every proposed redaction: POST /review/{review_id} {"approve": [span_id, ...]}.
+
+    Airlock then finishes the request and answers like /v1/chat/completions (200 or 422) under a
+    new request id, whose audit record is what gets scored.
+    """
+    review = record["review"]
+    if not review.get("review_id"):
+        record["status"] = "error"
+        record["error"] = "409 airlock_review_required without a review_id"
+        return None
+    body = {"approve": review["span_ids"], "reject": [], "add": []}
+    resp = await client.post(f"/review/{review['review_id']}", json=body)
+    review["approval_status"] = resp.status_code
+    if resp.status_code not in (200, 422):
+        record["status"] = "error"
+        record["error"] = f"review approval returned {resp.status_code}: {resp.text[:300]}"
+        return None
+    return resp
 
 
 async def run_pass(
@@ -327,6 +379,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="pass (default): fresh x-airlock-conversation-id per case per pass, so passes are "
         "independent; shared: let Airlock derive it (later passes reuse earlier vault sessions)",
     )
+    ap.add_argument(
+        "--auto-approve-review",
+        action="store_true",
+        help="when Airlock answers 409 airlock_review_required, approve through the review "
+        "endpoint and score what is sent. Default: count the held request as a block",
+    )
+    ap.add_argument(
+        "--reset-vault",
+        action="store_true",
+        help="POST /vault/reset before the run (clears declared terms and conversation mappings)",
+    )
     ap.add_argument("--label", default="airlock", help="free-text target label for the report")
     ap.add_argument(
         "--judge",
@@ -366,6 +429,10 @@ async def main_async(opts: argparse.Namespace) -> Path:
             health = hr.json() if hr.status_code == 200 else {"status": hr.status_code}
         except (httpx.HTTPError, ValueError) as exc:
             health = {"error": str(exc)}
+        if opts.reset_vault:
+            rr = await client.post("/vault/reset", json={})
+            if rr.status_code >= 400:
+                raise SystemExit(f"/vault/reset returned {rr.status_code}: {rr.text[:200]}")
         server_level = (health or {}).get("protection_level")
         if opts.protection_level and server_level and server_level != opts.protection_level:
             print(
@@ -389,6 +456,8 @@ async def main_async(opts: argparse.Namespace) -> Path:
             "conversation_scope": opts.conversation_scope,
             "seed": opts.seed,
             "register_canaries": opts.register_canaries,
+            "auto_approve_review": opts.auto_approve_review,
+            "reset_vault": opts.reset_vault,
             "started_at": started.isoformat(),
             "harness_version": scoring.HARNESS_VERSION,
             "argv": sys.argv[1:],

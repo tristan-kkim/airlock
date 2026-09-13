@@ -31,8 +31,8 @@ import httpx
 
 JUDGE_PROMPT = """You are grading two assistant answers to the same user request.
 Score each from 1 (useless) to 5 (fully serves the request) for helpfulness and correctness only.
-Placeholder tokens like [[PERSON_1]] or generalized wording are acceptable if the answer still
-serves the request. Reference notes describe what a good answer covers.
+Placeholder tokens like [[PERSON_1]] or <PERSON_1>, or generalized wording, are acceptable if the
+answer still serves the request. Reference notes describe what a good answer covers.
 
 USER REQUEST:
 {request}
