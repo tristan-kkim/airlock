@@ -64,6 +64,134 @@ Request flow for `POST /v1/chat/completions`:
 5. **Rehydrate.** Placeholders in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
 6. **Audit.** One record per request stores the outbound payloads verbatim, detections as SHA-256 hashes, the gate decision, and timings.
 
+## Agent mode: egress firewall for tool calls and web search
+
+Masking a prompt and restoring the answer is a solved problem: PasteGuard, Kiji, and LiteLLM with Presidio all do it. Agents leak through other channels. A research agent that reads your documents sends their contents to the cloud model on every planning turn, replays its own tool-call arguments, and sends search queries to a search API. MosaicLeaks (Gurung et al., 2026, [arXiv:2605.30727](https://arxiv.org/abs/2605.30727)) shows that an observer can infer private document contents from a deep-research agent's search queries alone. AWS Bedrock Guardrails [documents](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-sensitive-filters.html) that it does not inspect tool-call arguments or tool results.
+
+In agent mode, Airlock treats every hop that leaves the machine as an egress event, gates it, and audits it:
+
+| Hop | Destination | What Airlock does before it leaves |
+|---|---|---|
+| planning turn (`prompt`, then `tool_result`) | Nemotron 3 Ultra | The whole history (question, documents read so far, search results, the model's earlier tool calls) goes through the normal detector and vault, then the deterministic gate. The same value keeps the same placeholder for the whole run. |
+| search (`search_query`) | Tavily | The search-intent guard: span detection, a local rewrite into a generic query, the gate on the exact Tavily payload, an intent judge, one retry, then that one search is blocked. |
+| local tools (`list_local_docs`, `read_local_doc`) | nowhere | They run on your machine. A document reaches the cloud only as a sanitized tool result. |
+| final answer | nowhere | The answer arrives with placeholders and is rehydrated locally. |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as You (question + local docs)
+    participant A as Airlock (local)
+    participant N as Nemotron-3-Nano-4B (local)
+    participant T as Nemotron 3 Ultra (Token Factory)
+    participant S as Tavily
+    U->>A: question, documents
+    loop each planning turn (max 8)
+        A->>N: detect spans in the whole history
+        A->>A: vault placeholders + deterministic gate
+        A->>T: sanitized turn (hop: upstream)
+        T-->>A: tool call with placeholders
+        alt read_local_doc / list_local_docs
+            A->>A: runs locally, result joins the history
+        else web_search(query)
+            A->>N: rewrite query without the private situation
+            A->>A: gate on the exact Tavily payload
+            A->>N: intent judge (or Content Safety model)
+            alt judged generic
+                A->>S: rewritten query (hop: tavily)
+                S-->>A: results
+            else still revealing after one retry
+                A->>A: block this search; the agent continues without it
+            end
+        end
+    end
+    T-->>A: finish(answer with placeholders)
+    A->>U: rehydrated answer + trace of every hop
+```
+
+### Search-intent guard
+
+Search queries are short, so the risk is rarely a string the gate already knows. It is intent: `<ORG_1> layoff list team lead how to respond` still tells the search provider that someone at a company is on a layoff list. For each query the agent wants to send ([`airlock/search_guard.py`](airlock/search_guard.py)):
+
+1. **Detect.** The normal span detector runs on the query, with the agent's placeholders restored locally.
+2. **Rewrite.** Nemotron-3-Nano-4B rewrites it toward a generic, information-seeking query ([`agent_search_rewrite.md`](airlock/prompts/agent_search_rewrite.md)). It receives the user's question and excerpts of the documents read so far as the thing it must not reveal. Example from a live run: the agent asked for `Tessellate Health AI ambient clinical documentation Denver competitors funding valuation`, and Tavily received `ambient clinical documentation market valuation competitors`.
+3. **Gate.** The exact Tavily payload is checked for every value detected in the query, every original masked during the run, declared terms, canaries, secret patterns and leftover placeholders.
+4. **Judge.** An intent judge decides whether the rewritten query still reveals a private situation. The policy is [`search_judge_policy.md`](airlock/prompts/search_judge_policy.md). `AIRLOCK_SEARCH_JUDGE` selects the judge:
+   - `nano` (default): the same local Nano-4B, yes/no JSON at temperature 0.
+   - `safety`: NVIDIA Nemotron 3.5 Content Safety in custom-policy mode (`chat_template_kwargs.custom_policy`, temperature 0.01, categories on, thinking off). Placeholders are swapped for `[REDACTED]` in the judge input, because the model reads `<PHONE_1>` as a phone number.
+   - `both`: block if either one flags the query.
+5. **Retry, then block.** A rejected rewrite is retried once, with the rejected query as feedback. If that also fails, only this search is blocked: the agent is told the search was withheld and continues. A judge that errors, times out or answers off-schema counts as a flag (fail closed).
+
+The audit hop records `original_query_hmac`, the `outbound_query` actually sent (or `null`), the judge verdict and model, and each attempt's gate reasons and verdict. Rejected candidates are stored only as HMACs.
+
+To run the Content Safety judge ([GGUF by mradermacher](https://huggingface.co/mradermacher/Nemotron-3.5-Content-Safety-GGUF), Q4_K_M, 2.5 GB). `--swa-full` lets llama.cpp cache the policy prefix for this Gemma 3 model:
+
+```bash
+llama-server -m ~/.cache/airlock/models/safety/Nemotron-3.5-Content-Safety.Q4_K_M.gguf \
+  --alias nemotron-3.5-content-safety --host 127.0.0.1 --port 8086 \
+  -ngl 999 -fa on -c 4096 -np 1 --swa-full --jinja --cache-ram 0 --no-webui
+AIRLOCK_SEARCH_JUDGE=safety uv run airlock serve
+```
+
+### Running the agent
+
+```bash
+uv run airlock agent "I got a layoff notice. Should I sign the separation agreement?" --docs ./private_docs
+```
+
+The CLI prints one line per hop: what went to Ultra, what went to Tavily (local query next to the query actually sent), which tools ran locally, and the rehydrated answer. In the demo UI, the **Agent** tab streams the same trace with two presets, one in Korean and one in English.
+
+`POST /v1/agent/run`
+
+```json
+{"question": "...", "docs": [{"name": "notice.md", "text": "..."}], "max_steps": 8}
+```
+
+Returns `{"run_id", "request_id", "status", "answer", "steps", "searches", "search_rewritten", "search_blocked", "trace": [...]}`. `status` is `finished`, `max_steps`, `blocked` (a planning turn failed the gate or the local detector failed) or `error`. With `?stream=1` the response is `text/event-stream`, one `event: <type>` per event:
+
+| Event | Fields |
+|---|---|
+| `run_started` | `run_id`, `request_id`, `guard`, `max_steps`, `docs` (`id`, `title`), `question` |
+| `hop` (upstream) | `hop`, `step`, `destination: "upstream"`, `kind`, `decision` (`allow`/`block`), `reasons`, `outbound` (messages new in this turn, as sent), `local` (the same messages as you have them), `model_used`, `ms` |
+| `hop` (tavily) | `hop`, `step`, `destination: "tavily"`, `kind: "search_query"`, `decision` (`allow`/`rewritten`/`block`), `reasons`, `model_query` (with placeholders), `local_query`, `outbound_query`, `judge`, `attempts`, `results`, `ms` |
+| `tool` | `step`, `name`, `executed: "local"`, `summary` |
+| `final` | `status`, `answer` (rehydrated), `steps`, `searches`, `search_rewritten`, `search_allowed`, `search_blocked` |
+| `done` | `run_id`, `request_id` (the audit record, `GET /audit/{request_id}`) |
+
+The `local` fields and `local_query` contain your originals. Like review previews, they are a response to the local client only. The audit record (`kind: "agent"`) holds one `hops[]` entry per hop: the exact payload for hops that were sent, and reasons and keyed hashes for hops that were not.
+
+Documents are listed to the model by neutral ids (`doc-1`), because file names often describe the situation. A run has at most `AIRLOCK_AGENT_MAX_STEPS` planning turns (default 8); the last turn offers only `finish`. Ultra's native OpenAI tool calling is used, with `reasoning_effort: "none"`. In a live check it called `list_local_docs`, `read_local_doc` and `finish` correctly and kept `<ORG_1>`-style placeholders intact inside tool arguments, so no JSON-action fallback was needed.
+
+### Measured: unguarded agent vs Airlock
+
+[`eval/agent/`](eval/agent/) holds 16 fictional scenarios, 8 Korean and 8 English: a lab result with a medication question, a layoff notice and severance, a lawsuit summons, an M&A memo with competitor research, an HR performance warning, a visa refusal, a debt collection notice, and a pregnancy with job-offer timing. Each scenario has local documents, a question, the private facts an observer must not learn, a one-sentence private situation, and an answer rubric. The same agent loop runs each scenario in two modes:
+
+- **unguarded:** raw documents and raw queries go out. This mode exists only in-process for evaluation, needs `AIRLOCK_ALLOW_UNGUARDED=1`, and records every hop the same way.
+- **airlock:** the guarded path described above.
+
+The attacker is Nemotron 3 Ultra with the [`eval/attack.py`](eval/attack.py) prompt, which sees only what left the machine. Each run is attacked twice: once over all hops, and once over the Tavily queries alone (the MosaicLeaks threat model). Private facts are matched deterministically in the attacker's output, and a strict grader decides whether the attacker inferred the private situation. A blind grader scores the final answer against the rubric from 1 to 5.
+
+<!-- AGENT_EVAL_TABLE -->
+
+### Threat model for agent mode
+
+**Covered:**
+
+- Every string Airlock knows is sensitive is enforced on every hop, including tool results and the agent's own tool-call arguments, not only the first prompt. "Knows" means detected in any document or turn of the run, declared, a canary, or a secret pattern.
+- Search queries are rewritten on the device and judged for intent before they leave, which targets the MosaicLeaks channel: the rewrite drops private organizations, people and the private event even when the cloud model asked for exactly that, and the search-only attacker row above measures how well it works.
+- Every hop is audited, so you can check afterwards exactly what Ultra saw at each turn and what Tavily saw.
+- The agent never runs unguarded outside evaluation.
+
+**Not covered:**
+
+- **Detector misses inside documents.** If the local detectors miss a name or a company in a document, and you did not declare it, the cloud model sees it on every later turn. The table above measures how often this happens. Declare your own name, employer and project names with `/vault/terms`.
+- **Content, not identity.** The cloud model must see the substance of your documents to help: a diagnosis, a severance clause, a deal price. Airlock removes identifiers and generalizes some quasi-identifiers. The provider can still learn that *someone* has this situation.
+- **The judge is a small model.** Nano-4B and Content Safety are 4B classifiers. In the local safety spike both judged all 16 probe queries correctly in 3 runs each, but that small set was also used to write the policy. The only deterministic guarantee is the gate on known strings.
+- **Linking queries.** Several generic queries in a row (`severance agreement review`, `Oregon non-compete`, `COBRA after layoff`) can still suggest the topic, and Tavily also sees timing and your network address.
+- **Inbound content.** Search results and documents are not checked for prompt injection. An injected instruction can steer the agent. It still cannot get known strings past the gate, and its search queries still pass the rewriter and judge.
+- **Utility cost.** A search that needs a private name (research on a small, non-public competitor) is rewritten to its category or blocked. The answer can be less specific.
+- **Scope.** Only the built-in tools are wired to the egress policy. The policy has an `http_tool` destination for more tools, but no generic HTTP tool ships.
+
 ## Quickstart
 
 Requirements: macOS or Linux, Python 3.12, [uv](https://docs.astral.sh/uv/), [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`).
@@ -148,6 +276,11 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_CANARIES` | none | Comma-separated tripwire strings that must never leave |
 | `AIRLOCK_HOST` / `AIRLOCK_PORT` | `127.0.0.1` / `8787` | Bind address |
 | `AIRLOCK_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Accepted `Host` headers (DNS-rebinding protection); `*` disables |
+| `AIRLOCK_AGENT_MAX_STEPS` | `8` | Planning turns per agent run (1-16) |
+| `AIRLOCK_AGENT_REASONING_EFFORT` | `none` | `reasoning_effort` sent with agent turns; empty omits it |
+| `AIRLOCK_SEARCH_JUDGE` | `nano` | Intent judge for agent searches: `nano`, `safety` or `both` |
+| `AIRLOCK_SAFETY_BASE_URL` / `AIRLOCK_SAFETY_MODEL` | `http://127.0.0.1:8086/v1` / `nemotron-3.5-content-safety` | Nemotron 3.5 Content Safety server for `safety` and `both` |
+| `AIRLOCK_ALLOW_UNGUARDED` | unset | Evaluation only: allows in-process `guard=False` agent runs (never over HTTP or the CLI) |
 
 Protection levels:
 
@@ -176,6 +309,8 @@ Blocked requests return HTTP 422:
 ```json
 {"error": {"type": "airlock_blocked", "reasons": ["declared_term:PERSON:6e0aeb4d2ed5"], "request_id": "req_..."}}
 ```
+
+Agent runs: see [Agent mode](#agent-mode-egress-firewall-for-tool-calls-and-web-search) for `POST /v1/agent/run` and its search reason codes (`search_intent_revealed`, `judge_malformed:<kind>`, `safety_judge_unavailable:<error>`, `safety_judge_malformed:<kind>`).
 
 Reason codes: `vault_original`, `declared_term`, `canary`, `secret_pattern:<rule>`, `uninspectable_content:<part type>`, `local_detector_unavailable:<error>` (connection failure or HTTP error), `local_detector_malformed:<kind>` with kind `prose`, `invalid_json`, `schema`, `length`, `repetition` or `timeout`, and for search also `local_rewriter_unavailable:<error>`, `rewrite_empty`, `rewrite_contains_placeholder`. Reasons carry the first 12 hex characters of the value's keyed hash (see the audit section), never the text.
 
@@ -301,13 +436,19 @@ airlock/
   upstream.py       Token Factory client with one-shot fallback
   rehydrate.py      placeholder restoration, including streams and tool calls
   search.py         private search: local rewrite, gate, Tavily, local re-rank
+  egress.py         egress events and per-run hop audit for agent mode
+  search_guard.py   search-intent guard: rewrite, gate, intent judge, retry, block
+  agent.py          private research agent (Ultra tool calling, local tools, guarded hops)
+  agent_api.py      POST /v1/agent/run (JSON and SSE)
+  agent_settings.py agent-mode environment settings
   audit.py          audit records (hashes only)
   server.py         FastAPI app
-  cli.py            `airlock serve`, `airlock doctor`
-  prompts/          detector, search rewrite and re-rank prompts
+  cli.py            `airlock serve`, `airlock doctor`, `airlock agent`
+  prompts/          detector, search rewrite, re-rank, agent and search-judge prompts
   static/index.html demo UI
 scripts/local_model/  llama.cpp serving for the local model
 eval/                 synthetic evaluation set and harness
+eval/agent/           agent-mode scenarios and the unguarded vs Airlock egress evaluation
 tests/                offline test suite
 ```
 
