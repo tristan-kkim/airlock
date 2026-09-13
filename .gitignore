@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Secrets and local state (the vault holds originals: never commit it)
+.env
+.env.*
+!.env.example
+.airlock/
+
+# Local model weights
+*.gguf
+models/
+
+# OS
+.DS_Store

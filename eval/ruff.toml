@@ -1,0 +1,8 @@
+# Inherit the repository settings; the dataset generator holds long natural-language templates.
+extend = "../pyproject.toml"
+
+[lint.per-file-ignores]
+"generate.py" = ["E501"]
+
+[lint.isort]
+known-first-party = ["generate", "judge", "mock_airlock", "run", "scoring"]

@@ -1,0 +1,6 @@
+# Eval-only dependencies. The harness and generator also carry PEP 723 headers, so
+# `uv run eval/run.py` works without installing anything by hand.
+httpx>=0.27
+fastapi>=0.110
+uvicorn>=0.29
+pytest>=8

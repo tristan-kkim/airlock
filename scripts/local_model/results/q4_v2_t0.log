@@ -1,0 +1,157 @@
+[q4_v2_t0 r0] ko01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.34s total=5.00s
+[q4_v2_t0 r0] ko02  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.25s total=1.96s
+[q4_v2_t0 r0] ko03  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.33s total=5.31s
+[q4_v2_t0 r0] ko04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=2.77s
+[q4_v2_t0 r0] ko05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.19s
+[q4_v2_t0 r0] ko06  parse=True full=2/3 fp=0 ungrounded=1 ttft=0.26s total=3.60s
+[q4_v2_t0 r0] ko07  parse=False full=0/1 fp=0 ungrounded=0 ttft=0.32s total=31.49s
+[q4_v2_t0 r0] ko08  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.36s total=1.55s
+[q4_v2_t0 r0] ko09  parse=True full=3/4 fp=0 ungrounded=0 ttft=0.33s total=5.50s
+[q4_v2_t0 r0] ko10  parse=True full=2/3 fp=0 ungrounded=0 ttft=0.32s total=2.30s
+[q4_v2_t0 r0] ko11  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=0.43s
+[q4_v2_t0 r0] ko12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r0] ko13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=0.44s
+[q4_v2_t0 r0] ko14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r0] ko15  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.78s
+[q4_v2_t0 r0] ko16  parse=True full=1/2 fp=1 ungrounded=0 ttft=0.26s total=2.17s
+[q4_v2_t0 r0] ko17  parse=True full=6/8 fp=0 ungrounded=0 ttft=0.63s total=7.08s
+[q4_v2_t0 r0] en01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.31s total=4.40s
+[q4_v2_t0 r0] en02  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=4.29s
+[q4_v2_t0 r0] en03  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.33s total=4.07s
+[q4_v2_t0 r0] en04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=4.00s
+[q4_v2_t0 r0] en05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=1.96s
+[q4_v2_t0 r0] en06  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.13s
+[q4_v2_t0 r0] en07  parse=True full=3/3 fp=1 ungrounded=0 ttft=0.26s total=4.03s
+[q4_v2_t0 r0] en08  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=2.24s
+[q4_v2_t0 r0] en09  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.56s
+[q4_v2_t0 r0] en10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.88s
+[q4_v2_t0 r0] en11  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.32s total=2.81s
+[q4_v2_t0 r0] en12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r0] en13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r0] en14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r0] en15  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r0] en16  parse=True full=6/7 fp=0 ungrounded=0 ttft=0.47s total=5.38s
+[q4_v2_t0 r0] en17  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.25s total=2.26s
+[q4_v2_t0 r1] ko01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.33s total=4.99s
+[q4_v2_t0 r1] ko02  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.26s total=1.96s
+[q4_v2_t0 r1] ko03  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.34s total=5.31s
+[q4_v2_t0 r1] ko04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=2.78s
+[q4_v2_t0 r1] ko05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=1.20s
+[q4_v2_t0 r1] ko06  parse=True full=2/3 fp=0 ungrounded=1 ttft=0.26s total=3.61s
+[q4_v2_t0 r1] ko07  parse=False full=0/1 fp=0 ungrounded=0 ttft=0.32s total=31.48s
+[q4_v2_t0 r1] ko08  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.32s total=1.51s
+[q4_v2_t0 r1] ko09  parse=True full=3/4 fp=0 ungrounded=0 ttft=0.33s total=5.51s
+[q4_v2_t0 r1] ko10  parse=True full=2/3 fp=0 ungrounded=0 ttft=0.32s total=2.30s
+[q4_v2_t0 r1] ko11  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r1] ko12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r1] ko13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=0.44s
+[q4_v2_t0 r1] ko14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r1] ko15  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.79s
+[q4_v2_t0 r1] ko16  parse=True full=1/2 fp=1 ungrounded=0 ttft=0.26s total=2.17s
+[q4_v2_t0 r1] ko17  parse=True full=6/8 fp=0 ungrounded=0 ttft=0.63s total=7.09s
+[q4_v2_t0 r1] en01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.31s total=4.40s
+[q4_v2_t0 r1] en02  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=4.28s
+[q4_v2_t0 r1] en03  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.33s total=4.08s
+[q4_v2_t0 r1] en04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=4.00s
+[q4_v2_t0 r1] en05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=1.97s
+[q4_v2_t0 r1] en06  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.13s
+[q4_v2_t0 r1] en07  parse=True full=3/3 fp=1 ungrounded=0 ttft=0.26s total=4.04s
+[q4_v2_t0 r1] en08  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=2.23s
+[q4_v2_t0 r1] en09  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.56s
+[q4_v2_t0 r1] en10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.88s
+[q4_v2_t0 r1] en11  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.32s total=2.81s
+[q4_v2_t0 r1] en12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r1] en13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r1] en14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r1] en15  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r1] en16  parse=True full=6/7 fp=0 ungrounded=0 ttft=0.47s total=5.40s
+[q4_v2_t0 r1] en17  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.25s total=2.26s
+[q4_v2_t0 r2] ko01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.33s total=4.99s
+[q4_v2_t0 r2] ko02  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.26s total=1.96s
+[q4_v2_t0 r2] ko03  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.33s total=5.32s
+[q4_v2_t0 r2] ko04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=2.77s
+[q4_v2_t0 r2] ko05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=1.20s
+[q4_v2_t0 r2] ko06  parse=True full=2/3 fp=0 ungrounded=1 ttft=0.26s total=3.61s
+[q4_v2_t0 r2] ko07  parse=False full=0/1 fp=0 ungrounded=0 ttft=0.32s total=31.50s
+[q4_v2_t0 r2] ko08  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.32s total=1.51s
+[q4_v2_t0 r2] ko09  parse=True full=3/4 fp=0 ungrounded=0 ttft=0.33s total=5.51s
+[q4_v2_t0 r2] ko10  parse=True full=2/3 fp=0 ungrounded=0 ttft=0.32s total=2.31s
+[q4_v2_t0 r2] ko11  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r2] ko12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r2] ko13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=0.44s
+[q4_v2_t0 r2] ko14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=0.43s
+[q4_v2_t0 r2] ko15  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.79s
+[q4_v2_t0 r2] ko16  parse=True full=1/2 fp=1 ungrounded=0 ttft=0.26s total=2.18s
+[q4_v2_t0 r2] ko17  parse=True full=6/8 fp=0 ungrounded=0 ttft=0.63s total=7.08s
+[q4_v2_t0 r2] en01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.31s total=4.40s
+[q4_v2_t0 r2] en02  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=4.29s
+[q4_v2_t0 r2] en03  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.33s total=4.08s
+[q4_v2_t0 r2] en04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=4.00s
+[q4_v2_t0 r2] en05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=1.97s
+[q4_v2_t0 r2] en06  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.13s
+[q4_v2_t0 r2] en07  parse=True full=3/3 fp=1 ungrounded=0 ttft=0.25s total=4.04s
+[q4_v2_t0 r2] en08  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=2.23s
+[q4_v2_t0 r2] en09  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=1.56s
+[q4_v2_t0 r2] en10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=2.88s
+[q4_v2_t0 r2] en11  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.32s total=2.81s
+[q4_v2_t0 r2] en12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=0.43s
+[q4_v2_t0 r2] en13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.19s total=0.37s
+[q4_v2_t0 r2] en14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r2] en15  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=0.37s
+[q4_v2_t0 r2] en16  parse=True full=6/7 fp=0 ungrounded=0 ttft=0.47s total=5.39s
+[q4_v2_t0 r2] en17  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.25s total=2.26s
+wrote ./scripts/local_model/results/q4_v2_t0.jsonl
+
+## q4_v2_t0  (102 requests)
+- JSON parse ok: 99/102
+
+| type | ko full (partial) | en full (partial) | all full (partial) | n |
+|---|---|---|---|---|
+| PERSON | 90.9% (90.9%) | 100.0% (100.0%) | 94.7% (94.7%) | 57 |
+| ORG | 50.0% (50.0%) | - | 50.0% (50.0%) | 6 |
+| CONTACT | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 24 |
+| ID_NUMBER | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 21 |
+| FINANCIAL | 66.7% (66.7%) | 100.0% (100.0%) | 83.3% (83.3%) | 18 |
+| SECRET | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 30 |
+| LOCATION | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 9 |
+| HEALTH | 50.0% (75.0%) | 75.0% (75.0%) | 62.5% (75.0%) | 24 |
+| QUASI_IDENTIFIER | 0.0% (0.0%) | 100.0% (100.0%) | 57.1% (57.1%) | 21 |
+| ALL | 77.8% (80.6%) | 97.1% (97.1%) | 87.1% (88.6%) | 210 |
+
+- type label agreement on detected spans: 96.8% (180/186)
+- QUASI_IDENTIFIER detected -> action=generalize with replacement: 9/12
+- benign prompts with >=1 flagged span (FP rate): 0.0% (0/24)
+- spurious spans on sensitive prompts: 6/222 predicted spans (2.7%)
+- ungrounded spans (text not verbatim in prompt): 3/222 (1.4%)
+- sensitive prompts with every expected span fully covered: 69.2% (54/78)
+- TTFT p50/p95: 0.26s / 0.47s
+- total p50/p95/max: 2.28s / 7.00s / 31.50s
+- prompt tokens mean 1039, completion tokens mean 103 (max 1024)
+- decode tok/s median 32.8; prefill tok/s median 234
+- prompt cache hit tokens (median): 969
+
+| run | recall full | recall partial | benign FP | spurious spans | p50 total |
+|---|---|---|---|---|---|
+| 0 | 87.1% | 88.6% | 0/8 | 2 | 2.28s |
+| 1 | 87.1% | 88.6% | 0/8 | 2 | 2.28s |
+| 2 | 87.1% | 88.6% | 0/8 | 2 | 2.28s |
+
+- expected spans whose full-detection flips across runs: 0/70
+
+### misses (all runs, full-coverage)
+- en16 HEALTH 'epilepsy' missed 3x
+- ko06 HEALTH '제2형 당뇨' missed 3x (partial)
+- ko07 QUASI_IDENTIFIER '유일한 여성 부사장' missed 3x
+- ko08 QUASI_IDENTIFIER '한국어-포르투갈어 통역사' missed 3x
+- ko09 FINANCIAL '6,200만원' missed 3x
+- ko10 PERSON '한지우' missed 3x
+- ko16 QUASI_IDENTIFIER '유일한 외국인 개발자' missed 3x
+- ko17 HEALTH '공황장애' missed 3x
+- ko17 ORG '대원물산' missed 3x
+
+### false-positive / spurious spans (all runs)
+- en07 QUASI_IDENTIFIER 'cover his shifts' x3
+- ko16 CONTACT '팀' x3
+
+### ungrounded spans
+- ko06 '1' x3

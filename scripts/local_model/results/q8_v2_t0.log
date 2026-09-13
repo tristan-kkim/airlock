@@ -1,0 +1,90 @@
+[q8_v2_t0 r0] ko01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.31s total=6.16s
+[q8_v2_t0 r0] ko02  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.24s total=2.40s
+[q8_v2_t0 r0] ko03  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.31s total=6.56s
+[q8_v2_t0 r0] ko04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.37s total=3.36s
+[q8_v2_t0 r0] ko05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.24s total=1.42s
+[q8_v2_t0 r0] ko06  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.24s total=5.17s
+[q8_v2_t0 r0] ko07  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.29s total=4.13s
+[q8_v2_t0 r0] ko08  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.29s total=1.79s
+[q8_v2_t0 r0] ko09  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.30s total=5.17s
+[q8_v2_t0 r0] ko10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.30s total=3.48s
+[q8_v2_t0 r0] ko11  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.23s total=0.46s
+[q8_v2_t0 r0] ko12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.22s total=0.45s
+[q8_v2_t0 r0] ko13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.23s total=0.47s
+[q8_v2_t0 r0] ko14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.22s total=0.45s
+[q8_v2_t0 r0] ko15  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.24s total=3.42s
+[q8_v2_t0 r0] ko16  parse=True full=1/2 fp=0 ungrounded=0 ttft=0.24s total=2.35s
+[q8_v2_t0 r0] ko17  parse=True full=6/8 fp=0 ungrounded=0 ttft=0.59s total=8.28s
+[q8_v2_t0 r0] en01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.29s total=3.93s
+[q8_v2_t0 r0] en02  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.24s total=5.31s
+[q8_v2_t0 r0] en03  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.31s total=5.03s
+[q8_v2_t0 r0] en04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.37s total=4.89s
+[q8_v2_t0 r0] en05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.24s total=2.39s
+[q8_v2_t0 r0] en06  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.22s total=1.34s
+[q8_v2_t0 r0] en07  parse=True full=3/3 fp=1 ungrounded=0 ttft=0.23s total=5.00s
+[q8_v2_t0 r0] en08  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.24s total=2.73s
+[q8_v2_t0 r0] en09  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.23s total=1.88s
+[q8_v2_t0 r0] en10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.25s total=3.54s
+[q8_v2_t0 r0] en11  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.29s total=3.44s
+[q8_v2_t0 r0] en12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.22s total=0.45s
+[q8_v2_t0 r0] en13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.17s total=0.40s
+[q8_v2_t0 r0] en14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.17s total=0.40s
+[q8_v2_t0 r0] en15  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.17s total=0.40s
+[q8_v2_t0 r0] en16  parse=True full=6/7 fp=0 ungrounded=0 ttft=0.44s total=6.55s
+[q8_v2_t0 r0] en17  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.23s total=2.81s
+wrote ./scripts/local_model/results/q8_v2_t0.jsonl
+
+## q8_v2_t0  (34 requests)
+- JSON parse ok: 34/34
+
+| type | ko full (partial) | en full (partial) | all full (partial) | n |
+|---|---|---|---|---|
+| PERSON | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 19 |
+| ORG | 50.0% (50.0%) | - | 50.0% (50.0%) | 2 |
+| CONTACT | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 8 |
+| ID_NUMBER | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 7 |
+| FINANCIAL | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 6 |
+| SECRET | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 10 |
+| LOCATION | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 3 |
+| HEALTH | 75.0% (75.0%) | 75.0% (75.0%) | 75.0% (75.0%) | 8 |
+| QUASI_IDENTIFIER | 0.0% (33.3%) | 100.0% (100.0%) | 57.1% (71.4%) | 7 |
+| ALL | 86.1% (88.9%) | 97.1% (97.1%) | 91.4% (92.9%) | 70 |
+
+- type label agreement on detected spans: 96.9% (63/65)
+- QUASI_IDENTIFIER detected -> action=generalize with replacement: 4/5
+- benign prompts with >=1 flagged span (FP rate): 0.0% (0/8)
+- spurious spans on sensitive prompts: 1/78 predicted spans (1.3%)
+- ungrounded spans (text not verbatim in prompt): 0/78 (0.0%)
+
+| type | regex-only ko / en | model(re-anchored)+regex ko / en / all |
+|---|---|---|
+| PERSON | 0.0% / 0.0% | 100.0% / 100.0% / 100.0% |
+| ORG | 0.0% / n/a | 50.0% / n/a / 50.0% |
+| CONTACT | 100.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| ID_NUMBER | 75.0% / 100.0% | 100.0% / 100.0% / 100.0% |
+| FINANCIAL | 66.7% / 100.0% | 100.0% / 100.0% / 100.0% |
+| SECRET | 100.0% / 83.3% | 100.0% / 100.0% / 100.0% |
+| LOCATION | 0.0% / 0.0% | 100.0% / 100.0% / 100.0% |
+| HEALTH | 0.0% / 0.0% | 75.0% / 75.0% / 75.0% |
+| QUASI_IDENTIFIER | 0.0% / 0.0% | 0.0% / 100.0% / 57.1% |
+| ALL | 36.1% / 44.1% | 86.1% / 97.1% / 91.4% |
+- regex hits on benign prompts: 0
+- sensitive prompts with every expected span fully covered: 80.8% (21/26)
+- TTFT p50/p95: 0.24s / 0.39s
+- total p50/p95/max: 3.09s / 6.55s / 8.28s
+- prompt tokens mean 1039, completion tokens mean 74 (max 201)
+- decode tok/s median 26.0; prefill tok/s median 255
+- prompt cache hit tokens (median): 969
+
+### misses (all runs, full-coverage)
+- en16 HEALTH 'epilepsy' missed 1x
+- ko07 QUASI_IDENTIFIER '유일한 여성 부사장' missed 1x (partial)
+- ko08 QUASI_IDENTIFIER '한국어-포르투갈어 통역사' missed 1x
+- ko16 QUASI_IDENTIFIER '유일한 외국인 개발자' missed 1x
+- ko17 HEALTH '공황장애' missed 1x
+- ko17 ORG '대원물산' missed 1x
+
+### false-positive / spurious spans (all runs)
+- en07 QUASI_IDENTIFIER 'cover his shifts' x1
+
+### ungrounded spans

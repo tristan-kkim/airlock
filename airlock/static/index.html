@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airlock</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --muted: #5d6573; --line: #e2e5ea;
+    --accent: #3b5bdb; --accent-ink: #ffffff; --ph-bg: #e7ecff; --ph-ink: #2f47b5;
+    --gen-bg: #fff3d6; --gen-ink: #7a5300; --ok: #1b7f4b; --ok-bg: #e3f5eb;
+    --bad: #b42318; --bad-bg: #fde8e7; --code-bg: #f1f3f6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --panel: #171a21; --ink: #e7e9ee; --muted: #9aa3b2; --line: #2a2f3a;
+      --accent: #7c93ff; --accent-ink: #0f1115; --ph-bg: #232c52; --ph-ink: #b7c4ff;
+      --gen-bg: #3a2f12; --gen-ink: #f3d38a; --ok: #5fd39a; --ok-bg: #173226;
+      --bad: #ff8a80; --bad-bg: #3a1c1b; --code-bg: #11141a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 24px;
+    padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  header .tag { color: var(--muted); font-size: 14px; }
+  #health { margin-left: auto; font-size: 13px; color: var(--muted); }
+  main { max-width: 1400px; margin: 0 auto; padding: 20px 24px 48px; }
+  .controls { display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 900px) { .controls { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tabs button { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 6px 0 4px; }
+  textarea, input[type=text] { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  textarea { min-height: 92px; resize: vertical; }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; font-size: 14px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+  button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  button:disabled { opacity: .5; cursor: progress; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .samples button { font-size: 12px; padding: 4px 10px; }
+  .panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 1100px) { .panes { grid-template-columns: 1fr; } }
+  .pane h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .pane .body { white-space: pre-wrap; word-break: break-word; min-height: 140px; }
+  .msg { padding: 8px 0; border-top: 1px dashed var(--line); }
+  .msg:first-child { border-top: 0; }
+  .role { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: block; }
+  .ph { background: var(--ph-bg); color: var(--ph-ink); border-radius: 4px; padding: 0 3px; font-family: var(--mono); font-size: .9em; }
+  .empty { color: var(--muted); font-style: italic; }
+  .gate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+  .badge { font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 999px; }
+  .badge.allow { background: var(--ok-bg); color: var(--ok); }
+  .badge.block { background: var(--bad-bg); color: var(--bad); }
+  .reasons { font-family: var(--mono); font-size: 12px; color: var(--bad); }
+  .meta { font-size: 12px; color: var(--muted); }
+  details { margin-top: 16px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  td.mono, pre { font-family: var(--mono); font-size: 12px; }
+  pre { background: var(--code-bg); border-radius: 8px; padding: 10px; overflow: auto; max-height: 360px; }
+  .result { padding: 8px 0; border-top: 1px dashed var(--line); }
+  .result a { color: var(--accent); }
+  .terms-list { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Airlock</h1>
+  <span class="tag">Local privacy airlock between your apps and cloud AI</span>
+  <span id="health">checking…</span>
+</header>
+<main>
+  <section class="controls">
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button id="tab-chat" role="tab" aria-selected="true">Chat</button>
+        <button id="tab-search" role="tab" aria-selected="false">Private search</button>
+      </div>
+      <label for="input" id="input-label">Message</label>
+      <textarea id="input" placeholder="Type something with a name, a phone number, a secret…"></textarea>
+      <div id="context-wrap" hidden>
+        <label for="context">Private context (stays on this machine)</label>
+        <textarea id="context" placeholder="Why you are searching. Used locally to rewrite and re-rank."></textarea>
+      </div>
+      <div class="row">
+        <button id="send">Send through Airlock</button>
+        <button id="reset" class="ghost">New conversation</button>
+        <span class="meta" id="status"></span>
+      </div>
+      <div class="samples" id="samples"></div>
+    </div>
+    <div class="card">
+      <label for="term">Always-sensitive terms (your name, employer…)</label>
+      <input type="text" id="term" placeholder="e.g. Hanbit Labs">
+      <div class="row"><button id="add-term" class="ghost">Add term</button></div>
+      <div class="terms-list" id="terms">Stored only in the local vault.</div>
+    </div>
+  </section>
+
+  <div class="gate" id="gate" hidden></div>
+
+  <section class="panes">
+    <div class="card pane"><h2>What you typed</h2><div class="body" id="pane-typed"><span class="empty">Nothing yet.</span></div></div>
+    <div class="card pane"><h2>What the cloud saw</h2><div class="body" id="pane-cloud"><span class="empty">Exact outbound payload appears here.</span></div></div>
+    <div class="card pane"><h2 id="answer-title">Answer (rehydrated)</h2><div class="body" id="pane-answer"><span class="empty">The answer, with placeholders restored locally.</span></div></div>
+  </section>
+
+  <details id="details" hidden>
+    <summary>Detections, timings and raw audit record</summary>
+    <table id="detections"></table>
+    <pre id="raw"></pre>
+  </details>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const mark = (s) => esc(s).replace(/\[\[[A-Z][A-Z_]*_\d+\]\]/g, (m) => `<span class="ph">${m}</span>`);
+  const newConv = () => "ui-" + (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+
+  let mode = "chat";
+  let history = [];
+  let conversation = newConv();
+
+  const samples = {
+    chat: [
+      ["Medical (EN)", "Hi, I'm Jane Park (jane.park@example.com, 010-2345-6789). I'm 34 years old and was just diagnosed with type 1 diabetes at Hanbit Clinic. Draft a short note to my manager asking for flexible hours."],
+      ["Secrets (EN)", "Why does this fail? DATABASE_URL=postgres://admin:hunter22@db.internal:5432/prod and OPENAI_API_KEY=sk-proj-Zx8Qw3Er5Ty7Ui9Op1As2Df4"],
+      ["계좌·주민번호 (KO)", "김민수(주민번호 900101-1234567)에게 신한은행 110-234-567890 계좌로 월세 85만원을 보내야 해. 집주인에게 보낼 정중한 문자를 써줘."],
+    ],
+    search: [
+      ["Layoff question", "Can my employer fire me without severance?", "I'm Minji Lee, a senior analyst at Seoul Mirae Bank, employee ID 20231187. HR told me on Friday my role is cut."],
+      ["Health question", "What should I ask the doctor at the first appointment?", "My son Junho (7) was diagnosed with type 1 diabetes yesterday at Hanbit Children's Hospital."],
+    ],
+  };
+
+  function renderSamples() {
+    $("samples").innerHTML = "";
+    for (const s of samples[mode]) {
+      const b = document.createElement("button");
+      b.className = "ghost"; b.textContent = s[0];
+      b.onclick = () => { $("input").value = s[1]; if (mode === "search") $("context").value = s[2] || ""; };
+      $("samples").appendChild(b);
+    }
+  }
+
+  function setMode(m) {
+    mode = m;
+    $("tab-chat").setAttribute("aria-selected", m === "chat");
+    $("tab-search").setAttribute("aria-selected", m === "search");
+    $("context-wrap").hidden = m !== "search";
+    $("input-label").textContent = m === "chat" ? "Message" : "Search query";
+    $("answer-title").textContent = m === "chat" ? "Answer (rehydrated)" : "Results (re-ranked locally)";
+    $("reset").hidden = m !== "chat";
+    renderSamples();
+  }
+
+  async function health() {
+    try {
+      const h = await (await fetch("/healthz")).json();
+      $("health").textContent = `level: ${h.protection_level} · local: ${h.local_model} · cloud: ${h.upstream_model}` +
+        (h.upstream_configured ? "" : " (no key)") + (h.search_configured ? "" : " · search: no key");
+    } catch { $("health").textContent = "server unreachable"; }
+  }
+
+  function showGate(gate, meta) {
+    const g = $("gate"); g.hidden = false;
+    const cls = gate.decision === "allow" ? "allow" : "block";
+    let html = `<span class="badge ${cls}">Gate: ${gate.decision.toUpperCase()}</span>`;
+    if (gate.reasons && gate.reasons.length) html += `<span class="reasons">${gate.reasons.map(esc).join(" · ")}</span>`;
+    if (meta && meta.model_used) html += `<span class="meta">model: ${esc(meta.model_used)}${meta.fallback ? " (fallback)" : ""}</span>`;
+    g.innerHTML = html;
+  }
+
+  function showAudit(audit) {
+    $("details").hidden = false;
+    const rows = (audit.detections || []).map((d) =>
+      `<tr><td>${esc(d.type)}</td><td>${esc(d.action)}</td><td>${esc(d.source)}</td><td class="mono">${esc(d.text_sha256.slice(0, 16))}…</td></tr>`).join("");
+    const t = audit.timings_ms || {};
+    $("detections").innerHTML = `<tr><th>Type</th><th>Action</th><th>Source</th><th>HMAC of original</th></tr>` +
+      (rows || `<tr><td colspan="4" class="empty">No detections</td></tr>`) +
+      `<tr><td colspan="4" class="meta">${Object.entries(t).map(([k, v]) => `${esc(k)} ${v} ms`).join(" · ")}</td></tr>`;
+    $("raw").textContent = JSON.stringify(audit, null, 2);
+    showGate(audit.gate, audit.meta);
+    const out = audit.outbound || [];
+    if (!out.length) { $("pane-cloud").innerHTML = `<span class="empty">Nothing left this machine.</span>`; return; }
+    const last = out[out.length - 1];
+    if (last.destination === "tavily") {
+      $("pane-cloud").innerHTML = `<span class="role">tavily · query</span>${mark(last.payload.query)}`;
+    } else {
+      $("pane-cloud").innerHTML = (last.payload.messages || []).map((m) =>
+        `<div class="msg"><span class="role">${esc(m.role)}</span>${mark(typeof m.content === "string" ? m.content : JSON.stringify(m.content))}</div>`).join("");
+    }
+  }
+
+  async function loadAudit(id) {
+    if (!id) return;
+    const r = await fetch(`/audit/${encodeURIComponent(id)}`);
+    if (r.ok) showAudit(await r.json());
+  }
+
+  async function send() {
+    const text = $("input").value.trim();
+    if (!text) return;
+    $("send").disabled = true; $("status").textContent = "Detecting locally…";
+    try {
+      if (mode === "chat") {
+        const messages = [...history, { role: "user", content: text }];
+        $("pane-typed").innerHTML = messages.map((m) => `<div class="msg"><span class="role">${esc(m.role)}</span>${esc(m.content)}</div>`).join("");
+        const r = await fetch("/v1/chat/completions", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-airlock-conversation-id": conversation },
+          body: JSON.stringify({ model: "airlock", messages }),
+        });
+        const data = await r.json();
+        const id = r.headers.get("x-airlock-request-id") || data?.error?.request_id;
+        if (r.ok) {
+          const answer = data.choices?.[0]?.message?.content ?? "";
+          $("pane-answer").textContent = answer;
+          history = [...messages, { role: "assistant", content: answer }];
+          $("input").value = "";
+        } else {
+          $("pane-answer").innerHTML = `<span class="empty">${esc(data.error?.type)}: ${esc(data.error?.message || "request blocked before leaving this machine")}</span>`;
+        }
+        await loadAudit(id);
+      } else {
+        const context = $("context").value.trim() || null;
+        $("pane-typed").innerHTML = `<div class="msg"><span class="role">query</span>${esc(text)}</div>` +
+          (context ? `<div class="msg"><span class="role">private context</span>${esc(context)}</div>` : "");
+        const r = await fetch("/v1/search", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: text, context, max_results: 5 }),
+        });
+        const data = await r.json();
+        const id = data.request_id || data?.error?.request_id;
+        if (r.ok) {
+          $("pane-answer").innerHTML = (data.answer ? `<div class="msg">${esc(data.answer)}</div>` : "") +
+            data.results.map((x) => `<div class="result"><span class="role">#${x.local_rank}</span><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a><br>${esc((x.content || "").slice(0, 280))}</div>`).join("");
+        } else {
+          $("pane-answer").innerHTML = `<span class="empty">${esc(data.error?.type)}: ${esc(data.error?.message || "query blocked before leaving this machine")}</span>`;
+        }
+        await loadAudit(id);
+      }
+      $("status").textContent = "";
+    } catch (e) {
+      $("status").textContent = "Error: " + e.message;
+    } finally {
+      $("send").disabled = false;
+    }
+  }
+
+  async function addTerm() {
+    const term = $("term").value.trim();
+    if (!term) return;
+    const r = await fetch("/vault/terms", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ terms: [term], type: "PERSON" }) });
+    const d = await r.json();
+    $("terms").textContent = r.ok ? `${d.total} term(s) in the local vault.` : "Could not add term.";
+    $("term").value = "";
+  }
+
+  $("tab-chat").onclick = () => setMode("chat");
+  $("tab-search").onclick = () => setMode("search");
+  $("send").onclick = send;
+  $("add-term").onclick = addTerm;
+  $("reset").onclick = () => {
+    history = []; conversation = newConv();
+    for (const p of ["pane-typed", "pane-cloud", "pane-answer"]) $(p).innerHTML = `<span class="empty">New conversation.</span>`;
+    $("gate").hidden = true; $("details").hidden = true;
+  };
+  $("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); });
+  setMode("chat");
+  health();
+})();
+</script>
+</body>
+</html>

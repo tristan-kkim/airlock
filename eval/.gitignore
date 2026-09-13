@@ -1,0 +1,3 @@
+# Timestamped local runs stay local; the mock demo is committed as a sample.
+results/*
+!results/mock-demo/

@@ -1,0 +1,76 @@
+[q4_v2_think_t1 r0] ko01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.34s total=11.86s
+[q4_v2_think_t1 r0] ko02  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.26s total=8.92s
+[q4_v2_think_t1 r0] ko03  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.33s total=23.94s
+[q4_v2_think_t1 r0] ko04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.40s total=26.53s
+[q4_v2_think_t1 r0] ko05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=27.88s
+[q4_v2_think_t1 r0] ko06  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.27s total=25.60s
+[q4_v2_think_t1 r0] ko07  parse=True full=0/1 fp=0 ungrounded=1 ttft=0.32s total=28.51s
+[q4_v2_think_t1 r0] ko08  parse=True full=0/1 fp=0 ungrounded=0 ttft=0.39s total=16.13s
+[q4_v2_think_t1 r0] ko09  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.33s total=20.32s
+[q4_v2_think_t1 r0] ko10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.32s total=12.95s
+[q4_v2_think_t1 r0] ko11  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=7.02s
+[q4_v2_think_t1 r0] ko12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=5.33s
+[q4_v2_think_t1 r0] ko13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.26s total=5.34s
+[q4_v2_think_t1 r0] ko14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.25s total=4.29s
+[q4_v2_think_t1 r0] ko15  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=14.64s
+[q4_v2_think_t1 r0] ko16  parse=True full=1/2 fp=0 ungrounded=1 ttft=0.26s total=18.50s
+[q4_v2_think_t1 r0] ko17  parse=True full=6/8 fp=0 ungrounded=0 ttft=0.63s total=28.10s
+[q4_v2_think_t1 r0] en01  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.36s total=10.92s
+[q4_v2_think_t1 r0] en02  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=12.98s
+[q4_v2_think_t1 r0] en03  parse=True full=4/4 fp=0 ungrounded=0 ttft=0.33s total=21.12s
+[q4_v2_think_t1 r0] en04  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.39s total=18.69s
+[q4_v2_think_t1 r0] en05  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.26s total=9.44s
+[q4_v2_think_t1 r0] en06  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=5.71s
+[q4_v2_think_t1 r0] en07  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=15.76s
+[q4_v2_think_t1 r0] en08  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=16.07s
+[q4_v2_think_t1 r0] en09  parse=True full=1/1 fp=0 ungrounded=0 ttft=0.25s total=12.22s
+[q4_v2_think_t1 r0] en10  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.26s total=19.17s
+[q4_v2_think_t1 r0] en11  parse=True full=3/3 fp=0 ungrounded=0 ttft=0.32s total=13.56s
+[q4_v2_think_t1 r0] en12  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.24s total=13.17s
+[q4_v2_think_t1 r0] en13  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=2.98s
+[q4_v2_think_t1 r0] en14  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.18s total=3.86s
+[q4_v2_think_t1 r0] en15  parse=True full=0/0 fp=0 ungrounded=0 ttft=0.19s total=3.71s
+[q4_v2_think_t1 r0] en16  parse=True full=7/7 fp=0 ungrounded=0 ttft=0.47s total=32.47s
+[q4_v2_think_t1 r0] en17  parse=True full=2/2 fp=0 ungrounded=0 ttft=0.28s total=28.14s
+wrote ./scripts/local_model/results/q4_v2_think_t1.jsonl
+
+## q4_v2_think_t1  (34 requests)
+- JSON parse ok: 34/34
+
+| type | ko full (partial) | en full (partial) | all full (partial) | n |
+|---|---|---|---|---|
+| PERSON | 90.9% (90.9%) | 100.0% (100.0%) | 94.7% (94.7%) | 19 |
+| ORG | 50.0% (50.0%) | - | 50.0% (50.0%) | 2 |
+| CONTACT | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 8 |
+| ID_NUMBER | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 7 |
+| FINANCIAL | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 6 |
+| SECRET | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 10 |
+| LOCATION | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 3 |
+| HEALTH | 100.0% (100.0%) | 100.0% (100.0%) | 100.0% (100.0%) | 8 |
+| QUASI_IDENTIFIER | 0.0% (0.0%) | 100.0% (100.0%) | 57.1% (57.1%) | 7 |
+| ALL | 86.1% (86.1%) | 100.0% (100.0%) | 92.9% (92.9%) | 70 |
+
+- type label agreement on detected spans: 96.9% (63/65)
+- QUASI_IDENTIFIER detected -> action=generalize with replacement: 3/4
+- benign prompts with >=1 flagged span (FP rate): 0.0% (0/8)
+- spurious spans on sensitive prompts: 0/74 predicted spans (0.0%)
+- ungrounded spans (text not verbatim in prompt): 2/74 (2.7%)
+- sensitive prompts with every expected span fully covered: 84.6% (22/26)
+- TTFT p50/p95: 0.26s / 0.42s
+- total p50/p95/max: 14.10s / 28.27s / 32.47s
+- prompt tokens mean 1039, completion tokens mean 498 (max 1052)
+- decode tok/s median 32.9; prefill tok/s median 234
+- prompt cache hit tokens (median): 969
+
+### misses (all runs, full-coverage)
+- ko07 QUASI_IDENTIFIER '유일한 여성 부사장' missed 1x
+- ko08 QUASI_IDENTIFIER '한국어-포르투갈어 통역사' missed 1x
+- ko16 QUASI_IDENTIFIER '유일한 외국인 개발자' missed 1x
+- ko17 ORG '대원물산' missed 1x
+- ko17 PERSON '류하린' missed 1x
+
+### false-positive / spurious spans (all runs)
+
+### ungrounded spans
+- ko07 '독일의 유일한 여성 부사장' x1
+- ko16 '그린루프의 유일한 외국인 개발자인 인도 출신 동료' x1

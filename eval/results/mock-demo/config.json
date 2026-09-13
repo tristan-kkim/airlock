@@ -1,0 +1,33 @@
+{
+  "base_url": "http://127.0.0.1:8799",
+  "target_label": "eval/mock_airlock.py --seed 0 (regex-only mock)",
+  "passes": 3,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "2549790dc5913bf1cac0d7f681427cf87b55af96a770b7f8678b83810bc82e70",
+  "protection_level": "mock",
+  "server_health": {
+    "ok": true,
+    "mock": true,
+    "protection_level": "mock"
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "register_canaries": false,
+  "started_at": "2026-09-13T15:29:31.285426+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8799",
+    "--passes",
+    "3",
+    "--out",
+    "eval/results/mock-demo",
+    "--label",
+    "eval/mock_airlock.py --seed 0 (regex-only mock)"
+  ],
+  "finished_at": "2026-09-13T15:29:32.408151+00:00"
+}

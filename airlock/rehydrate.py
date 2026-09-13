@@ -1,0 +1,115 @@
+"""Map placeholders in upstream responses back to the local originals."""
+
+from __future__ import annotations
+
+import copy
+import json
+import re
+from typing import Any
+
+from airlock.vault import VaultSession
+
+# Canonical [[KEY]] plus the single-bracket form some models produce ([KEY]).
+_DOUBLE = re.compile(r"\[\[\s*([A-Z][A-Z_]*_\d+)\s*\]\]")
+_SINGLE = re.compile(r"(?<!\[)\[([A-Z][A-Z_]*_\d+)\](?!\])")
+
+
+def rehydrate_text(text: str, session: VaultSession, *, json_escape: bool = False) -> str:
+    def sub(m: re.Match[str]) -> str:
+        original = session.original_for(m.group(1))
+        if original is None:
+            return m.group(0)  # unknown placeholder: leave untouched
+        return json.dumps(original, ensure_ascii=False)[1:-1] if json_escape else original
+
+    return _SINGLE.sub(sub, _DOUBLE.sub(sub, text))
+
+
+def _walk(obj: Any, session: VaultSession) -> Any:
+    if isinstance(obj, str):
+        return rehydrate_text(obj, session)
+    if isinstance(obj, list):
+        return [_walk(v, session) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _walk(v, session) for k, v in obj.items()}
+    return obj
+
+
+def rehydrate_arguments(arguments: str, session: VaultSession) -> str:
+    """Tool-call arguments are a JSON string: rehydrate values without breaking the JSON."""
+    try:
+        parsed = json.loads(arguments)
+    except (json.JSONDecodeError, TypeError):
+        return rehydrate_text(arguments, session, json_escape=True)
+    return json.dumps(_walk(parsed, session), ensure_ascii=False)
+
+
+REASONING_FIELDS = ("reasoning_content", "reasoning")
+
+
+def _rehydrate_message(
+    msg: dict[str, Any], session: VaultSession, *, include_reasoning: bool = False
+) -> None:
+    for key in REASONING_FIELDS:
+        if not include_reasoning:
+            msg.pop(key, None)
+    for key in ("content", "refusal", *REASONING_FIELDS):
+        value = msg.get(key)
+        if isinstance(value, str):
+            msg[key] = rehydrate_text(value, session)
+        elif isinstance(value, list):
+            msg[key] = _walk(value, session)
+    if isinstance(msg.get("content"), str):
+        # Some models (e.g. Nemotron 3 Super) prefix the answer with blank lines.
+        msg["content"] = msg["content"].lstrip()
+    for call in msg.get("tool_calls") or []:
+        fn = call.get("function") if isinstance(call, dict) else None
+        if isinstance(fn, dict) and isinstance(fn.get("arguments"), str):
+            fn["arguments"] = rehydrate_arguments(fn["arguments"], session)
+    fc = msg.get("function_call")
+    if isinstance(fc, dict) and isinstance(fc.get("arguments"), str):
+        fc["arguments"] = rehydrate_arguments(fc["arguments"], session)
+
+
+_PARTIAL = re.compile(r"\[\[?\s*[A-Z0-9_]*\s*\]?")
+
+
+class StreamRehydrator:
+    """Rehydrates a text stream whose chunks may split a placeholder ("[[PER" + "SON_1]]").
+
+    Text is released as soon as it cannot be the start of a placeholder; a possible partial
+    placeholder at the end of the buffer is held back until the next chunk decides it.
+    """
+
+    def __init__(self, session: VaultSession, max_hold: int = 64):
+        self.session = session
+        self.max_hold = max_hold
+        self.buffer = ""
+
+    def feed(self, text: str) -> str:
+        self.buffer += text
+        start = self.buffer.rfind("[")
+        if start > 0 and self.buffer[start - 1] == "[":
+            start -= 1
+        if start != -1:
+            tail = self.buffer[start:]
+            if len(tail) <= self.max_hold and _PARTIAL.fullmatch(tail):
+                ready, self.buffer = self.buffer[:start], tail
+                return rehydrate_text(ready, self.session)
+        ready, self.buffer = self.buffer, ""
+        return rehydrate_text(ready, self.session)
+
+    def flush(self) -> str:
+        ready, self.buffer = self.buffer, ""
+        return rehydrate_text(ready, self.session)
+
+
+def rehydrate_response(
+    response: dict[str, Any], session: VaultSession, *, include_reasoning: bool = False
+) -> dict[str, Any]:
+    out = copy.deepcopy(response)
+    for choice in out.get("choices") or []:
+        if not isinstance(choice, dict):
+            continue
+        if isinstance(choice.get("message"), dict):
+            _rehydrate_message(choice["message"], session, include_reasoning=include_reasoning)
+    return out
