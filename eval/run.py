@@ -18,7 +18,8 @@ Output directory:
     pass_01.jsonl ...      one line per case: raw request outcome + audit record + score
     summary.json           all metrics
     summary.md             human-readable report
-    judge.jsonl            only with --judge (see README: sends raw synthetic prompts to the cloud)
+    utility/               only with --judge: eval/utility.py output (sends raw synthetic prompts
+                           to the cloud for the reference answers; see README)
 """
 
 from __future__ import annotations
@@ -298,11 +299,9 @@ def rescore(run_dir: Path) -> None:
     pass_files = sorted(run_dir.glob("pass_*.jsonl"))
     raw_passes = [[row["record"] for row in read_jsonl(p)] for p in pass_files]
     scored_passes, summary = score_and_summarize(cases, raw_passes, config)
-    judge_file = run_dir / "judge.jsonl"
-    if judge_file.exists():
-        import judge
-
-        summary["judge"] = judge.summarize(read_jsonl(judge_file))
+    utility_summary = run_dir / "utility" / "summary.json"
+    if utility_summary.exists():
+        summary["utility"] = json.loads(utility_summary.read_text(encoding="utf-8"))["overall"]
     write_outputs(run_dir, raw_passes, scored_passes, summary)
     print(f"rescored {len(pass_files)} pass(es) in {run_dir}")
     print_headline(summary)
@@ -394,8 +393,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--judge",
         action="store_true",
-        help="OPTIONAL answer-utility scoring. Sends raw synthetic prompts directly to the "
-        "endpoint in AIRLOCK_JUDGE_BASE_URL. See README before using",
+        help="answer utility and distortion after the run (eval/utility.py; part of the "
+        "published protocol). Sends raw synthetic prompts to Token Factory for the reference "
+        "answers. See README before using",
     )
     ap.add_argument("--judge-passes", type=int, default=1, help="judge only the first N passes")
     ap.add_argument("--quiet", action="store_true")
@@ -477,13 +477,18 @@ async def main_async(opts: argparse.Namespace) -> Path:
         )
         scored_passes, summary = score_and_summarize(cases, raw_passes, config)
 
-        if opts.judge:
-            import judge
-
-            rows = await judge.run(cases, raw_passes[: opts.judge_passes], out / "judge.jsonl")
-            summary["judge"] = judge.summarize(rows)
-
     write_outputs(out, raw_passes, scored_passes, summary)
+    if opts.judge:
+        import utility
+
+        util_opts = utility.parse_args(
+            ["--results", str(out), "--passes", str(opts.judge_passes), "--yes"]
+        )
+        if await utility.run_utility(util_opts):
+            summary["utility"] = json.loads(
+                (out / "utility" / "summary.json").read_text(encoding="utf-8")
+            )["overall"]
+            write_outputs(out, raw_passes, scored_passes, summary)
     print_headline(summary)
     print(f"results: {out}")
     return out

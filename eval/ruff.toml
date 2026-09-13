@@ -6,6 +6,6 @@ extend = "../pyproject.toml"
 
 [lint.isort]
 known-first-party = [
-  "attack", "common", "compare", "generate", "gliner_pii", "judge", "mock_airlock",
-  "presidio_ko", "raw", "regex_only", "run", "scoring",
+  "attack", "common", "compare", "generate", "gliner_pii", "mock_airlock", "presidio_ko",
+  "protected", "raw", "reframe", "regex_only", "run", "run_agent_eval", "scoring", "utility",
 ]
