@@ -98,6 +98,46 @@
   @media (max-width: 700px) { .review .add { grid-template-columns: 1fr; } }
   select { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
   .review .empty-list { color: var(--muted); font-style: italic; padding: 8px 0; }
+
+  /* ---- Agent tab ---- */
+  .agent-docs { display: grid; gap: 8px; margin-top: 6px; }
+  .agent-doc { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+  .agent-doc .doc-head { display: flex; gap: 8px; align-items: center; }
+  .agent-doc input[type=text] { padding: 6px 8px; font-size: 13px; font-family: var(--mono); }
+  .agent-doc textarea { min-height: 110px; margin-top: 6px; font-size: 13px; }
+  .agent-doc .remove { padding: 4px 10px; font-size: 12px; }
+  .lock-note { font-size: 12px; color: var(--muted); }
+  .trace { margin-top: 16px; display: grid; gap: 10px; }
+  .trace-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .trace-head h2 { margin: 0; font-size: 16px; }
+  .hop { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+  .hop.blocked { border-color: var(--bad); }
+  .hop-top { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 13px; }
+  .step { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 3.2em; }
+  .dest { font-weight: 600; border-radius: 999px; padding: 1px 10px; font-size: 12px; }
+  .dest.ultra { background: var(--ph-bg); color: var(--ph-ink); }
+  .dest.tavily { background: var(--gen-bg); color: var(--gen-ink); }
+  .dest.local { background: var(--code-bg); color: var(--muted); border: 1px solid var(--line); }
+  .badge.rewritten { background: var(--gen-bg); color: var(--gen-ink); }
+  .badge.sent { background: var(--ok-bg); color: var(--ok); }
+  .badge.blocked { background: var(--bad-bg); color: var(--bad); }
+  .hop-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-top: 8px; }
+  @media (max-width: 760px) { .hop-cols { grid-template-columns: 1fr; } }
+  .hop-col h3 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .hop-col .body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; max-height: 260px; overflow: auto;
+    background: var(--code-bg); border-radius: 8px; padding: 8px 10px; }
+  .hop-col .body.query { font-size: 14px; max-height: none; }
+  .hop-col .body .role { margin-top: 6px; }
+  .hop-col .body .role:first-child { margin-top: 0; }
+  .judge { font-size: 12px; color: var(--muted); }
+  .tool-row { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 13px; color: var(--muted); padding: 2px 14px; }
+  .final-card { border-color: var(--accent); }
+  .final-card h2 { margin: 0 0 8px; font-size: 16px; }
+  .final-card .answer { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
 </style>
 </head>
 <body>
@@ -112,7 +152,9 @@
       <div class="tabs" role="tablist">
         <button id="tab-chat" role="tab" aria-selected="true">Chat</button>
         <button id="tab-search" role="tab" aria-selected="false">Private search</button>
+        <button id="tab-agent" role="tab" aria-selected="false">Agent</button>
       </div>
+      <div id="classic-inputs">
       <label for="input" id="input-label">Message</label>
       <textarea id="input" placeholder="Type something with a name, a phone number, a secret…"></textarea>
       <div id="context-wrap" hidden>
@@ -126,6 +168,19 @@
         <span class="meta" id="status"></span>
       </div>
       <div class="samples" id="samples"></div>
+      </div>
+      <div id="agent-inputs" hidden>
+        <label for="agent-question">Question for the research agent</label>
+        <textarea id="agent-question" placeholder="What do you want researched about your documents?"></textarea>
+        <label>Local documents <span class="lock-note">(stay on this machine; the cloud sees them only through Airlock)</span></label>
+        <div class="agent-docs" id="agent-docs"></div>
+        <div class="row">
+          <button id="agent-run">Run agent through Airlock</button>
+          <button id="agent-add-doc" class="ghost">Add document</button>
+          <span class="meta" id="agent-status"></span>
+        </div>
+        <div class="samples" id="agent-presets"></div>
+      </div>
     </div>
     <div class="card">
       <label for="term">Always-sensitive terms (your name, employer…)</label>
@@ -164,6 +219,8 @@
     <div class="card pane"><h2>What the cloud saw</h2><div class="body" id="pane-cloud"><span class="empty">Exact outbound payload appears here.</span></div></div>
     <div class="card pane"><h2 id="answer-title">Answer (rehydrated)</h2><div class="body" id="pane-answer"><span class="empty">The answer, with placeholders restored locally.</span></div></div>
   </section>
+
+  <section class="trace" id="agent-trace" hidden aria-live="polite"></section>
 
   <details id="details" hidden>
     <summary>Detections, timings and raw audit record</summary>
@@ -215,6 +272,13 @@
     mode = m;
     $("tab-chat").setAttribute("aria-selected", m === "chat");
     $("tab-search").setAttribute("aria-selected", m === "search");
+    $("tab-agent").setAttribute("aria-selected", m === "agent");
+    const agent = m === "agent";
+    $("classic-inputs").hidden = agent;
+    $("agent-inputs").hidden = !agent;
+    document.querySelector(".panes").hidden = agent;
+    $("agent-trace").hidden = !agent || !$("agent-trace").innerHTML;
+    if (agent) { $("gate").hidden = true; $("details").hidden = true; hideReview(); return; }
     $("context-wrap").hidden = m !== "search";
     $("input-label").textContent = m === "chat" ? "Message" : "Search query";
     $("answer-title").textContent = m === "chat" ? "Answer (rehydrated)" : "Results (re-ranked locally)";
@@ -409,6 +473,7 @@
 
   $("tab-chat").onclick = () => setMode("chat");
   $("tab-search").onclick = () => setMode("search");
+  $("tab-agent").onclick = () => setMode("agent");
   $("send").onclick = send;
   $("add-term").onclick = addTerm;
   $("review-send").onclick = sendReview;
@@ -421,6 +486,197 @@
     $("gate").hidden = true; $("details").hidden = true;
   };
   $("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); });
+
+  // ---------------------------------------------------------------- Agent tab
+  const AGENT_PRESETS = [
+ {
+  "label": "희망퇴직 통보 (KO)",
+  "question": "회사에서 받은 문서야. 여기에 서명해야 하는지, 퇴직금이랑 위로금을 제대로 받는 건지, 실업급여는 받을 수 있는지 알려줘.",
+  "docs": [
+   {
+    "name": "퇴직_합의서.md",
+    "text": "# 퇴직 합의서\n\n본인 박성훈(사번 DN-19044)은 동해누리정밀(주)와 아래와 같이 합의한다.\n\n1. 본인은 자발적 의사로 2026년 10월 31일자로 퇴직한다.\n2. 회사는 법정 퇴직금 외에 위로금 3개월분을 지급한다.\n3. 본인은 본 합의 이후 회사에 대하여 퇴직과 관련한 어떠한 민·형사상 이의도 제기하지 않는다.\n4. 본 합의 내용은 제3자에게 누설하지 않는다.\n"
+   },
+   {
+    "name": "희망퇴직_안내.md",
+    "text": "# 희망퇴직 대상자 개별 통보\n\n수신: 품질보증팀 박성훈 팀장 (사번 DN-19044)\n발신: 동해누리정밀(주) 인사총무팀\n\n당사는 경영 효율화를 위한 조직 개편에 따라 품질보증팀을 생산기술팀으로 통합하기로 결정하였습니다. 이에 귀하를 희망퇴직 대상자로 선정하였음을 알려드립니다.\n\n## 조건\n\n1. 퇴직일: 2026년 10월 31일\n2. 법정 퇴직금 외 위로금 3개월분 통상임금 지급 (약 1,650만원)\n3. 잔여 연차수당 정산\n4. 재취업 지원 프로그램 3개월 제공\n\n## 기한\n\n동봉한 「퇴직 합의서」에 2026년 9월 25일까지 서명하여 인사총무팀에 제출해 주시기 바랍니다. 기한 내 미제출 시 위 위로금 조건은 적용되지 않을 수 있습니다.\n"
+   }
+  ]
+ },
+ {
+  "label": "Lab result + new medication (EN)",
+  "question": "My lab report came back and my doctor started me on a new blood pressure medicine. What do these kidney numbers mean, and can I keep taking ibuprofen for my back pain?",
+  "docs": [
+   {
+    "name": "lab_report.md",
+    "text": "# Larkspur Family Health: Laboratory Report\n\nPatient: Marcus Whitfield\nDOB: 03/14/1971\nMRN: LFH-7730142\nOrdering provider: Dr. Renata Oyelaran\nCollected: 2026-09-02\n\n| Test | Result | Reference range | Flag |\n|---|---|---|---|\n| Creatinine | 1.48 mg/dL | 0.74–1.35 | H |\n| eGFR (CKD-EPI 2021) | eGFR 52 mL/min/1.73m² | >60 | L |\n| Potassium | 5.4 mmol/L | 3.5–5.1 | H |\n| Urine albumin/creatinine ratio | 64 mg/g | <30 | H |\n\nComment: Findings consistent with CKD stage 3a with moderately increased albuminuria. Repeat in 3 months.\n"
+   },
+   {
+    "name": "visit_summary.md",
+    "text": "# After-Visit Summary\n\nMarcus Whitfield, seen by Dr. Renata Oyelaran at Larkspur Family Health, 2026-09-05.\n\nBlood pressure today: 152/94.\n\nNew medication: lisinopril 10 mg by mouth once daily.\n\nCurrent medications reported by patient: ibuprofen 400 mg two to three times daily for lower back pain (over the counter).\n\nFollow-up: basic metabolic panel in 2 weeks. Portal messages: mwhitfield@example.com.\n"
+   }
+  ]
+ }
+];
+  const agentDocs = [];
+  let agentRunning = false;
+
+  function renderAgentDocs() {
+    const wrap = $("agent-docs");
+    wrap.innerHTML = "";
+    agentDocs.forEach((d, i) => {
+      const card = document.createElement("div");
+      card.className = "agent-doc";
+      card.innerHTML = `<div class="doc-head"><input type="text" aria-label="Document name" value="${esc(d.name)}">` +
+        `<button class="ghost remove" type="button">Remove</button></div><textarea aria-label="Document text"></textarea>`;
+      const [name, remove] = [card.querySelector("input"), card.querySelector("button")];
+      const text = card.querySelector("textarea");
+      text.value = d.text;
+      name.oninput = () => { d.name = name.value; };
+      text.oninput = () => { d.text = text.value; };
+      remove.onclick = () => { agentDocs.splice(i, 1); renderAgentDocs(); };
+      wrap.appendChild(card);
+    });
+    if (!agentDocs.length) wrap.innerHTML = `<div class="empty">No documents. Add one or pick a preset.</div>`;
+  }
+
+  function renderAgentPresets() {
+    const wrap = $("agent-presets");
+    wrap.innerHTML = "";
+    for (const p of AGENT_PRESETS) {
+      const b = document.createElement("button");
+      b.className = "ghost"; b.type = "button"; b.textContent = p.label;
+      b.onclick = () => {
+        $("agent-question").value = p.question;
+        agentDocs.splice(0, agentDocs.length, ...p.docs.map((d) => ({ ...d })));
+        renderAgentDocs();
+      };
+      wrap.appendChild(b);
+    }
+  }
+
+  const shorten = (text, n = 900) => {
+    const t = String(text ?? "");
+    return t.length > n ? t.slice(0, n) + `\n… (${t.length - n} more characters)` : t;
+  };
+
+  function messagesHtml(msgs, withMarks) {
+    const system = (msgs || []).filter((m) => m.role === "system").length;
+    msgs = (msgs || []).filter((m) => m.role !== "system");
+    const note = system ? `<span class="role">system prompt and tool schemas</span><span class="empty">(same every turn, not shown)</span>` : "";
+    if (!msgs.length) return note || `<span class="empty">Nothing new.</span>`;
+    return note + msgs.map((m) => {
+      let body = typeof m.content === "string" ? m.content : "";
+      const calls = (m.tool_calls || []).map((c) => `${c.function?.name}(${c.function?.arguments || ""})`).join("\n");
+      if (calls) body = body ? `${body}\n${calls}` : calls;
+      const label = m.role === "tool" ? "tool result" : m.role;
+      const content = withMarks ? mark(shorten(body)) : esc(shorten(body));
+      return `<span class="role">${esc(label)}</span>${content || '<span class="empty">(empty)</span>'}`;
+    }).join("");
+  }
+
+  function traceEl() { return $("agent-trace"); }
+
+  function addRow(html, cls = "hop") {
+    const el = document.createElement("div");
+    el.className = cls;
+    el.innerHTML = html;
+    const pending = $("agent-pending");
+    traceEl().insertBefore(el, pending || null);
+    return el;
+  }
+
+  function judgeText(j) {
+    if (!j) return "";
+    const verdict = j.error ? `error (${j.error}), fails closed` : (j.flagged ? "still reveals the situation" : "generic");
+    return `judge ${esc(j.model || "")}: ${esc(verdict)}`;
+  }
+
+  function onAgentEvent(ev) {
+    if (ev.type === "run_started") {
+      traceEl().innerHTML = `<div class="trace-head"><h2>Egress trace</h2>` +
+        `<span class="meta">Every row is one hop that left this machine, or a tool that ran locally. ${ev.docs.length} local document(s).</span></div>` +
+        `<div id="agent-pending" class="tool-row"><span class="pulse" aria-hidden="true"></span> working…</div>`;
+    } else if (ev.type === "hop" && ev.destination === "upstream") {
+      const blocked = ev.decision === "block";
+      addRow(`<div class="hop-top"><span class="step">step ${ev.step}</span><span class="dest ultra">→ Nemotron 3 Ultra</span>` +
+        `<span class="badge ${blocked ? "blocked" : "sent"}">${blocked ? "blocked by gate" : "sent"}</span>` +
+        `<span class="meta">${esc(ev.kind === "prompt" ? "question" : "tool results")}${ev.ms ? ` · ${Math.round(ev.ms)} ms` : ""}</span>` +
+        (ev.reasons?.length ? `<span class="reasons">${ev.reasons.map(esc).join(" · ")}</span>` : "") + `</div>` +
+        `<div class="hop-cols"><div class="hop-col"><h3>What left the machine</h3><div class="body">${blocked ? '<span class="empty">Nothing. The gate stopped this turn.</span>' : messagesHtml(ev.outbound, true)}</div></div>` +
+        `<div class="hop-col"><h3>What you have locally</h3><div class="body">${messagesHtml(ev.local, false)}</div></div></div>`,
+        blocked ? "hop blocked" : "hop");
+    } else if (ev.type === "hop" && ev.destination === "tavily") {
+      const badge = ev.decision === "block" ? ["blocked", "search blocked"] : ev.decision === "rewritten" ? ["rewritten", "rewritten"] : ["sent", "sent"];
+      const tries = (ev.attempts || []).length;
+      addRow(`<div class="hop-top"><span class="step">step ${ev.step}</span><span class="dest tavily">→ Tavily search</span>` +
+        `<span class="badge ${badge[0]}">${badge[1]}</span>` +
+        (tries > 1 ? `<span class="chip">${tries} rewrites</span>` : "") +
+        `<span class="judge">${judgeText(ev.judge)}</span></div>` +
+        `<div class="hop-cols"><div class="hop-col"><h3>What left the machine</h3><div class="body query">${ev.outbound_query ? esc(ev.outbound_query) : '<span class="empty">Nothing. The agent continues without this search.</span>'}</div></div>` +
+        `<div class="hop-col"><h3>What you have locally</h3><div class="body query">${esc(ev.local_query)}` +
+        (ev.model_query && ev.model_query !== ev.local_query ? `<span class="role">agent wrote</span>${mark(ev.model_query)}` : "") + `</div></div></div>`,
+        ev.decision === "block" ? "hop blocked" : "hop");
+    } else if (ev.type === "tool") {
+      if (ev.name === "finish") return;
+      addRow(`<span class="step">step ${ev.step}</span><span class="dest local">ran locally</span>` +
+        `<span>${esc(ev.name)}${ev.summary ? ` · ${esc(ev.summary)}` : ""}</span>`, "tool-row");
+    } else if (ev.type === "error") {
+      addRow(`<span class="reasons">${esc(ev.message)}</span>`, "tool-row");
+    } else if (ev.type === "final") {
+      $("agent-pending")?.remove();
+      const stats = [`${ev.steps} step(s)`, `${ev.searches} search(es)`, `${ev.search_rewritten} rewritten`, `${ev.search_blocked} blocked`];
+      addRow(`<h2>Answer <span class="meta">(rehydrated locally)</span></h2><div class="stats">` +
+        `<span class="badge ${ev.status === "finished" ? "allow" : "block"}">${esc(ev.status)}</span>` +
+        stats.map((x) => `<span class="chip">${esc(x)}</span>`).join("") + `</div>` +
+        `<div class="answer">${ev.answer ? esc(ev.answer) : '<span class="empty">No answer.</span>'}</div>`, "card final-card");
+    } else if (ev.type === "done") {
+      addRow(`<span class="meta">Audit record: <a href="/audit/${encodeURIComponent(ev.request_id)}" target="_blank" rel="noopener">${esc(ev.request_id)}</a> (hashes and outbound payloads only)</span>`, "tool-row");
+    }
+  }
+
+  async function runAgent() {
+    const question = $("agent-question").value.trim();
+    if (!question || agentRunning) return;
+    const docs = agentDocs.filter((d) => d.text.trim()).map((d, i) => ({ name: d.name.trim() || `doc-${i + 1}.md`, text: d.text }));
+    agentRunning = true; $("agent-run").disabled = true; $("agent-status").textContent = "Running…";
+    traceEl().hidden = false; traceEl().innerHTML = "";
+    try {
+      const r = await fetch("/v1/agent/run?stream=1", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question, docs }),
+      });
+      if (!r.ok || !r.body) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(data?.error?.message || data?.detail?.[0]?.msg || `HTTP ${r.status}`);
+      }
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let cut;
+        while ((cut = buf.indexOf("\n\n")) >= 0) {
+          const block = buf.slice(0, cut); buf = buf.slice(cut + 2);
+          const data = block.split("\n").filter((l) => l.startsWith("data: ")).map((l) => l.slice(6)).join("\n");
+          if (data) onAgentEvent(JSON.parse(data));
+        }
+      }
+      $("agent-status").textContent = "";
+    } catch (e) {
+      $("agent-pending")?.remove();
+      $("agent-status").textContent = "Error: " + e.message;
+    } finally {
+      agentRunning = false; $("agent-run").disabled = false;
+    }
+  }
+
+  $("agent-run").onclick = runAgent;
+  $("agent-add-doc").onclick = () => { agentDocs.push({ name: `note-${agentDocs.length + 1}.md`, text: "" }); renderAgentDocs(); };
+  $("agent-question").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runAgent(); });
+  renderAgentPresets();
+  renderAgentDocs();
   setMode("chat");
   health();
 })();
