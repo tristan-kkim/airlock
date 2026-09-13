@@ -307,7 +307,9 @@ async def agent_calls(opts, scenarios, graded_all, runs_by_key, out: Path) -> di
         headers={"Authorization": f"Bearer {key}"},
         timeout=httpx.Timeout(300.0, connect=15.0),
     ) as client:
-        llm = attack.make_llm(client, opts.model)
+        grader_llm = attack.make_llm(client, opts.grader_model)
+        judge_llm = attack.make_llm(client, opts.judge_model)
+        confirm_llm = attack.make_llm(client, opts.confirm_model)
         sem = asyncio.Semaphore(opts.concurrency)
 
         async def grade(g: dict[str, Any]) -> dict[str, Any]:
@@ -322,11 +324,12 @@ async def agent_calls(opts, scenarios, graded_all, runs_by_key, out: Path) -> di
                 row["situation_match"] = False
                 return row
             async with sem:
-                reply = await llm(
+                reply = await grader_llm(
                     attack.situation_messages(true_situation(s), attacked), "situation",
                     attack.GRADER_SCHEMA, "none", attack.GRADER_MAX_TOKENS,
                 )  # fmt: skip
             row["situation_match"] = attack.parse_grade(reply.get("content"))
+            row["model"] = reply.get("model")
             row["raw"] = reply.get("content")
             row["usage"] = reply.get("usage")
             return row
@@ -341,10 +344,11 @@ async def agent_calls(opts, scenarios, graded_all, runs_by_key, out: Path) -> di
             shown = "Answer 1" if system_first else "Answer 2"
             row: dict[str, Any] = {"scenario_id": sid, "pass": pass_no, "system_shown_as": shown}
             async with sem:
-                reply = await llm(
+                reply = await judge_llm(
                     utility.judge_messages({}, a1, a2, request_text=agent_judge_request(s)),
                     "utility_judge", utility.JUDGE_SCHEMA, "none", utility.JUDGE_MAX_TOKENS,
                 )  # fmt: skip
+            row["model"] = reply.get("model")
             row["raw"] = reply.get("content")
             row["usage"] = reply.get("usage")
             grades = utility.parse_judgment(reply.get("content"))
@@ -352,7 +356,7 @@ async def agent_calls(opts, scenarios, graded_all, runs_by_key, out: Path) -> di
                 airlock_grade, unguarded_grade = utility.assign(grades, system_first)
                 async with sem:
                     checks = await utility.verify_distortions(
-                        llm,
+                        confirm_llm,
                         agent_judge_request(s),
                         [(airlock_grade, sys_answer), (unguarded_grade, ref_answer)],
                     )
@@ -477,7 +481,8 @@ def cmd_agent(opts: argparse.Namespace) -> None:
     cfg_path = out / "config.json"
     cfg = load_json(cfg_path) or {}
     cfg.update({"reframe_version": REFRAME_VERSION, "source_run": str(run_dir),
-                "model": opts.model})  # fmt: skip
+                "grader_model": opts.grader_model, "judge_model": opts.judge_model,
+                "confirm_model": opts.confirm_model})  # fmt: skip
     if calls["usage"]["prompt_tokens"]:
         cfg.setdefault("runs", []).append(
             {
@@ -572,11 +577,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     a.add_argument("run_dir", type=Path)
     a.add_argument("--out", type=Path, required=True)
     a.add_argument("--base-url", default=attack.DEFAULT_BASE_URL)
-    a.add_argument("--model", default=attack.DEFAULT_MODEL)
+    a.add_argument("--grader-model", default=None, help="situation grader (AIRLOCK_GRADER_MODEL)")
+    a.add_argument("--judge-model", default=None, help="utility judge (AIRLOCK_UTILITY_MODEL)")
+    a.add_argument(
+        "--confirm-model",
+        default=None,
+        help="distortion confirmation (AIRLOCK_DISTORTION_CONFIRM_MODEL)",
+    )
+    a.add_argument("--model", default=None, help="one model for all three roles")
     a.add_argument("--concurrency", type=int, default=6)
     a.add_argument("--dry-run", action="store_true")
     a.add_argument("--yes", action="store_true")
-    return ap.parse_args(argv)
+    opts = ap.parse_args(argv)
+    if opts.cmd == "agent":
+        attack.resolve_role_models(
+            opts,
+            {
+                "grader_model": "grader",
+                "judge_model": "utility",
+                "confirm_model": "distortion_confirm",
+            },
+        )
+    return opts
 
 
 def main(argv: list[str] | None = None) -> None:

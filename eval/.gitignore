@@ -8,3 +8,5 @@ results/*.server.log
 !results/ensemble-split.json
 !results/ENSEMBLE.md
 results/ensemble-*.server.log
+!results/JUDGE_CALIBRATION.md
+!results/judge-calibration/

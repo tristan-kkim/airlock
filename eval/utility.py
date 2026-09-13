@@ -25,10 +25,13 @@ measures what the user loses. For every chat case of a results directory:
      they would have sent (placeholders are not restored; they have no rehydration).
    `auto` (default) uses `upstream` for runs labelled `baseline:<name>` or with stub answers,
    `recorded` otherwise. Cached per results directory in <results>/utility/answers_pass_NN.jsonl.
-3. Judge (Nemotron 3 Ultra, strict JSON schema): sees the user's real request and both answers as
-   "Answer 1" and "Answer 2" in a seeded random order, without being told which is the reference.
+3. Judge (`--judge-model`, env AIRLOCK_UTILITY_MODEL; JSON schema): sees the user's real
+   request and both answers as "Answer 1" and "Answer 2" in a seeded random order, without being
+   told which is the reference.
    For each answer: usefulness 1-5 and a binary factual distortion (the answer contradicts a fact
    the user stated, e.g. "45" became "in their 30s", or claims a value the user gave is unknown).
+   Every flagged distortion is re-checked by a focused confirmation call (`--confirm-model`, env
+   AIRLOCK_DISTORTION_CONFIRM_MODEL); only confirmed flags count.
 
 Metrics per judged pass, then mean ± sample sd across passes:
     utility_mean                  mean usefulness of the system answer
@@ -65,7 +68,7 @@ sys.path.insert(0, str(EVAL_DIR))
 import attack  # noqa: E402
 import scoring  # noqa: E402
 
-UTILITY_VERSION = "1.0.0"
+UTILITY_VERSION = "1.1.0"
 REFERENCE_DIR = EVAL_DIR / "results" / "_reference_answers"
 ANSWER_MAX_TOKENS = 4096
 ANSWER_TOKENS_TYPICAL = 800  # for the estimate; measured answers average roughly this
@@ -519,6 +522,7 @@ async def verify_distortions(
         grade["distortion_verified"] = confirmed
         grade["distortion"] = bool(confirmed)
         grade["verify_raw"] = reply.get("content")
+        grade["verify_model"] = reply.get("model")
         checks.append({"confirmed": confirmed, "usage": reply.get("usage")})
     return checks
 
@@ -604,7 +608,8 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
     est = estimate([j for pj in jobs for j in pj], source, opts.model, opts.reference_dir,
                    cached_answers)  # fmt: skip
     print_estimate(run_dir.name, est)
-    print(f"  answer source: {source}", file=sys.stderr)
+    print(f"  answer source: {source}; judge {opts.judge_model}, distortion confirmation "
+          f"{opts.confirm_model}", file=sys.stderr)  # fmt: skip
     if opts.dry_run:
         return None
     if not opts.yes:
@@ -628,6 +633,7 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
     ) as client:
         sem = asyncio.Semaphore(opts.concurrency)
         judge_llm = attack.make_llm(client, opts.judge_model)
+        confirm_llm = attack.make_llm(client, opts.confirm_model)
         ref_locks: dict[str, asyncio.Lock] = {}
 
         async def reference_for(case: dict[str, Any], ref_model: str) -> dict[str, Any]:
@@ -689,7 +695,8 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                     "status": record.get("status"),
                 }
                 prev = previous.get(case["id"])
-                if prev and (prev.get("system") and prev.get("reference")):
+                judged = bool(prev and prev.get("system") and prev.get("reference"))
+                if judged and same_models(prev, opts):
                     return prev
                 if record.get("status") != "ok":
                     return row  # blocked: nothing was sent, no answer to judge
@@ -730,7 +737,11 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                 usage["judge"]["calls"] += 1
                 for u in attack.iter_usage(reply):
                     add_usage(usage["judge"], u)
-                row["judge"] = {"raw": reply.get("content"), "error": reply.get("error")}
+                row["judge"] = {
+                    "model": reply.get("model"),
+                    "raw": reply.get("content"),
+                    "error": reply.get("error"),
+                }
                 grades = parse_judgment(reply.get("content"))
                 if grades is None:
                     row["unjudged_reason"] = "judge reply unparsed"
@@ -740,7 +751,7 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
                 system_grade, reference_grade = assign(grades, system_first)
                 async with sem:
                     checks = await verify_distortions(
-                        judge_llm,
+                        confirm_llm,
                         render_request(case["messages"]),
                         [(system_grade, sys_text), (reference_grade, reference["answer"])],
                     )
@@ -772,6 +783,7 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
             "answer_source": source,
             "base_url": opts.base_url,
             "judge_model": opts.judge_model,
+            "confirm_model": opts.confirm_model,
             "judge_reasoning": opts.judge_reasoning,
             "default_upstream_model": opts.model,
             "answer_max_tokens": ANSWER_MAX_TOKENS,
@@ -781,12 +793,38 @@ async def run_utility(opts: argparse.Namespace) -> Path | None:
             "reference_dir": scoring_display(opts.reference_dir),
         }
     )
+    part_models = {"judge": opts.judge_model, "verify": opts.confirm_model}
     cfg.setdefault("runs", []).append(
-        {"at": datetime.now(UTC).isoformat(), "estimate": est, "usage": usage}
+        {
+            "at": datetime.now(UTC).isoformat(),
+            "estimate": est,
+            "judge_model": opts.judge_model,
+            "confirm_model": opts.confirm_model,
+            "usage": usage,
+            # Answers are priced at the default upstream model; payloads may name another.
+            "cost_usd": {
+                part: attack.usage_cost(part_models.get(part, opts.model), u)
+                for part, u in usage.items()
+            },
+        }
     )
     cfg_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
     write_summary(out)
     return out
+
+
+def same_models(row: dict[str, Any], opts: argparse.Namespace) -> bool:
+    """A stored judgment is reused only if the same judge and confirmation models made it.
+
+    Rows from before model plumbing carry no model: they were all Nemotron 3 Ultra.
+    """
+    judge = (row.get("judge") or {}).get("model") or attack.ULTRA
+    confirms = {
+        g.get("verify_model") or attack.ULTRA
+        for g in (row.get("system") or {}, row.get("reference") or {})
+        if g.get("distortion_judge")
+    }
+    return judge == opts.judge_model and confirms <= {opts.confirm_model}
 
 
 def scoring_display(path: Path) -> str:
@@ -831,7 +869,8 @@ def render_markdown(summary: dict[str, Any], config: dict[str, Any]) -> str:
         f"# Answer utility: {config.get('target_label') or config.get('results_dir')}",
         "",
         f"- answer source: `{config.get('answer_source')}`; judge `{config.get('judge_model')}` "
-        f"(reasoning_effort `{config.get('judge_reasoning')}`), blind, seeded order",
+        f"(reasoning `{config.get('judge_reasoning')}`), blind, seeded order; distortion "
+        f"confirmation `{config.get('confirm_model') or config.get('judge_model')}`",
         f"- judged passes: {summary['passes']}; tokens used so far: prompt "
         f"{usage['prompt_tokens']:,}, completion {usage['completion_tokens']:,}",
         "",
@@ -893,7 +932,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--base-url", default=attack.DEFAULT_BASE_URL)
     ap.add_argument("--model", default=attack.DEFAULT_MODEL,
                     help="upstream model when the payload names none")  # fmt: skip
-    ap.add_argument("--judge-model", default=attack.DEFAULT_MODEL)
+    ap.add_argument(
+        "--judge-model",
+        default=None,
+        help=f"utility judge (default ${attack.ROLE_ENV['utility']} or "
+        f"{attack.DEFAULT_ROLE_MODELS['utility']})",
+    )
+    ap.add_argument(
+        "--confirm-model",
+        default=None,
+        help=f"distortion confirmation (default ${attack.ROLE_ENV['distortion_confirm']} or "
+        f"{attack.DEFAULT_ROLE_MODELS['distortion_confirm']})",
+    )
     ap.add_argument("--judge-reasoning", default="none")
     ap.add_argument("--reference-dir", type=Path, default=REFERENCE_DIR)
     ap.add_argument("--out-name", default="utility")
@@ -902,7 +952,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--dry-run", action="store_true", help="print the estimate and exit")
     ap.add_argument("--yes", action="store_true", help="confirm the cloud calls")
     ap.add_argument("--score-only", action="store_true", help="rebuild summary from stored rows")
-    return ap.parse_args(argv)
+    opts = ap.parse_args(argv)
+    for field, role in (("judge_model", "utility"), ("confirm_model", "distortion_confirm")):
+        if not getattr(opts, field):
+            setattr(opts, field, attack.role_model(role))
+    return opts
 
 
 def main(argv: list[str] | None = None) -> None:
