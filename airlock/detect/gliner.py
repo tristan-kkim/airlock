@@ -348,7 +348,9 @@ def ko_name(text: str, min_syllables: int = 2) -> str | None:
     name = text.strip()
     for _ in range(2):
         stripped = _KO_NAME_TAIL.sub("", name)
-        if len(stripped) >= 2:
+        removed = name[len(stripped) :]
+        # 정다은 ends in 은: a one-syllable particle only goes when a 3+ syllable name remains.
+        if len(stripped) >= 3 or (len(stripped) == 2 and (len(removed) >= 2 or removed in "님씨")):
             name = stripped
     if not re.fullmatch(r"[가-힣]{2,4}", name) or len(name) < min_syllables:
         return None

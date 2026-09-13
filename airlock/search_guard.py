@@ -5,7 +5,8 @@ layoff list team lead how to respond" tells the search provider who is in troubl
 name is masked. MosaicLeaks (arXiv 2605.30727) shows an observer can reconstruct private documents
 from an agent's queries alone. For every query the agent wants to send, this guard:
 
-1. detects spans in the query (the normal detector: patterns, vault, rules, local model),
+1. detects spans in the query (the normal detector entry point: patterns, vault, rules, local
+   model, the GLiNER ensemble when enabled),
 2. has the local Nano-4B rewrite it into a generic information-seeking query, with the private
    context given as the thing NOT to reveal,
 3. runs the deterministic gate on the exact Tavily payload (detected values, every original of
@@ -272,10 +273,11 @@ class SearchGuard:
         def lap(name: str, t0: float) -> None:
             timings[name] = round(timings.get(name, 0.0) + (time.perf_counter() - t0) * 1000, 1)
 
-        # 1. Span detection on the query itself (no vault writes).
+        # 1. Span detection on the query itself (no vault writes), through the same entry point as
+        # every other path, so the GLiNER ensemble and the refinement steps apply here too.
         t0 = time.perf_counter()
         try:
-            detected = await self.sanitizer.detect(query, session)
+            [detected] = await self.sanitizer.detect_many([query], session)
         except LocalModelError as exc:
             lap("detect", t0)
             return GuardResult("blocked", None, None, [block_reason(exc)], [], None, timings)
