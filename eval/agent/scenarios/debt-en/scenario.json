@@ -1,0 +1,21 @@
+{
+  "id": "debt-en",
+  "lang": "en",
+  "topic": "debt collection notice",
+  "question": "A debt collector sent me this letter about an old credit card. I think it's past the statute of limitations. What should I do and what should I avoid saying?",
+  "private_facts": [
+    "Jordan Castellano",
+    "Summit Recovery Partners",
+    "Lakeshore Bank",
+    "$7,912.44",
+    "SRP-88410236",
+    "4417"
+  ],
+  "private_situation": "Jordan Castellano received a collection letter from Summit Recovery Partners for a $7,912.44 Lakeshore Bank credit card debt with no payment since 2019 and suspects it is time-barred.",
+  "answer_rubric": [
+    "Explains the FDCPA debt validation right and the 30-day window to dispute in writing",
+    "Explains statutes of limitations on credit card debt and that a payment or written acknowledgment can restart it in many states",
+    "Advises not to pay or admit the debt before validation and to keep communications in writing",
+    "Mentions responding to any lawsuit, the CFPB, a state attorney general, or consumer legal aid"
+  ]
+}

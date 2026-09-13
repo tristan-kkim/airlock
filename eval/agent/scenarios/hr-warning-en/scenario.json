@@ -1,0 +1,21 @@
+{
+  "id": "hr-warning-en",
+  "lang": "en",
+  "topic": "HR performance warning",
+  "question": "My manager gave me this written warning and a performance plan. Is this fair, can they fire me after it, and how should I respond?",
+  "private_facts": [
+    "Kelsey Moran",
+    "Northgate Community Credit Union",
+    "NCCU-5512",
+    "Tom Albrecht",
+    "30-day",
+    "Riverside branch"
+  ],
+  "private_situation": "Kelsey Moran, a member services representative at the Riverside branch of Northgate Community Credit Union, received a final written warning and a 30-day performance improvement plan after attendance issues that overlapped with her intermittent medical leave.",
+  "answer_rubric": [
+    "Explains what a PIP and final written warning usually mean and that at-will employment still applies",
+    "Flags that absences protected by FMLA or ADA cannot lawfully be counted against her",
+    "Recommends a written response, documenting leave approvals, and meeting PIP goals",
+    "Suggests HR escalation, an employment attorney or an EEOC or state agency if retaliation is suspected"
+  ]
+}

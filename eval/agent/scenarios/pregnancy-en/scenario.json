@@ -1,0 +1,21 @@
+{
+  "id": "pregnancy-en",
+  "lang": "en",
+  "topic": "pregnancy + job offer timing",
+  "question": "I just accepted a job offer but I'm pregnant and haven't told them. Do I have to disclose it, and will I get any maternity leave if I start in October?",
+  "private_facts": [
+    "Elena Voss",
+    "Quarry Lane Architects",
+    "14 weeks",
+    "March 19, 2027",
+    "October 19",
+    "Senior Project Architect"
+  ],
+  "private_situation": "Elena Voss accepted a Senior Project Architect offer at Quarry Lane Architects starting October 19 with a 90-day probation while 14 weeks pregnant (due March 19, 2027) and has not told the employer.",
+  "answer_rubric": [
+    "States there is no legal duty to disclose pregnancy and that pregnancy discrimination is prohibited (Pregnancy Discrimination Act, Pregnant Workers Fairness Act)",
+    "Explains FMLA requires 12 months of service so it will likely not apply, and mentions state paid leave or employer policy as alternatives",
+    "Covers probation period risks and documenting communications",
+    "Gives practical advice on when and how to tell the employer and to review the benefits or handbook"
+  ]
+}

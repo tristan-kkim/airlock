@@ -1,0 +1,3 @@
+# Timestamped runs stay local; the demo sample is committed.
+results/*
+!results/demo/
