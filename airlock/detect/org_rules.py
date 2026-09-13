@@ -247,13 +247,16 @@ _LEAD_STOP = frozenset(
         """
     )
 )
+_SP = r"[ \t]+"
 _EN_UNIT = re.compile(
-    rf"\bTeam\s+(?P<tname>{_CAP}(?:\s+{_CAP})?)"
-    rf"|(?P<cap>(?:{_CAP}\s+){{0,2}}{_CAP})\s+(?P<ukind>Platform|Squad|Division|Department|Dept\.?)"
-    rf"(?:\s+(?P<ctail>team))?\b"
-    rf"|(?P<lcap>(?:{_CAP}\s+){{0,2}}{_CAP})\s+team\b"
-    r"|(?:\b(?:the|a|an|our|my|her|his|their)\s+)(?P<low>[a-z][a-z&\-]+(?:\s+[a-z][a-z&\-]+){0,2})"
-    r"\s+team\b"
+    rf"\bTeam[ \t]+(?P<tname>{_CAP}(?:[ \t]+{_CAP})?)"
+    rf"|(?P<cap>(?:{_CAP}{_SP}){{0,2}}{_CAP}){_SP}"
+    r"(?P<ukind>Platform|Squad|Division|Department|Dept\.?)"
+    rf"(?:[ \t]+(?P<ctail>team))?\b"
+    rf"|(?P<lcap>(?:{_CAP}[ \t]+){{0,2}}{_CAP})[ \t]+team\b"
+    r"|(?:\b(?:the|a|an|our|my|her|his|their)[ \t]+)"
+    r"(?P<low>[a-z][a-z&\-]+(?:[ \t]+[a-z][a-z&\-]+){0,2})"
+    r"[ \t]+team\b"
 )
 _EN_PUBLIC_DEPTS = frozenset(
     _words(
@@ -275,7 +278,7 @@ _EN_LOW_STOP = frozenset(
     )
 )
 _EN_SITE = re.compile(
-    rf"(?P<place>(?:{_CAP}\s+){{0,2}}{_CAP})\s+"
+    rf"(?P<place>(?:{_CAP}[ \t]+){{0,2}}{_CAP})[ \t]+"
     r"(?P<site>plant|office|branch|campus|warehouse|facility|site|headquarters|HQ|factory|"
     r"distribution center|store|location)\b"
 )
@@ -299,7 +302,7 @@ _EN_ROLE_HEADS = {
 }  # fmt: skip
 _EN_ROLE = re.compile(
     r"(?P<title>(?:(?:Senior|Sr\.|Junior|Jr\.|Lead|Principal|Staff|Chief|Head|Associate|Assistant|"
-    r"Deputy|Vice|Executive|Regional|General)\s+)*(?:[A-Z][a-z]+\s+){0,2}"
+    r"Deputy|Vice|Executive|Regional|General)[ \t]+)*(?:[A-Z][a-z]+[ \t]+){0,2}"
     r"(?:Architect|Engineer|Manager|Director|Analyst|Designer|Scientist|Developer|Officer|"
     r"Coordinator|Specialist|Consultant|Supervisor|Administrator|Accountant|Nurse|Technician|"
     r"Representative|Lead|President|Partner))\b"
@@ -325,7 +328,7 @@ _EN_ORG_SUFFIX = (
     r"Academy|Institute"
 )
 _EN_ORG = re.compile(
-    rf"(?<![A-Za-z])(?P<name>(?:{_CAP}\s+){{1,3}}(?:{_EN_ORG_SUFFIX}))(?![A-Za-z])"
+    rf"(?<![A-Za-z])(?P<name>(?:{_CAP}[ \t]+){{1,3}}(?:{_EN_ORG_SUFFIX}))(?![A-Za-z])"
 )
 _EN_ORG_STOP_FIRST = frozenset(
     _words(
@@ -530,14 +533,16 @@ _KO_SMALL_PLACE_GENERIC = frozenset(
     ]
 )
 _EN_ONLY_IN_PLACE = re.compile(
-    r"\b(?:the|our|my) only (?P<what>(?:[a-z\-]+\s+){0,3}(?:center|centre|hospital|clinic|school|"
-    r"firm|store|shop|restaurant|church|mosque|temple|pharmacy|bakery|bar|gym|practice|office|"
-    r"company|plant|factory|farm|library|station))\s+in\s+(?P<place>(?:[A-Z][\w'’\-]*\s?){1,3})"
+    r"\b(?:the|our|my) only (?P<what>(?:[a-z\-]+[ \t]+){0,3}"
+    r"(?:center|centre|hospital|clinic|school|firm|store|shop|restaurant|church|mosque|temple|pharmacy|bakery|bar|gym|practice|office|"
+    r"company|plant|factory|farm|library|station))[ \t]+in[ \t]+"
+    r"(?P<place>(?:[A-Z][\w'’\-]*[ \t]?){1,3})"
 )
 
 
 _EN_CITY_STATE = re.compile(
-    r"\b(?P<prep>in|near|outside|from|to)\s+(?P<city>(?:[A-Z][\w'’\-]*\s){0,2}[A-Z][\w'’\-]*),\s*"
+    r"\b(?P<prep>in|near|outside|from|to)[ \t]+"
+    r"(?P<city>(?:[A-Z][\w'’\-]*[ \t]){0,2}[A-Z][\w'’\-]*),[ \t]*"
     r"(?P<state>" + "|".join(sorted(regions.EN_REGIONS | set(regions.US_STATE_CODES), key=len,
                                     reverse=True)) + r")\b"
 )  # fmt: skip

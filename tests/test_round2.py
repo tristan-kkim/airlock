@@ -661,3 +661,9 @@ def test_gliner_secret_shape_rejects_identifiers() -> None:
     assert not shape_ok("doc_id", LABELS_BY_NAME["http_cookie"])
     assert not shape_ok("api-key", LABELS_BY_NAME["password"])
     assert shape_ok("hunter2!", LABELS_BY_NAME["password"])
+
+
+def test_titles_do_not_cross_lines_and_surrogates_avoid_request_originals() -> None:
+    text = "Employer: Northgate Community Credit Union\nManager: Tom Albrecht\nRole: Teller"
+    assert not [c for c in org_rules.candidates(text) if "\n" in text[c.start : c.end]]
+    assert surrogate.collides("Larkmoor Community Credit Union", [], ["Credit Union"], [])

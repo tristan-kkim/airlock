@@ -651,6 +651,7 @@ class Sanitizer:
         json_safe: bool = False,
         rejected: Iterable[str] = (),
         context: Iterable[str] = (),
+        context_originals: Iterable[str] = (),
     ) -> TextResult:
         """Substitute spans in `text`. `rejected` holds normalized originals the user kept.
 
@@ -704,7 +705,9 @@ class Sanitizer:
             else:
                 if span.action == "generalize":
                     rejected_generalizations += 1
-                mapping = self._substitute(key, span, session, [text, *context], originals)
+                mapping = self._substitute(
+                    key, span, session, [text, *context], [*originals, *context_originals]
+                )
             before = text[cursor : p.start]
             out.append(before)
             out_len += len(before)
@@ -785,8 +788,9 @@ class Sanitizer:
 
     async def sanitize_texts(self, texts: list[str], session: VaultSession) -> list[TextResult]:
         detected = await self.detect_many(texts, session)
+        originals = [s.text for d in detected for s in d.spans if s.action != "keep"]
         return [
-            self.apply(text, d.spans, session, context=texts)
+            self.apply(text, d.spans, session, context=texts, context_originals=originals)
             for text, d in zip(texts, detected, strict=True)
         ]
 
@@ -827,13 +831,23 @@ class Sanitizer:
         protected: list[Protected] = []
         applied: list[tuple[str, str, Applied]] = []
         texts = [container[key] for container, key, _ in slots]
+        # A surrogate must not contain any value protected anywhere in the request.
+        request_originals = [
+            s.text for spans in analysis.spans_by_text.values() for s in spans if s.action != "keep"
+        ] + [s.text for s in added]
         before = sum(1 for m in session.mappings() if m.action == "surrogate")
         for container, key, json_safe in slots:
             original = container[key]
             spans = list(analysis.spans_by_text.get(original, []))
             spans += [s for s in added if find_term(original, s.text)]
             result = self.apply(
-                original, spans, session, json_safe=json_safe, rejected=rejected, context=texts
+                original,
+                spans,
+                session,
+                json_safe=json_safe,
+                rejected=rejected,
+                context=texts,
+                context_originals=request_originals,
             )
             container[key] = result.text
             detections += result.detections
