@@ -159,6 +159,8 @@ def test_schedules_lab_values_and_labeled_amounts_are_situation() -> None:
     assert generalize.situation_value("월 소득 290만원", "FINANCIAL")
     assert generalize.situation_value("90 days overdue, $46,500", "FINANCIAL")
     assert generalize.situation_value("90일째 안 주고 있어(4,650만원)", "FINANCIAL")
+    assert generalize.situation_value("sold 120 shares bought 14 months ago at $312", "FINANCIAL")
+    assert not generalize.situation_value("$84,300 from Greyloft Studios", "FINANCIAL")
     assert not generalize.situation_value("acct 4471-2290, $46,500", "FINANCIAL")
     assert not generalize.situation_value("account 11413888539", "FINANCIAL")
     assert not generalize.situation_value("193-364014-02-231", "FINANCIAL")
@@ -199,6 +201,14 @@ def test_a_diagnosis_is_not_an_identifying_phrase(client, harness) -> None:
     chat(client, "실손보험 청구 사유 써줘. 진단명 요추 추간판탈출증, 도수치료 10회.")
     text = sent(harness)[-1]["content"]
     assert "요추 추간판탈출증" in text and "등기증후군" not in text
+    # Short health terms are not reworded by the local model either ("요추" went out as "등심").
+    harness.entities = {
+        "요추": ("HEALTH", "generalize", "등심"),
+        "체외수정 시술": ("HEALTH", "generalize", "수술 시술"),
+    }
+    chat(client, "진단명 요추 디스크, 다음 달 체외수정 시술 예정이야.")
+    assert "요추 디스크, 다음 달 체외수정 시술" in sent(harness)[-1]["content"]
+    assert not generalize.health_term("the only deaf kid in our class")
     # A uniqueness phrase that mentions a condition is still a quasi-identifier.
     assert not generalize.diagnosis_term("the only fourth-grader with cochlear implants")
     assert not generalize.diagnosis_term("정보처리기사 자격증")
@@ -244,6 +254,10 @@ def test_entropy_span_leaves_the_variable_name() -> None:
     assert trim(Span(text="DB_USER: b3JkZXJzX3J3", type="SECRET", source="llm"), "").text == (
         "b3JkZXJzX3J3"
     )
+    url = "redisUrl: 'redis://:rQpokK1JPxkuvAr4VUWa@10.0.4.21:6379/0'"
+    assert trim(Span(text=url, type="ID_NUMBER", source="llm"), "").text.startswith("redis://")
+    dsn = "postgresql://svc:pw@10.0.0.1/db"
+    assert trim(Span(text=dsn, type="SECRET", source="llm"), "").text == dsn
 
 
 def test_generalization_after_a_determiner_drops_its_article(client, harness) -> None:

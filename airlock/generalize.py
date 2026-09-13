@@ -275,6 +275,9 @@ _MONEY_INNER = re.compile(
 _DURATION_INNER = re.compile(
     r"\d+\s*(?:일|주|개월|달|년|시간|days?|weeks?|months?|years?|hours?)", re.IGNORECASE
 )
+_COUNT_INNER = re.compile(
+    r"\d[\d,]*\s*(?:shares?|units?|times|people|주|건|명|회|개|장|%)", re.IGNORECASE
+)
 
 
 def _money(t: str) -> bool:
@@ -285,10 +288,11 @@ def _money(t: str) -> bool:
         return True
     # "90 days overdue, $46,500", "90일째 안 주고 있어(4,650만원)": an amount inside a short
     # phrase, with no other number that could be an account.
-    if len(t) > 48 or not _MONEY_INNER.search(t):
+    if len(t) > 100 or not _MONEY_INNER.search(t):
         return False
-    rest = _DURATION_INNER.sub(" ", _MONEY_INNER.sub(" ", t))
-    return not re.search(r"\d", rest)
+    rest = _COUNT_INNER.sub(" ", _DURATION_INNER.sub(" ", _MONEY_INNER.sub(" ", t)))
+    # No other number (an account) and no capitalized name inside the phrase.
+    return not re.search(r"\d|[A-Z][a-z]+\s+[A-Z][a-z]+", rest)
 
 
 _CLOCK = (
@@ -418,6 +422,23 @@ def diagnosis_term(span_text: str) -> bool:
     if _NOT_JUST_A_DIAGNOSIS.search(t) or _NOT_A_DIAGNOSIS_TAIL.search(t):
         return False
     return common_health_term(t) or bool(_DIAGNOSIS_SHAPE.match(t))
+
+
+_HEALTH_TERM_CUE = re.compile(
+    r"\b(?:only|sole|first|youngest|oldest|who|that|which|whose|my|her|his|their|our)\b|"
+    r"유일|최초|하나뿐|혼자|우리|내가|제가",
+    re.IGNORECASE,
+)
+
+
+def health_term(span_text: str) -> bool:
+    """A short health term ("체외수정 시술", "도수치료", "요추", "Fabry disease"): the situation
+    at balanced, kept as written. Rewording it locally is where distortion came from ("요추" as
+    "등심", "체외수정" as "수술"). Descriptive phrases still go through generalization."""
+    t = span_text.strip().strip(".,;:()")
+    if not t or len(t) > 32 or len(t.split()) > 4 or re.search(r"\d{3,}", t):
+        return False
+    return not _HEALTH_TERM_CUE.search(t)
 
 
 def common_health_term(span_text: str) -> bool:

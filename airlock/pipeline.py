@@ -491,7 +491,9 @@ class Sanitizer:
         ):  # fmt: skip
             return False
         if span.type == "HEALTH" and (
-            generalize.common_health_term(span.text) or generalize.diagnosis_term(span.text)
+            generalize.common_health_term(span.text)
+            or generalize.diagnosis_term(span.text)
+            or generalize.health_term(span.text)
         ):
             return not generalize.SMALL_GROUP_CUE.search(text)
         return generalize.situation_value(span.text, span.type) and not generalize.is_birth_date(

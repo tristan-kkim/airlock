@@ -42,7 +42,8 @@ _ID_LABEL_HEAD = re.compile(
     r"\s*(?:#|:|no\.?|number|번호)?\s*[:#]?\s*",
     re.IGNORECASE,
 )
-_CODE_KEY_HEAD = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*\s*[:=]\s*(?!/)")
+_CODE_KEY_HEAD = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\-]*\s*[:=]\s*(?=['\"`]|[^/'\"`])(?!['\"`]?/)")
+_VALUE_TYPES = ("SECRET", "ID_NUMBER", "FINANCIAL", "CONTACT")
 _ORG_KO_TAIL = re.compile(r"(?:에서는|에서|에게|에는|의|은|는|을|를|과|와|이|가|측|쪽|으로|로)$")
 
 
@@ -62,10 +63,12 @@ def trim(span: Span, text: str) -> Span | None:
         else:
             new = _EN_TITLE_HEAD.sub("", new)
             new = re.sub(r"(?:['’]s)$", "", new)
-    elif span.type == "SECRET" and (key := _CODE_KEY_HEAD.match(new)):
-        # "DB_USER: b3JkZXJzX3J3" -> the value; the key is schema the answer refers to.
-        if len(new) - key.end() >= MIN_SPAN_CHARS:
-            new = new[key.end() :]
+    elif span.type in _VALUE_TYPES and (key := _CODE_KEY_HEAD.match(new)):
+        # "DB_USER: b3JkZXJzX3J3", "redisUrl: 'redis://...'": the value; the key is schema the
+        # answer refers to.
+        value = new[key.end() :].strip("'\"`")
+        if len(value) >= MIN_SPAN_CHARS:
+            new = value
     elif span.type in ("ID_NUMBER", "FINANCIAL", "CONTACT"):
         stripped = _ID_LABEL_HEAD.sub("", new)
         if stripped and re.search(r"\d", stripped) and len(stripped) >= MIN_SPAN_CHARS:
