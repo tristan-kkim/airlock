@@ -136,6 +136,8 @@ def test_only_allowlisted_routes_are_reachable(demo_client):
         assert client.get(path).status_code == 404
     assert client.get("/healthz").json()["demo"] is True
     assert client.get("/readyz").status_code == 200
+    assert client.head("/readyz").status_code == 200
+    assert client.head("/").status_code == 200
 
 
 # ---------------------------------------------------------------- rate limits

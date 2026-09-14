@@ -346,7 +346,7 @@ class DemoGateway:
             info = request.scope["airlock_demo"]
             return info["ip"], info["sid"]
 
-        @site.get("/")
+        @site.api_route("/", methods=["GET", "HEAD"])
         async def home() -> HTMLResponse:
             return HTMLResponse(index, headers={"content-security-policy": index_csp})
 
@@ -424,7 +424,9 @@ class DemoGateway:
             return
         if scope["type"] != "http":
             return
-        method, path = scope["method"], scope["path"]
+        path = scope["path"]
+        # HEAD is routed like GET (uptime checkers use it).
+        method = "GET" if scope["method"] == "HEAD" else scope["method"]
 
         if path == "/healthz" and method == "GET":
             await self._json(send, 200, self.health())
