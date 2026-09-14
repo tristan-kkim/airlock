@@ -1,0 +1,1113 @@
+{
+  "passes": 1,
+  "overall": {
+    "utility_mean": {
+      "n": 1,
+      "mean": 3.4285714285714284,
+      "std": 0.0,
+      "min": 3.4285714285714284,
+      "max": 3.4285714285714284,
+      "values": [
+        3.4285714285714284
+      ]
+    },
+    "reference_utility_mean": {
+      "n": 1,
+      "mean": 4.446428571428571,
+      "std": 0.0,
+      "min": 4.446428571428571,
+      "max": 4.446428571428571,
+      "values": [
+        4.446428571428571
+      ]
+    },
+    "utility_ratio_vs_reference": {
+      "n": 1,
+      "mean": 0.7710843373493976,
+      "std": 0.0,
+      "min": 0.7710843373493976,
+      "max": 0.7710843373493976,
+      "values": [
+        0.7710843373493976
+      ]
+    },
+    "distortion_rate": {
+      "n": 1,
+      "mean": 0.35714285714285715,
+      "std": 0.0,
+      "min": 0.35714285714285715,
+      "max": 0.35714285714285715,
+      "values": [
+        0.35714285714285715
+      ]
+    },
+    "reference_distortion_rate": {
+      "n": 1,
+      "mean": 0.05357142857142857,
+      "std": 0.0,
+      "min": 0.05357142857142857,
+      "max": 0.05357142857142857,
+      "values": [
+        0.05357142857142857
+      ]
+    },
+    "similar_or_better_rate": {
+      "n": 1,
+      "mean": 0.48214285714285715,
+      "std": 0.0,
+      "min": 0.48214285714285715,
+      "max": 0.48214285714285715,
+      "values": [
+        0.48214285714285715
+      ]
+    },
+    "judged": {
+      "n": 1,
+      "mean": 56.0,
+      "std": 0.0,
+      "min": 56.0,
+      "max": 56.0,
+      "values": [
+        56.0
+      ]
+    },
+    "blocked": {
+      "n": 1,
+      "mean": 4.0,
+      "std": 0.0,
+      "min": 4.0,
+      "max": 4.0,
+      "values": [
+        4.0
+      ]
+    },
+    "unjudged": {
+      "n": 1,
+      "mean": 2.0,
+      "std": 0.0,
+      "min": 2.0,
+      "max": 2.0,
+      "values": [
+        2.0
+      ]
+    }
+  },
+  "by_lang": {
+    "en": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.3461538461538463,
+        "std": 0.0,
+        "min": 3.3461538461538463,
+        "max": 3.3461538461538463,
+        "values": [
+          3.3461538461538463
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 4.153846153846154,
+        "std": 0.0,
+        "min": 4.153846153846154,
+        "max": 4.153846153846154,
+        "values": [
+          4.153846153846154
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.8055555555555555,
+        "std": 0.0,
+        "min": 0.8055555555555555,
+        "max": 0.8055555555555555,
+        "values": [
+          0.8055555555555555
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.2692307692307692,
+        "std": 0.0,
+        "min": 0.2692307692307692,
+        "max": 0.2692307692307692,
+        "values": [
+          0.2692307692307692
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.07692307692307693,
+        "std": 0.0,
+        "min": 0.07692307692307693,
+        "max": 0.07692307692307693,
+        "values": [
+          0.07692307692307693
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.6153846153846154,
+        "std": 0.0,
+        "min": 0.6153846153846154,
+        "max": 0.6153846153846154,
+        "values": [
+          0.6153846153846154
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 26.0,
+        "std": 0.0,
+        "min": 26.0,
+        "max": 26.0,
+        "values": [
+          26.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 2.0,
+        "std": 0.0,
+        "min": 2.0,
+        "max": 2.0,
+        "values": [
+          2.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 2.0,
+        "std": 0.0,
+        "min": 2.0,
+        "max": 2.0,
+        "values": [
+          2.0
+        ]
+      }
+    },
+    "ko": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.5,
+        "std": 0.0,
+        "min": 3.5,
+        "max": 3.5,
+        "values": [
+          3.5
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 4.7,
+        "std": 0.0,
+        "min": 4.7,
+        "max": 4.7,
+        "values": [
+          4.7
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.7446808510638298,
+        "std": 0.0,
+        "min": 0.7446808510638298,
+        "max": 0.7446808510638298,
+        "values": [
+          0.7446808510638298
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.43333333333333335,
+        "std": 0.0,
+        "min": 0.43333333333333335,
+        "max": 0.43333333333333335,
+        "values": [
+          0.43333333333333335
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.03333333333333333,
+        "std": 0.0,
+        "min": 0.03333333333333333,
+        "max": 0.03333333333333333,
+        "values": [
+          0.03333333333333333
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.36666666666666664,
+        "std": 0.0,
+        "min": 0.36666666666666664,
+        "max": 0.36666666666666664,
+        "values": [
+          0.36666666666666664
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 30.0,
+        "std": 0.0,
+        "min": 30.0,
+        "max": 30.0,
+        "values": [
+          30.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 2.0,
+        "std": 0.0,
+        "min": 2.0,
+        "max": 2.0,
+        "values": [
+          2.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    }
+  },
+  "by_category": {
+    "adversarial": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.0,
+        "std": 0.0,
+        "min": 3.0,
+        "max": 3.0,
+        "values": [
+          3.0
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 3.6666666666666665,
+        "std": 0.0,
+        "min": 3.6666666666666665,
+        "max": 3.6666666666666665,
+        "values": [
+          3.6666666666666665
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.8181818181818182,
+        "std": 0.0,
+        "min": 0.8181818181818182,
+        "max": 0.8181818181818182,
+        "values": [
+          0.8181818181818182
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.3333333333333333,
+        "std": 0.0,
+        "min": 0.3333333333333333,
+        "max": 0.3333333333333333,
+        "values": [
+          0.3333333333333333
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.16666666666666666,
+        "std": 0.0,
+        "min": 0.16666666666666666,
+        "max": 0.16666666666666666,
+        "values": [
+          0.16666666666666666
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.6666666666666666,
+        "std": 0.0,
+        "min": 0.6666666666666666,
+        "max": 0.6666666666666666,
+        "values": [
+          0.6666666666666666
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 6.0,
+        "std": 0.0,
+        "min": 6.0,
+        "max": 6.0,
+        "values": [
+          6.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 2.0,
+        "std": 0.0,
+        "min": 2.0,
+        "max": 2.0,
+        "values": [
+          2.0
+        ]
+      }
+    },
+    "benign": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 4.666666666666667,
+        "std": 0.0,
+        "min": 4.666666666666667,
+        "max": 4.666666666666667,
+        "values": [
+          4.666666666666667
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 5.0,
+        "std": 0.0,
+        "min": 5.0,
+        "max": 5.0,
+        "values": [
+          5.0
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.9333333333333333,
+        "std": 0.0,
+        "min": 0.9333333333333333,
+        "max": 0.9333333333333333,
+        "values": [
+          0.9333333333333333
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.16666666666666666,
+        "std": 0.0,
+        "min": 0.16666666666666666,
+        "max": 0.16666666666666666,
+        "values": [
+          0.16666666666666666
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.8333333333333334,
+        "std": 0.0,
+        "min": 0.8333333333333334,
+        "max": 0.8333333333333334,
+        "values": [
+          0.8333333333333334
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 6.0,
+        "std": 0.0,
+        "min": 6.0,
+        "max": 6.0,
+        "values": [
+          6.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "direct_pii": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.8333333333333335,
+        "std": 0.0,
+        "min": 3.8333333333333335,
+        "max": 3.8333333333333335,
+        "values": [
+          3.8333333333333335
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 4.333333333333333,
+        "std": 0.0,
+        "min": 4.333333333333333,
+        "max": 4.333333333333333,
+        "values": [
+          4.333333333333333
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.8846153846153847,
+        "std": 0.0,
+        "min": 0.8846153846153847,
+        "max": 0.8846153846153847,
+        "values": [
+          0.8846153846153847
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.8333333333333334,
+        "std": 0.0,
+        "min": 0.8333333333333334,
+        "max": 0.8333333333333334,
+        "values": [
+          0.8333333333333334
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 6.0,
+        "std": 0.0,
+        "min": 6.0,
+        "max": 6.0,
+        "values": [
+          6.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 2.0,
+        "std": 0.0,
+        "min": 2.0,
+        "max": 2.0,
+        "values": [
+          2.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "finance": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.857142857142857,
+        "std": 0.0,
+        "min": 3.857142857142857,
+        "max": 3.857142857142857,
+        "values": [
+          3.857142857142857
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 4.285714285714286,
+        "std": 0.0,
+        "min": 4.285714285714286,
+        "max": 4.285714285714286,
+        "values": [
+          4.285714285714286
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.9,
+        "std": 0.0,
+        "min": 0.9,
+        "max": 0.9,
+        "values": [
+          0.9
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.42857142857142855,
+        "std": 0.0,
+        "min": 0.42857142857142855,
+        "max": 0.42857142857142855,
+        "values": [
+          0.42857142857142855
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.42857142857142855,
+        "std": 0.0,
+        "min": 0.42857142857142855,
+        "max": 0.42857142857142855,
+        "values": [
+          0.42857142857142855
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 7.0,
+        "std": 0.0,
+        "min": 7.0,
+        "max": 7.0,
+        "values": [
+          7.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "values": [
+          1.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "health": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.125,
+        "std": 0.0,
+        "min": 3.125,
+        "max": 3.125,
+        "values": [
+          3.125
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 4.5,
+        "std": 0.0,
+        "min": 4.5,
+        "max": 4.5,
+        "values": [
+          4.5
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.6944444444444444,
+        "std": 0.0,
+        "min": 0.6944444444444444,
+        "max": 0.6944444444444444,
+        "values": [
+          0.6944444444444444
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.625,
+        "std": 0.0,
+        "min": 0.625,
+        "max": 0.625,
+        "values": [
+          0.625
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.25,
+        "std": 0.0,
+        "min": 0.25,
+        "max": 0.25,
+        "values": [
+          0.25
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "quasi_identifier": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.0,
+        "std": 0.0,
+        "min": 3.0,
+        "max": 3.0,
+        "values": [
+          3.0
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 3.75,
+        "std": 0.0,
+        "min": 3.75,
+        "max": 3.75,
+        "values": [
+          3.75
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.8,
+        "std": 0.0,
+        "min": 0.8,
+        "max": 0.8,
+        "values": [
+          0.8
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "secrets_in_code": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 2.4285714285714284,
+        "std": 0.0,
+        "min": 2.4285714285714284,
+        "max": 2.4285714285714284,
+        "values": [
+          2.4285714285714284
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 5.0,
+        "std": 0.0,
+        "min": 5.0,
+        "max": 5.0,
+        "values": [
+          5.0
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.48571428571428565,
+        "std": 0.0,
+        "min": 0.48571428571428565,
+        "max": 0.48571428571428565,
+        "values": [
+          0.48571428571428565
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.7142857142857143,
+        "std": 0.0,
+        "min": 0.7142857142857143,
+        "max": 0.7142857142857143,
+        "values": [
+          0.7142857142857143
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.14285714285714285,
+        "std": 0.0,
+        "min": 0.14285714285714285,
+        "max": 0.14285714285714285,
+        "values": [
+          0.14285714285714285
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.2857142857142857,
+        "std": 0.0,
+        "min": 0.2857142857142857,
+        "max": 0.2857142857142857,
+        "values": [
+          0.2857142857142857
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 7.0,
+        "std": 0.0,
+        "min": 7.0,
+        "max": 7.0,
+        "values": [
+          7.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "values": [
+          1.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    },
+    "vault_terms": {
+      "utility_mean": {
+        "n": 1,
+        "mean": 3.75,
+        "std": 0.0,
+        "min": 3.75,
+        "max": 3.75,
+        "values": [
+          3.75
+        ]
+      },
+      "reference_utility_mean": {
+        "n": 1,
+        "mean": 5.0,
+        "std": 0.0,
+        "min": 5.0,
+        "max": 5.0,
+        "values": [
+          5.0
+        ]
+      },
+      "utility_ratio_vs_reference": {
+        "n": 1,
+        "mean": 0.75,
+        "std": 0.0,
+        "min": 0.75,
+        "max": 0.75,
+        "values": [
+          0.75
+        ]
+      },
+      "distortion_rate": {
+        "n": 1,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5
+        ]
+      },
+      "reference_distortion_rate": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "similar_or_better_rate": {
+        "n": 1,
+        "mean": 0.25,
+        "std": 0.0,
+        "min": 0.25,
+        "max": 0.25,
+        "values": [
+          0.25
+        ]
+      },
+      "judged": {
+        "n": 1,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0
+        ]
+      },
+      "blocked": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "unjudged": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      }
+    }
+  },
+  "per_pass": [
+    {
+      "cases": 62,
+      "judged": 56,
+      "blocked": 4,
+      "unjudged": 2,
+      "system_empty": 0,
+      "utility_mean": 3.4285714285714284,
+      "reference_utility_mean": 4.446428571428571,
+      "utility_ratio_vs_reference": 0.7710843373493976,
+      "distortion_rate": 0.35714285714285715,
+      "reference_distortion_rate": 0.05357142857142857,
+      "similar_or_better_rate": 0.48214285714285715
+    }
+  ],
+  "config": {
+    "utility_version": "1.1.0",
+    "results_dir": "dev-main",
+    "target_label": "airlock 2e92453 (main), AIRLOCK_GLINER=on, placeholder, dev split",
+    "answer_source": "recorded",
+    "base_url": "https://api.tokenfactory.nebius.com/v1",
+    "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "judge_reasoning": "none",
+    "default_upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "answer_max_tokens": 4096,
+    "passes": 1,
+    "limit": null,
+    "categories": null,
+    "reference_dir": "eval/results/_reference_answers",
+    "subset": null,
+    "reuse_identical_passes": false,
+    "reuse_from": null,
+    "reuse": {
+      "note": "scored once; outputs identical across passes, verified by payload hash",
+      "from": null,
+      "rows": 62,
+      "rows_reused": 0,
+      "rows_scored": 62,
+      "by_pass": [
+        {
+          "pass": 1,
+          "rows": 62,
+          "reused_within_run": 0,
+          "reused_from_earlier_run": 0
+        }
+      ]
+    },
+    "runs": [
+      {
+        "at": "2026-09-13T23:37:13.068133+00:00",
+        "estimate": {
+          "reference_calls": 58,
+          "system_answer_calls": 0,
+          "judge_calls": 58,
+          "prompt_tokens_est": 137052,
+          "completion_tokens_typical": 60900,
+          "completion_tokens_max": 266568,
+          "rows": 62,
+          "rows_reused_planned": 0
+        },
+        "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+        "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+        "usage": {
+          "reference": {
+            "prompt_tokens": 5539,
+            "completion_tokens": 68042,
+            "calls": 58
+          },
+          "system_answer": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "calls": 0
+          },
+          "judge": {
+            "prompt_tokens": 141590,
+            "completion_tokens": 12960,
+            "calls": 56
+          },
+          "verify": {
+            "prompt_tokens": 43494,
+            "completion_tokens": 1843,
+            "calls": 30
+          }
+        },
+        "cost_usd": {
+          "reference": 0.209665,
+          "system_answer": 0.0,
+          "judge": 0.18047,
+          "verify": 0.049023
+        }
+      }
+    ]
+  }
+}
