@@ -5,7 +5,7 @@
   "lang": "ko",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T13:37:43+00:00",
+  "recorded_at": "2026-09-14T14:58:11+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -44,7 +44,7 @@
     {
       "destination": "tavily",
       "label": "step 3 → Tavily (rewritten)",
-      "text": "voluntary retirement benefits and unemployment insurance eligibility in Korea"
+      "text": "voluntary resignation severance unemployment benefits eligibility"
     },
     {
       "destination": "upstream",
@@ -53,26 +53,26 @@
     },
     {
       "destination": "tavily",
-      "label": "step 4 → Tavily (rewritten)",
-      "text": "퇴직 위로금 실업급여 수급 조건 고용보험법"
+      "label": "step 4 → Tavily (block)",
+      "text": "(nothing: search blocked)"
     },
     {
       "destination": "upstream",
       "label": "step 5 → Nemotron 3 Ultra (allow)",
-      "text": "[assistant] web_search({\"query\": \"권고사직 위로금 실업급여 수급 자격 고용보험법 제58조\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them."
+      "text": "[assistant] web_search({\"query\": \"희망퇴직 위로금 실업급여 수급 자격 자발적 퇴직 고용보험법\"})\n\n[tool] web_search was withheld by the user's privacy firewall: the query would reveal private details. Continue without it, or search for a more general topic."
     },
     {
       "destination": "tavily",
       "label": "step 5 → Tavily (rewritten)",
-      "text": "unemployment benefits eligibility and voluntary resignation settlement agreement"
+      "text": "퇴직 합의서 위로금 실업급여 조건 고용보험법"
     },
     {
       "destination": "upstream",
       "label": "step 6 → Nemotron 3 Ultra (allow)",
-      "text": "[assistant] web_search({\"query\": \"고용보험법 실업급여 자발적 이직 수급 제한 위로금 합의서\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them.\n\n[user] Step limit reached. Call finish now with the best answer you can give."
+      "text": "[assistant] web_search({\"query\": \"<PERSON_8> 수급 자격 <PERSON_7>법\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them.\n\n[user] Step limit reached. Call finish now with the best answer you can give."
     }
   ],
-  "answer": "제공해주신 두 문서(퇴직 합의서, 개별 통보)를 검토하고 관련 법리를 종합해 답변드립니다.\n\n---\n\n### 1. 서명해야 할까요? — **신중히 판단하세요. 서명 전 반드시 확인·협상할 사항이 있습니다.**\n\n| 문구 | 법적 효과 | 주의점 |\n|------|-----------|--------|\n| **“자발적 의사로 퇴직한다”** (합의서 1항) | **자발적 이직(자진 퇴사)**으로 처리됩니다. | 실업급여 수급이 **원칙적으로 제한**됩니다(고용보험법 제58조). |\n| **“어떠한 민·형사상 이의도 제기하지 않는다”** (합의서 3항) | **포괄적 권리 포기(면책)** 조항입니다. | 부당해고·임금체불·산재 등 **향후 모든 분쟁 제기권**을 포기하게 됩니다. |\n| **“제3자에게 누설하지 않는다”** (합의서 4항) | 비밀유지 의무 부과. | 위반 시 손해배상 청구 대상이 될 수 있습니다. |\n| **서명 기한: 2026-09-25** (개별 통보) | 회사가 제시한 **일방적 마감일**입니다. | 법적 강제력은 없으나, 기한 내 미제출 시 회사가 ‘거절’로 간주할 수 있습니다. |\n\n**→ 서명 전 반드시 다음을 확인/요구하세요.**\n1. **“자발적 의사” 문구를 “회사의 권고/권고사직” 또는 “구조조정에 따른 이직”으로 변경** 요구  \n   → 실업급여 수급 가능성을 열기 위함.\n2. **면책 조항(3항) 축소/삭제** 요구  \n   → “퇴직 조건(위로금·연차수당 등) 이행 관련 분쟁만 포기”로 한정.\n3. **서면 회신으로 “검토 중이며 기한 연장 요청” 통보** → 시간 벌기.\n\n---\n\n### 2. 위로금 조건(3개월분 ≈ 1,650만 원)이 괜찮은가요? — **법정 퇴직금 외 추가 지급이므로 ‘나쁘지 않음’, 단 비교 기준 필요**\n\n| 항목 | 내용 | 판단 포인트 |\n|------|------|-------------|\n| **법정 퇴직금** | 1년 이상 근속 시 **평균임금 × 30일 × (근속연수/1년)** | 별도 지급(합의서 2항 “법정 퇴직금 외”) |\n| **위로금** | **통상임금 3개월분 ≈ 1,650만 원** | 통상임금 기준이면 평균임금보다 낮을 수 있음 → **평균임금 3개월분과 비교 필요** |\n| **잔여 연차수당** | 별도 정산 약속(개별 통보) | 미사용 연차일수 × 통상임금 확인 필요 |\n| **업계/판례 참고** | 구조조정·권고사직 시 **4~6개월분(평균임금 기준)** 지급 사례 다수 | 현재 안이 **하한선 근접** → **증액 협상 여지 있음** |\n\n**체크리스트**\n- [ ] 통상임금·평균임금 산출 내역서 요청  \n- [ ] 근속연수별 법정 퇴직금 액수 확인  \n- [ ] 동일 사유(조직개편) 타사/선례 지급 수준 파악  \n- [ ] 위로금 **증액(4~6개월분) 또는 평균임금 기준 변경** 협상 시도\n\n---\n\n### 3. 실업급여(구직급여) 받을 수 있나요? — **현 문구 그대로 서명하면 ‘수급 매우 어려움’**\n\n| 시나리오 | 수급 가능성 | 비고 |\n|----------|-------------|------|\n| **현 합의서 그대로 서명** | **거의 불가능** | ‘자발적 이직’으로 처리 → 수급제한(고용보험법 제58조 제1항) |\n| **“권고사직/회사 사정”으로 문구 변경 후 서명** | **가능성 높음** | ‘비자발적 이직’ 인정 시 수급자격 인정(동법 제58조 제2항) |\n| **서명 거부 → 해고/권고사직 통보받음** | **가능** | 회사가 정식 해고/권고사직 절차 밟으면 비자발적 이직으로 간주 |\n| **서명 거부 → 근로관계 지속** | **해당 없음** | 퇴직 자체가 성립 안 됨 |\n\n**핵심 포인트**  \n- 고용센터는 **“사업주 귀책 사유(구조조정·권고사직 등)”** 입증 서류(공문·합의서 문구·녹취 등)를 봅니다.  \n- 합의서에 **“자발적 의사”** 문구가 남아 있으면 **입증 곤란**.  \n- 따라서 **문구 변경(“회사 권고에 따라 이직” 등) 없이는 실업급여 수급을 기대하기 어렵습니다.**\n\n---\n\n### 4. 즉시 취할 행동 요약\n\n| 순서 | 행동 | 기한/팁 |\n|------|------|---------|\n| 1 | **서명 보류** → 인사팀에 “내용 검토 중, 기한 연장 요청” **서면(이메일/카카오톡 캡처) 회신** | 2026-09-25 전까지 |\n| 2 | **노무사/노동변호사 1회 상담** (비용 10~20만 원) → 합의서 수정안 검토 | 이번 주 내 |\n| 3 | **수정 요구서 발송** (내용증명/이메일) <br>① “자발적 의사” → “회사 권고/구조조정에 따른 이직” <br>② 면책 조항 축소 <br>③ 위로금 증액(평균임금 4~6개월분) 협상 | 상담 후 즉시 |\n| 4 | **회사 회신 대기** → 수용 시 서명, 미수용 시 **노동위 구제신청/고용센터 상담** 병행 | 1~2주 내 |\n| 5 | **실업급여 신청 준비** → 고용센터 방문 전 ‘비자발적 이직 입증 서류’(수정된 합의서, 공문, 녹취 등) 확보 | 퇴직일(10-31) 직후 |\n\n---\n\n### 5. 한 줄 결론\n> **“자발적 의사” 문구와 포괄적 면책 조항이 그대로인 한 서명하지 마세요. 문구 변경·위로금 증액 협상 후 서명해야 실업급여 수급 길이 열립니다.**\n\n필요하시면 **수정 요구서 초안**이나 **상담 가능한 노무사 리스트**도 정리해 드리겠습니다.",
+  "answer": "**결론부터 말씀드리면: 서명하지 않는 것이 좋습니다.**  \n\n---\n\n### 1. 서명 여부  \n- **서명 마감일:** 2026-09-25 (문서 2)  \n- **문서 1(합의서) 핵심 조항**  \n  1. “자발적 의사로 2026-10-31일자로 **퇴직**한다” → **자진 퇴직**로 처리됨  \n  2. “법정 퇴직금 외 위로금 3개월분 지급”  \n  3. “퇴직과 관련한 어떠한 민·형사상 이의도 제기하지 않는다” → **권리 포기 각서**  \n  4. “내용을 제3자에게 누설하지 않는다” → 비밀유지 의무  \n\n**자진 퇴직으로 처리되면**  \n- 희망퇴직 수급이 **최대 3개월 제한(수급제한)** 또는 **전면 배제**될 수 있음  \n- 부당퇴직 구제신청·손해배상 청구 등 **모든 법적 구제수단 봉쇄**  \n- 위로금 3개월분(약 1,650만 원)이 그 대가로 **충분한지** 별도 검토 필요  \n\n따라서 **현재 문구 그대로 서명하면 불이익이 큽니다.**  \n\n---\n\n### 2. 위로금 조건 적정성  \n- 제시액: **통상임금 3개월분 ≈ 1,650만 원**  \n- 참고 기준(대법원·노동위 판례):  \n  - 부당퇴직 위자료 통상 **3~6개월분**  \n  - 희망퇴직 수급제한 기간(3개월) 동안의 소득상실분 + 구제절차 비용·정신적 손해 고려 시 **최소 4~6개월분**이 통상적  \n- **현 제시액은 하한선 수준** → 협상 여지 있음  \n\n---\n\n### 3. 실업급여(희망퇴직) 수급 가능성  \n| 시나리오 | 희망퇴직 수급 |\n|---|---|\n| **현재 합의서 서명(자진 퇴직)** | **수급제한 3개월**(최장) 또는 **전면 배제** 가능성 높음 |\n| **서명 거부 → 회사 직권 퇴직 통보** | **비자발적 퇴직**로 인정돼 **즉시 수급 가능**(대기 7일만) |\n| **부당퇴직 구제신청 후 화해·판정** | 화해금·위자료 별도 수령 + 희망퇴직 정상 수급 |\n\n**핵심:** “자발적 의사” 문구만 지워도 희망퇴직 수급길이 열립니다.  \n\n---\n\n### 4. 즉시 할 일(실무 체크리스트)  \n1. **서명 보류** – 마감일(9/25) 전까지 **서명하지 말고** 회사에 “검토 중” 통보  \n2. **노무사·변호사 1회 상담** – 위로금 증액(4~6개월분) + “자발적” 문구 삭제 + 비밀유지 조항 완화 협상 위임  \n3. **증거 확보** – 문서 2(통보서), 합의서 초안, 근로계약서, 임금명세서, 퇴직 사유 관련 메일·메신저 캡처  \n4. **병행 준비** – 회사 직권 퇴직 통보 시 즉시 **관할 고용센터 희망퇴직 신청** + **지방노동위 부당퇴직 구제신청(30일 내)**  \n\n---\n\n### 5. 한 줄 요약  \n> **“자발적 퇴직” 문구가 있는 한 서명하지 마세요. 위로금 3개월분은 낮고, 희망퇴직은 막힙니다. 전문가 동행해 ‘비자발적 퇴직’로 전환하거나 위로금 4~6개월분+권리유보 조건으로 재협상하십시오.**  \n\n필요하면 노무사 추천·구제신청서 초안·협상 이메일 템플릿 등 실무 자료도 바로 드릴 수 있습니다.",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -170,6 +170,26 @@
       "source": "vault"
     },
     {
+      "type": "QUASI_IDENTIFIER",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
+      "type": "QUASI_IDENTIFIER",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
       "type": "PERSON",
       "action": "mask",
       "source": "vault"
@@ -177,25 +197,45 @@
     {
       "type": "QUASI_IDENTIFIER",
       "action": "mask",
+      "source": "llm"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
       "source": "vault"
     },
     {
-      "type": "QUASI_IDENTIFIER",
-      "action": "generalize",
+      "type": "PERSON",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "vault"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
       "source": "vault"
     }
   ],
   "timings_ms": {
-    "run": 51586.9,
-    "total": 51587.0
+    "run": 55363.7,
+    "total": 55363.73
   },
   "stats": {
     "status": "finished",
     "steps": 6,
     "searches": 3,
-    "search_rewritten": 3,
-    "search_blocked": 0
+    "search_rewritten": 2,
+    "search_blocked": 1
   },
   "request_id": null,
-  "recorded_seconds": 51.6
+  "leak_check": {
+    "outbound_payloads": 16,
+    "private_values": 13,
+    "found": 0
+  },
+  "recorded_seconds": 55.4
 }
