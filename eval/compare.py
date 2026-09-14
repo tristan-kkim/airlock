@@ -180,7 +180,11 @@ def label_for(name: str) -> str:
 
 
 def independence_notes(runs: list[tuple[str, Path]]) -> list[str]:
-    marked = [label_for(n) for n, _ in runs if n in _not_independent]
+    marked = [
+        label_for(n).removesuffix(f" {NOT_INDEPENDENT_MARK}")
+        for n, _ in runs
+        if n in _not_independent
+    ]
     if not marked:
         return []
     return ["", f"{NOT_INDEPENDENT_MARK} {NOT_INDEPENDENT_NOTE}: " + "; ".join(marked) + "."]

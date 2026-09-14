@@ -29,6 +29,27 @@ eval/final_protocol.sh --commit e0ee6aa --gliner on --substitution both --passes
 
 Full tables: [`COMPARISON.md`](COMPARISON.md).
 
+> **The Airlock passes in this run are not independent.** The harness reset the server only
+> before pass 1, so passes 2 and 3 reused pass-1 detections from Airlock's in-memory cache.
+> The independence check added afterwards (`eval/scoring.py`) reports:
+>
+> | | Byte-identical payloads, all 3 passes | Detect p50 by pass |
+> |---|---:|---|
+> | Placeholder | 211 of 232 cases (90.9%) | 3,412 / 462 / 475 ms |
+> | Surrogate | 70 of 231 cases (30.3%) | 3,270 / 506 / 571 ms |
+>
+> Surrogates are re-drawn per conversation, so their payloads differ even though detection was
+> cached. Treat every Airlock ± below as not measured. The means are one detection per case
+> scored three times.
+>
+> The harness now resets before every pass (commit `91bb954`). A rerun of the placeholder config
+> with that fix (`final-20260914T035811Z`, not committed) confirmed the fix: detect p50 stayed at
+> 3,321 / 3,357 ms in passes 1 and 2, and 140 of 229 cases (61.1%) sent byte-identical payloads
+> in both. The rerun stopped in pass 3, when Token Factory began returning HTTP 402 (budget
+> exhausted), before any attack or utility scoring. Its scanner numbers for passes 1 and 2
+> (identity leak 8.3% / 8.3%, leak rate 7.4% / 7.4%) are close to this run's 9.7% and 7.9%.
+> Independent means ± sd for the default config remain to be measured.
+
 ## Headline
 
 Mean ± sample sd over 3 passes. For the baselines, ± 0.0 reflects identical outputs scored once;
@@ -187,18 +208,17 @@ not valid JSON and were retried once, as documented in `eval/README.md`.
 ## Caveats
 
 - **The three Airlock passes share one local detection for most texts.** `LLMDetector` caches
-  results in memory by text, and `/vault/reset` clears that cache only once, before pass 1. Pass
-  2 and 3 therefore reused pass-1 detections wherever the text repeated. Local detect time p50
-  fell from 3.4 s in pass 1 to 0.46 s in pass 2, and with placeholders 215 of 243 outbound
-  payloads were byte-identical across all three passes. As a result:
+  results in memory by text, and the harness called `/vault/reset` only once, before pass 1.
+  Passes 2 and 3 therefore reused pass-1 detections wherever the text repeated. Local detect
+  time p50 fell from 3.4 s in pass 1 to 0.46 s in pass 2, and with placeholders 211 of 232
+  cases sent byte-identical payloads in all three passes. As a result:
   - the ± on the scanner columns (identity leak, leak rate: sd 0.0) says almost nothing about
     local-model sampling variance;
   - the ± on attacker and judge columns mostly measures cloud-side noise;
   - the 3-pass latency means in `COMPARISON.md` mix cold and cached requests, so the pass-1
     figures above are the honest latency.
 
-  A per-pass reset (or disabling the cache) is needed before local-model variance can be
-  reported.
+  The harness now resets before every pass; see the note at the top for the rerun status.
 - **Judge noise.** The judge scores answer pairs, so the same cached reference answers scored
   between 4.33 and 4.57 depending on the system they were paired with. The raw baseline, whose
   prompt equals the reference prompt, gets a utility ratio of 1.05 and 7.7% distortion against

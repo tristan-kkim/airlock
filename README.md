@@ -18,7 +18,7 @@ It works with tools you already use (scripts, notebooks, editors, agents) by cha
 
 ## Measured results
 
-Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables in [`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)): all 243 synthetic cases (122 Korean, 121 English), 3 passes, each system alone on an M3 Pro, Airlock at `e0ee6aa` with the GLiNER ensemble on, attacker and judges on Nemotron 3 Ultra. **Linkable disclosure** is the share of the 98 situation-sensitive cases where an attacker reading only the outbound payloads recovers an identity item and infers the private situation. Airlock rows are mean ± sd over 3 passes; baseline outputs were identical across passes and scored once.
+Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables in [`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)): all 243 synthetic cases (122 Korean, 121 English), 3 passes, each system alone on an M3 Pro, Airlock at `e0ee6aa` with the GLiNER ensemble on, attacker and judges on Nemotron 3 Ultra. **Linkable disclosure** is the share of the 98 situation-sensitive cases where an attacker reading only the outbound payloads recovers an identity item and infers the private situation. Baseline outputs were identical across passes and scored once. The Airlock passes were not independent: the harness reset the server only before pass 1, so later passes reused cached detections. Airlock's ± is therefore not a measured spread.
 
 | System | **Linkable disclosure** | Identity leak | Usefulness 1-5 | Utility ratio | Distortion | Over-redaction | Benign masked |
 |---|---:|---:|---:|---:|---:|---:|---:|

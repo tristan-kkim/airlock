@@ -12,10 +12,12 @@ Airlock's claim is unlinkability: the cloud may learn the problem, but not who h
 | regex only | 3 / 3* / 3* | 92.7% ± 0.0 | 79.6% ± 0.0 | 88.8% ± 0.0 | 80.6% ± 0.0 | 0.87 ± 0.00 | 13.9% ± 0.0 | 0.4% ± 0.0 | 7.4% ± 0.0 | 0 / 0 |
 | Presidio + ko/en spaCy + KR recognizers | 3 / 3* / 3* | 76.7% ± 0.0 | 53.1% ± 0.0 | 73.8% ± 0.0 | 77.8% ± 0.0 | 0.66 ± 0.00 | 33.7% ± 0.0 | 16.7% ± 0.0 | 66.7% ± 0.0 | 2 / 4 |
 | NVIDIA GLiNER-PII | 3 / 3* / 3* | 18.9% ± 0.0 | 9.2% ± 0.0 | 19.4% ± 0.0 | 63.0% ± 0.0 | 0.59 ± 0.00 | 24.5% ± 0.0 | 14.1% ± 0.0 | 59.3% ± 0.0 | 79 / 166 |
-| airlock (live, e0ee6aa, gliner-placeholder) | 3 / 3 / 3 | 9.7% ± 0.0 | 15.3% ± 1.0 | 10.2% ± 0.0 | 71.0% ± 2.8 | 0.95 ± 0.02 | 14.7% ± 1.9 | 7.0% ± 0.3 | 11.1% ± 0.0 | 1,629 / 5,734 |
-| airlock (live, e0ee6aa, gliner-surrogate) | 3 / 3 / 3 | 8.3% ± 0.0 | 12.6% ± 1.2 | 7.8% ± 0.0 | 54.0% ± 2.1 | 0.94 ± 0.02 | 19.4% ± 1.6 | 6.4% ± 0.2 | 11.1% ± 0.0 | 1,632 / 6,541 |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 3 / 3 / 3 | 9.7% ± 0.0 | 15.3% ± 1.0 | 10.2% ± 0.0 | 71.0% ± 2.8 | 0.95 ± 0.02 | 14.7% ± 1.9 | 7.0% ± 0.3 | 11.1% ± 0.0 | 1,629 / 5,734 |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 3 / 3 / 3 | 8.3% ± 0.0 | 12.6% ± 1.2 | 7.8% ± 0.0 | 54.0% ± 2.1 | 0.94 ± 0.02 | 19.4% ± 1.6 | 6.4% ± 0.2 | 11.1% ± 0.0 | 1,632 / 6,541 |
 
 \* scored once; outputs identical across passes, verified by payload hash: raw (pass-through) attack 729 of 729 rows, pass 1 from `eval/results/baseline-raw`; raw (pass-through) utility 624 of 630 rows, pass 1 from `eval/results/baseline-raw`; regex only attack 729 of 729 rows, pass 1 from `eval/results/baseline-regex`; regex only utility 623 of 630 rows, pass 1 from `eval/results/baseline-regex`; Presidio + ko/en spaCy + KR recognizers attack 729 of 729 rows, pass 1 from `eval/results/baseline-presidio_ko`; Presidio + ko/en spaCy + KR recognizers utility 624 of 630 rows, pass 1 from `eval/results/baseline-presidio_ko`; NVIDIA GLiNER-PII attack 729 of 729 rows, pass 1 from `eval/results/baseline-gliner_pii`; NVIDIA GLiNER-PII utility 624 of 630 rows, pass 1 from `eval/results/baseline-gliner_pii`. Other rows were scored normally.
+
+† passes not independent (detector cache: the server was reset only before pass 1, so later passes reused pass-1 detections); treat sd as not measured: airlock (live, e0ee6aa, gliner-placeholder); airlock (live, e0ee6aa, gliner-surrogate).
 
 ### By language
 
@@ -25,8 +27,8 @@ Airlock's claim is unlinkability: the cloud may learn the problem, but not who h
 | regex only | 92.3% ± 0.0 | 93.1% ± 0.0 | 82.0% ± 0.0 | 77.1% ± 0.0 | 0.84 ± 0.00 | 0.91 ± 0.00 | 12.4% ± 0.0 | 15.5% ± 0.0 | 0.0% ± 0.0 | 0.7% ± 0.0 |
 | Presidio + ko/en spaCy + KR recognizers | 87.5% ± 0.0 | 65.7% ± 0.0 | 64.0% ± 0.0 | 41.7% ± 0.0 | 0.67 ± 0.00 | 0.66 ± 0.00 | 31.4% ± 0.0 | 35.9% ± 0.0 | 13.5% ± 0.0 | 19.9% ± 0.0 |
 | NVIDIA GLiNER-PII | 20.2% ± 0.0 | 17.6% ± 0.0 | 10.0% ± 0.0 | 8.3% ± 0.0 | 0.54 ± 0.00 | 0.65 ± 0.00 | 26.7% ± 0.0 | 22.3% ± 0.0 | 17.7% ± 0.0 | 10.5% ± 0.0 |
-| airlock (live, e0ee6aa, gliner-placeholder) | 10.6% ± 0.0 | 8.8% ± 0.0 | 14.0% ± 0.0 | 16.7% ± 2.1 | 0.89 ± 0.02 | 1.02 ± 0.01 | 16.2% ± 1.9 | 13.3% ± 3.7 | 10.2% ± 0.2 | 3.8% ± 0.7 |
-| airlock (live, e0ee6aa, gliner-surrogate) | 8.7% ± 0.0 | 7.8% ± 0.0 | 10.7% ± 1.2 | 14.6% ± 2.1 | 0.88 ± 0.03 | 1.01 ± 0.02 | 21.9% ± 2.3 | 16.9% ± 2.1 | 8.3% ± 0.1 | 4.5% ± 0.5 |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 10.6% ± 0.0 | 8.8% ± 0.0 | 14.0% ± 0.0 | 16.7% ± 2.1 | 0.89 ± 0.02 | 1.02 ± 0.01 | 16.2% ± 1.9 | 13.3% ± 3.7 | 10.2% ± 0.2 | 3.8% ± 0.7 |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 8.7% ± 0.0 | 7.8% ± 0.0 | 10.7% ± 1.2 | 14.6% ± 2.1 | 0.88 ± 0.03 | 1.01 ± 0.02 | 21.9% ± 2.3 | 16.9% ± 2.1 | 8.3% ± 0.1 | 4.5% ± 0.5 |
 
 ## Agent mode (`eval/agent`, reframed by `eval/reframe.py agent`)
 
@@ -53,8 +55,8 @@ Every planted value counts, including situation details the answer does not need
 | regex only | 3 | 94.0% ± 0.0 | 87.6% ± 0.0 | 98.0% ± 0.0 | 0.0% ± 0.0 | 7.4% ± 0.0 | 0.4% ± 0.0 | 93.6% ± 0.0 | 94.4% ± 0.0 | 0.0 |
 | Presidio + ko/en spaCy + KR recognizers | 3 | 76.9% ± 0.0 | 84.1% ± 0.0 | 50.0% ± 0.0 | 0.0% ± 0.0 | 66.7% ± 0.0 | 16.7% ± 0.0 | 88.1% ± 0.0 | 65.4% ± 0.0 | 0.0 |
 | NVIDIA GLiNER-PII | 3 | 19.0% ± 0.0 | 12.4% ± 0.0 | 10.0% ± 0.0 | 0.0% ± 0.0 | 59.3% ± 0.0 | 14.1% ± 0.0 | 21.1% ± 0.0 | 16.8% ± 0.0 | 0.0 |
-| airlock (live, e0ee6aa, gliner-placeholder) | 3 | 7.9% ± 0.0 | 0.0% ± 0.0 | 26.0% ± 0.0 | 7.4% ± 0.0 | 11.1% ± 0.0 | 7.0% ± 0.3 | 8.3% ± 0.0 | 7.5% ± 0.0 | 0.0 |
-| airlock (live, e0ee6aa, gliner-surrogate) | 3 | 7.4% ± 0.0 | 0.0% ± 0.0 | 28.0% ± 0.0 | 7.4% ± 0.0 | 11.1% ± 0.0 | 6.4% ± 0.2 | 7.3% ± 0.0 | 7.5% ± 0.0 | 0.0 |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 3 | 7.9% ± 0.0 | 0.0% ± 0.0 | 26.0% ± 0.0 | 7.4% ± 0.0 | 11.1% ± 0.0 | 7.0% ± 0.3 | 8.3% ± 0.0 | 7.5% ± 0.0 | 0.0 |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 3 | 7.4% ± 0.0 | 0.0% ± 0.0 | 28.0% ± 0.0 | 7.4% ± 0.0 | 11.1% ± 0.0 | 6.4% ± 0.2 | 7.3% ± 0.0 | 7.5% ± 0.0 | 0.0 |
 
 ### By language
 
@@ -64,8 +66,8 @@ Every planted value counts, including situation details the answer does not need
 | regex only | 93.6% ± 0.0 | 94.4% ± 0.0 | 96.3% ± 0.0 | 100.0% ± 0.0 | 0.0% ± 0.0 | 14.3% ± 0.0 | 0.0% ± 0.0 | 0.7% ± 0.0 |
 | Presidio + ko/en spaCy + KR recognizers | 88.1% ± 0.0 | 65.4% ± 0.0 | 74.1% ± 0.0 | 21.7% ± 0.0 | 61.5% ± 0.0 | 71.4% ± 0.0 | 13.5% ± 0.0 | 19.9% ± 0.0 |
 | NVIDIA GLiNER-PII | 21.1% ± 0.0 | 16.8% ± 0.0 | 14.8% ± 0.0 | 4.3% ± 0.0 | 61.5% ± 0.0 | 57.1% ± 0.0 | 17.7% ± 0.0 | 10.5% ± 0.0 |
-| airlock (live, e0ee6aa, gliner-placeholder) | 8.3% ± 0.0 | 7.5% ± 0.0 | 18.5% ± 0.0 | 34.8% ± 0.0 | 23.1% ± 0.0 | 0.0% ± 0.0 | 10.2% ± 0.2 | 3.8% ± 0.7 |
-| airlock (live, e0ee6aa, gliner-surrogate) | 7.3% ± 0.0 | 7.5% ± 0.0 | 22.2% ± 0.0 | 34.8% ± 0.0 | 23.1% ± 0.0 | 0.0% ± 0.0 | 8.3% ± 0.1 | 4.5% ± 0.5 |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 8.3% ± 0.0 | 7.5% ± 0.0 | 18.5% ± 0.0 | 34.8% ± 0.0 | 23.1% ± 0.0 | 0.0% ± 0.0 | 10.2% ± 0.2 | 3.8% ± 0.7 |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 7.3% ± 0.0 | 7.5% ± 0.0 | 22.2% ± 0.0 | 34.8% ± 0.0 | 23.1% ± 0.0 | 0.0% ± 0.0 | 8.3% ± 0.1 | 4.5% ± 0.5 |
 
 ### Leak rate by category
 
@@ -75,8 +77,8 @@ Every planted value counts, including situation details the answer does not need
 | regex only | 100.0% ± 0.0 | n/a | 100.0% ± 0.0 | 100.0% ± 0.0 | 100.0% ± 0.0 | 96.3% ± 0.0 | 100.0% ± 0.0 | 55.6% ± 0.0 | 100.0% ± 0.0 |
 | Presidio + ko/en spaCy + KR recognizers | 70.4% ± 0.0 | n/a | 92.6% ± 0.0 | 92.6% ± 0.0 | 88.9% ± 0.0 | 48.1% ± 0.0 | 48.1% ± 0.0 | 96.3% ± 0.0 | 77.8% ± 0.0 |
 | NVIDIA GLiNER-PII | 37.0% ± 0.0 | n/a | 25.9% ± 0.0 | 14.8% ± 0.0 | 3.7% ± 0.0 | 11.1% ± 0.0 | 7.4% ± 0.0 | 48.1% ± 0.0 | 3.7% ± 0.0 |
-| airlock (live, e0ee6aa, gliner-placeholder) | 14.8% ± 0.0 | n/a | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 48.1% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 |
-| airlock (live, e0ee6aa, gliner-surrogate) | 7.4% ± 0.0 | n/a | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 51.9% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 14.8% ± 0.0 | n/a | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 48.1% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 7.4% ± 0.0 | n/a | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 | 51.9% ± 0.0 | 0.0% ± 0.0 | 0.0% ± 0.0 |
 
 ## Adversary inference (`eval/attack.py`)
 
@@ -88,8 +90,8 @@ An LLM attacker sees only the outbound payloads of each request and tries to rec
 | regex only | 3* | 58.1% ± 0.0 | 61.4% ± 0.0 | 92.0% ± 0.0 | 85.2% ± 0.0 | 56.1% ± 0.0 | 59.7% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
 | Presidio + ko/en spaCy + KR recognizers | 3* | 31.4% ± 0.0 | 36.4% ± 0.0 | 48.0% ± 0.0 | 63.0% ± 0.0 | 40.3% ± 0.0 | 24.3% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
 | NVIDIA GLiNER-PII | 3* | 6.2% ± 0.0 | 9.3% ± 0.0 | 22.0% ± 0.0 | 37.0% ± 0.0 | 7.9% ± 0.0 | 4.8% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
-| airlock (live, e0ee6aa, gliner-placeholder) | 3 | 0.6% ± 0.0 | 2.5% ± 0.1 | 32.7% ± 1.2 | 25.9% ± 6.4 | 1.3% ± 0.0 | 0.0% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
-| airlock (live, e0ee6aa, gliner-surrogate) | 3 | 0.1% ± 0.0 | 12.8% ± 0.4 | 28.0% ± 0.0 | 39.5% ± 9.3 | 0.3% ± 0.0 | 0.0% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
+| airlock (live, e0ee6aa, gliner-placeholder) † | 3 | 0.6% ± 0.0 | 2.5% ± 0.1 | 32.7% ± 1.2 | 25.9% ± 6.4 | 1.3% ± 0.0 | 0.0% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
+| airlock (live, e0ee6aa, gliner-surrogate) † | 3 | 0.1% ± 0.0 | 12.8% ± 0.4 | 28.0% ± 0.0 | 39.5% ± 9.3 | 0.3% ± 0.0 | 0.0% ± 0.0 | `nvidia/Nemotron-3-Ultra-550b-a55b` reasoning `none` |
 
 \* scored once; outputs identical across passes, verified by payload hash: raw (pass-through) attack 729 of 729 rows, pass 1 from `eval/results/baseline-raw`; raw (pass-through) utility 624 of 630 rows, pass 1 from `eval/results/baseline-raw`; regex only attack 729 of 729 rows, pass 1 from `eval/results/baseline-regex`; regex only utility 623 of 630 rows, pass 1 from `eval/results/baseline-regex`; Presidio + ko/en spaCy + KR recognizers attack 729 of 729 rows, pass 1 from `eval/results/baseline-presidio_ko`; Presidio + ko/en spaCy + KR recognizers utility 624 of 630 rows, pass 1 from `eval/results/baseline-presidio_ko`; NVIDIA GLiNER-PII attack 729 of 729 rows, pass 1 from `eval/results/baseline-gliner_pii`; NVIDIA GLiNER-PII utility 624 of 630 rows, pass 1 from `eval/results/baseline-gliner_pii`. Other rows were scored normally.
 
