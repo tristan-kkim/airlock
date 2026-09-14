@@ -1,6 +1,6 @@
 # Airlock public demo runbook
 
-This runbook covers the hosted demo that judges use. The demo must stay free and unrestricted until the end of judging on **2026-12-15 12:00 PT**, and it should be live from **2026-11-02**, the earlier of the two judging start dates. Everything in this folder was built and smoke-tested locally on 2026-09-14. No cloud resource exists yet. In early October you create the accounts, set the secrets, and run the commands below.
+This runbook covers the hosted demo that judges use. The demo must stay free and unrestricted until the end of judging on **2026-12-15 12:00 PT**, and it should be live from **2026-11-02**, the earlier of the two judging start dates. The image, demo mode and `smoke_test.sh` were built and tested locally on 2026-09-14. The Nebius and Fly.io commands were checked against current docs, and `deploy.sh` against a stub CLI, but none has run against a real account. No cloud resource exists yet. In early October you create the accounts, set the secrets, and run the commands below.
 
 ## What gets deployed
 
@@ -268,3 +268,5 @@ curl -s https://<url>/demo/status | jq .budget             # requests / cloud_ca
 | Preset runs | 8 live runs in total: 5 presets, 2 re-runs after Token Factory slowness caused detector timeouts, 1 final re-record of `chat-medical-en` on the fixed image (4.1 s). The agent preset took 51.6 s and 44 cloud calls |
 | Budget fallback, no live calls | Budget set to 1 request. Free text got 429 `demo_budget_reached`; the agent preset served its recorded run labeled `budget_exhausted`; a 5,000-character input got 413 |
 | Browser | Headless Chrome rendered the banner and the JS-built preset list under the hash-based CSP |
+| Sidecar option (a) | `--target sidecar` image is 303 MB, plus the GGUF mounted read-only. Limited to `--cpus 2` in Docker Desktop's arm64 VM: llama-server ready, one chat masked name and email, gate allowed. Detection took **61 s** (first request) and memory reached 2.7 GiB. On that evidence the sidecar is too slow for a judge-facing demo unless Nebius `cpu-d3` measures much faster (**UNVERIFIED**) |
+| Live usage in total | 8 preset runs, 1 sidecar chat, 1 adapter check, 1 latency diagnostic call |
