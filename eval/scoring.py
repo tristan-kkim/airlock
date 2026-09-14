@@ -637,7 +637,13 @@ def summarize(
     }
 
 
-INDEPENDENCE_WARN_RATE = 0.5
+# Measured on the 243-case set with Nemotron-3-Nano-4B at temperature 0.6: a run reset before
+# every pass repeated 61% of payloads byte for byte between passes 1 and 2 while its detect p50
+# stayed at 3.3 s; a run served from the detection cache repeated 91% (placeholders) or only 32%
+# (surrogates are re-drawn per conversation) while detect p50 fell from 3.4 s to 0.46 s. The
+# latency drop is the reliable signature, identical payloads only a secondary one.
+INDEPENDENCE_WARN_RATE = 0.85
+INDEPENDENCE_DETECT_DROP = 0.5  # a later pass whose detect p50 is below half of pass 1's
 
 
 def _p50(values: list[float]) -> float | None:
@@ -653,7 +659,9 @@ def independence_check(
     pass, whose outbound payloads are byte-identical (same SHA-256) in all passes. A sampling
     detector (temperature > 0) that is really re-run should rarely repeat itself exactly, so a
     high rate means the passes were served from a cache or a shared state. Detect time p50 per
-    pass shows the same thing from the latency side (a cached pass is much faster).
+    pass shows the same thing from the latency side (a cached pass is much faster), and is the
+    better signal: a small model at temperature 0.6 still repeats many short outputs exactly,
+    and surrogate substitution changes payloads even when detection was cached.
     """
     hashes: dict[str, list[str]] = defaultdict(list)
     detect_p50 = []
@@ -680,11 +688,22 @@ def independence_check(
         "detector_temperature": detector_temperature,
         "warning": None,
     }
+    reasons = []
+    first = detect_p50[0] if detect_p50 else None
+    if first and any(
+        v is not None and v < INDEPENDENCE_DETECT_DROP * first for v in detect_p50[1:]
+    ):
+        later = ", ".join("n/a" if v is None else f"{v:.0f}" for v in detect_p50[1:])
+        reasons.append(f"detect p50 fell from {first:.0f} ms in pass 1 to {later} ms later")
     if rate is not None and rate > INDEPENDENCE_WARN_RATE and (detector_temperature or 0) > 0:
-        out["warning"] = (
+        reasons.append(
             f"{rate * 100:.1f}% of cases sent byte-identical payloads in all {n_passes} passes "
-            f"although the detector samples at temperature {detector_temperature}; the passes "
-            "are probably not independent (was state reset before every pass?)"
+            f"although the detector samples at temperature {detector_temperature}"
+        )
+    if reasons:
+        out["warning"] = (
+            "; ".join(reasons) + "; the passes are probably not independent (was the server "
+            "reset before every pass?)"
         )
     return out
 

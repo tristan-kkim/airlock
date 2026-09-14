@@ -114,21 +114,32 @@ def record(case_id, payload, detect_ms):
 def test_independence_check_flags_repeated_passes():
     passes = [
         [record("a", {"m": "same"}, 3000), record("b", {"m": "b1"}, 3000), record("c", None, 10)],
-        [record("a", {"m": "same"}, 400), record("b", {"m": "b2"}, 500), record("c", None, 10)],
-        [record("a", {"m": "same"}, 450), record("b", {"m": "b3"}, 450), record("c", None, 10)],
+        [record("a", {"m": "same"}, 2900), record("b", {"m": "b2"}, 3100), record("c", None, 10)],
+        [record("a", {"m": "same"}, 3050), record("b", {"m": "b3"}, 2950), record("c", None, 10)],
     ]
     ind = scoring.independence_check(passes, 0.6)
     assert ind["cases_compared"] == 2  # c sent nothing
     assert ind["identical_outbound_cases"] == 1
     assert ind["identical_outbound_rate"] == 0.5
-    assert ind["detect_ms_p50_by_pass"] == [3000, 400, 450]
-    assert ind["warning"] is None  # 50% is not above the threshold
+    assert ind["detect_ms_p50_by_pass"] == [3000, 2900, 2950]
+    assert ind["warning"] is None  # detection re-ran and half the payloads differ
 
-    passes[1][1] = record("b", {"m": "b1"}, 500)
-    passes[2][1] = record("b", {"m": "b1"}, 450)
+    # Cached detection: later passes are much faster even though payloads differ (surrogates).
+    cached = [
+        passes[0],
+        [record("a", {"m": "s2"}, 400), record("b", {"m": "b2"}, 500), record("c", None, 10)],
+        [record("a", {"m": "s3"}, 450), record("b", {"m": "b3"}, 450), record("c", None, 10)],
+    ]
+    ind = scoring.independence_check(cached, 0.6)
+    assert ind["identical_outbound_rate"] == 0.0
+    assert "detect p50 fell" in ind["warning"] and "not independent" in ind["warning"]
+
+    # Every payload repeated at a sampling temperature, without a latency drop.
+    passes[1][1] = record("b", {"m": "b1"}, 3100)
+    passes[2][1] = record("b", {"m": "b1"}, 2950)
     ind = scoring.independence_check(passes, 0.6)
     assert ind["identical_outbound_rate"] == 1.0
-    assert "not independent" in ind["warning"]
+    assert "byte-identical" in ind["warning"] and "detect p50 fell" not in ind["warning"]
     assert scoring.independence_check(passes, 0.0)["warning"] is None  # deterministic detector
     assert scoring.independence_check(passes, None)["warning"] is None
     assert "## Pass independence" in "\n".join(scoring._independence_lines(ind))
