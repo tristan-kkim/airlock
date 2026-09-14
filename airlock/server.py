@@ -315,6 +315,7 @@ def create_app(
             "version": __version__,
             "protection_level": str(settings.protection_level),
             "local_model": settings.local_model,
+            "local_temperature": settings.local_temperature,
             "upstream_model": settings.upstream_model,
             "upstream_configured": bool(settings.nebius_api_key),
             "search_configured": bool(settings.tavily_api_key),
@@ -576,11 +577,11 @@ def create_app(
 
     @app.post("/vault/reset")
     async def reset_vault() -> dict[str, Any]:
-        # Clears declared terms, canaries, all conversation mappings and the in-memory detector
-        # cache (which holds raw text). Audit records are kept.
-        services.sanitizer.detector.clear_cache()
+        # Clears declared terms, canaries, all conversation mappings and the in-memory detection
+        # caches (local detector and health entailment; both hold raw text). Audit records are kept.
+        cleared = services.sanitizer.clear_caches()
         services.reviews.clear()
-        return {"reset": True, **services.vault.reset()}
+        return {"reset": True, **services.vault.reset(), "detection_cache_cleared": cleared}
 
     # Agent mode (egress firewall for tool calls and web search): airlock/agent_api.py
     from airlock.agent_api import add_agent_routes

@@ -176,12 +176,42 @@ def test_vault_reset_and_delete_terms(client, harness) -> None:
     assert sent == "<PERSON_1> works at <ORG_1>"  # an untyped term's type is inferred
 
     r = client.post("/vault/reset", json={})
-    assert r.json() == {"reset": True, "terms_removed": 2, "mappings_removed": 2}
+    assert r.json() == {
+        "reset": True,
+        "terms_removed": 2,
+        "mappings_removed": 2,
+        "detection_cache_cleared": 1,
+    }
     harness.entities = {}
     client.post("/v1/chat/completions", json=body, headers=h)
     # Both the declared term and the earlier conversation mapping are gone: the company name is
     # now only caught by the Korean organization-suffix rule, numbered afresh.
     assert harness.upstream_requests[-1]["messages"][-1]["content"] == "Jane Park works at <ORG_1>"
+
+
+def test_vault_reset_clears_the_detector_cache(client, harness) -> None:
+    """A repeated text is served from the detector cache until /vault/reset clears it."""
+    harness.entities = {"Jane Park": ("PERSON", "mask", "")}
+    body = {"messages": [{"role": "user", "content": "Please thank Jane Park for the review"}]}
+
+    def detector_calls() -> int:
+        return sum(
+            1
+            for b in harness.local_requests
+            if "privacy gate of Airlock" in b["messages"][0]["content"]
+        )
+
+    client.post("/v1/chat/completions", json=body, headers={"x-airlock-conversation-id": "p1"})
+    first = detector_calls()
+    assert first >= 1
+    client.post("/v1/chat/completions", json=body, headers={"x-airlock-conversation-id": "p2"})
+    assert detector_calls() == first  # cache hit: the local model is not asked again
+
+    r = client.post("/vault/reset", json={})
+    assert r.json()["detection_cache_cleared"] >= 1
+    client.post("/v1/chat/completions", json=body, headers={"x-airlock-conversation-id": "p3"})
+    assert detector_calls() == 2 * first  # after the reset the text is detected afresh
+    assert client.post("/vault/reset", json={}).json()["detection_cache_cleared"] >= 1
 
 
 def test_audit_hash_key_file_is_created_private_and_stable(make_client, tmp_path) -> None:

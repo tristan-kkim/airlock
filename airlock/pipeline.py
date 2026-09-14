@@ -385,6 +385,16 @@ class Sanitizer:
         self.ensemble = ensemble or build_ensemble(settings, detector.model)
         self._entail_cache: dict[tuple[str, str], bool] = {}
 
+    def clear_caches(self) -> int:
+        """Drop every in-memory detection result (local detector and health entailment).
+
+        Both hold raw text, and a cached detection makes a repeated request skip the local model,
+        so an evaluation pass after a reset must not see results from the one before.
+        """
+        n = self.detector.clear_cache() + len(self._entail_cache)
+        self._entail_cache.clear()
+        return n
+
     # ---- protected strings the gate always enforces ------------------------
     def standing_protected(self) -> list[Protected]:
         items = [Protected(t.text, t.type, "declared_term") for t in self.vault.terms("sensitive")]
@@ -561,7 +571,8 @@ class Sanitizer:
         # masked). An organization masked earlier in the conversation or run counts.
         org_known = any(m.type == "ORG" for m in session.mappings())
         for d, extra in zip(
-            detected, org_rules.link(texts, [d.spans for d in detected], org_known=org_known),
+            detected,
+            org_rules.link(texts, [d.spans for d in detected], org_known=org_known),
             strict=True,
         ):
             if extra:
@@ -614,9 +625,7 @@ class Sanitizer:
                 detected[ti].spans[si] = replace(span, action="keep", replacement=None)
                 stats.kept_situation += 1
 
-    async def _ask_entailment(
-        self, pairs: list[tuple[str, str]], stats: DetectStats
-    ) -> list[bool]:
+    async def _ask_entailment(self, pairs: list[tuple[str, str]], stats: DetectStats) -> list[bool]:
         """One batched local model call: does each original imply its replacement?"""
         answers: dict[tuple[str, str], bool] = {}
         todo = [p for p in dict.fromkeys(pairs) if p not in self._entail_cache]
@@ -726,9 +735,7 @@ class Sanitizer:
             located = [p for p in located if not _is_json_key(text, p.start, p.end)]
             active = [s for s in active if id(s) not in keys_only]
         placements = [
-            p
-            for p in resolve_overlaps(located)
-            if normalize(text[p.start : p.end]) not in rejected
+            p for p in resolve_overlaps(located) if normalize(text[p.start : p.end]) not in rejected
         ]
         out: list[str] = []
         cursor = 0

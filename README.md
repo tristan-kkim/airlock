@@ -558,13 +558,13 @@ Body `{"terms": ["Hanbit Labs"], "kind": "sensitive"}` (`kind` optional; omitted
 
 ### `POST /vault/reset`
 
-Body `{}`. Clears every declared term, canary and conversation mapping, plus the in-memory detector cache. Audit records are kept. Returns `{"reset": true, "terms_removed", "mappings_removed"}`. Evaluation harnesses call it between runs instead of restarting the server.
+Body `{}`. Clears every declared term, canary and conversation mapping, plus the in-memory detection caches (local detector and health entailment). Audit records are kept. Returns `{"reset": true, "terms_removed", "mappings_removed", "detection_cache_cleared"}`. The evaluation harness calls it before every pass instead of restarting the server.
 
 All `POST` endpoints require `Content-Type: application/json`, including `/vault/reset`.
 
 ### `GET /healthz`
 
-Status, version, protection level, model names, and whether keys are configured. It makes no network calls.
+Status, version, protection level, model names, the local detector temperature, and whether keys are configured. It makes no network calls.
 
 ## Threat model and limitations
 

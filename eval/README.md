@@ -101,7 +101,8 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 | `--subset` | all | `stratified:N` (proportional per category x language, seeded by `--seed`) or `ids:PATH` (a results directory or `config.json` with `subset.case_ids`, or a text file of ids). The chosen ids go to `config.json` `subset`; `attack.py`, `utility.py` and `final_protocol.sh` take the same option (`eval/subset.py`). |
 | `--category`, `--limit` | all | restrict for smoke tests |
 | `--register-canaries` | off | also declares canaries to the vault. Off by default because it hands the gate the answer. |
-| `--reset-vault` | off | `POST /vault/reset` before the first case: clears declared terms, canaries and conversation mappings |
+| `--reset-vault` | off | `POST /vault/reset` before every pass: clears declared terms, canaries, conversation mappings and Airlock's in-memory detection cache, so each pass samples the local detector again. The responses go to `config.json` `resets`. |
+| `--detector-temperature` | server's `/healthz` `local_temperature` | used only by the pass-independence check |
 | `--auto-approve-review` | off | when Airlock holds a request for review (HTTP 409 `airlock_review_required`), approve every proposed redaction with `POST /review/{review_id}` and score what is then sent. Without it, a held request counts as `blocked`. |
 | `--judge`, `--judge-passes` | off, 1 | after the run, `utility.py` over the first N passes (see *Answer utility*) |
 | `--rescore DIR` | | rebuild `summary.json`/`summary.md` from a run directory |
@@ -113,7 +114,7 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 | `config.json` | arguments, dataset SHA-256, server `/healthz` snapshot, timestamps |
 | `cases_snapshot.jsonl` | the exact cases used, so `--rescore` needs nothing else |
 | `pass_NN.jsonl` | one line per case: `record` (HTTP outcome, answer, full audit record) and `score` |
-| `summary.json` | every metric per pass, across-pass statistics, per-case failure tables |
+| `summary.json` | every metric per pass, across-pass statistics, per-case failure tables, and `independence`: the share of cases whose outbound payloads are byte-identical in every pass and the detect-time p50 per pass. The harness warns when more than 50% are identical while the detector temperature is above 0, which means the passes repeated a cached detection instead of sampling it again. |
 | `summary.md` | the human-readable report |
 | `utility/` | only with `--judge`: `utility.py` output |
 
@@ -142,7 +143,9 @@ eval/final_protocol.sh --commit <sha> --systems "airlock" --gliner on --passes 3
    are clean because nothing else shares the GPU.
 2. **Fresh state.** Airlock runs with `AIRLOCK_VAULT_PATH=:memory:`, `AIRLOCK_AUDIT_DB=:memory:`, a
    random `AIRLOCK_AUDIT_HASH_KEY` shared with the harness (so gate saves are attributed),
-   `balanced`, review off; every harness run uses `--reset-vault`.
+   `balanced`, review off; every harness run uses `--reset-vault`, which resets the server before
+   every pass. Runs before this change reset only before pass 1, so Airlock's detection cache
+   served passes 2 and 3 (see `results/FINAL.md`).
 3. **3 passes** per system (`--passes`), into `eval/results/final-<UTC>/baseline-<name>/`; Airlock
    variants land in `baseline-<sha>-gliner` / `baseline-<sha>-nogliner`. `--substitution
    placeholder|surrogate|both` sets `AIRLOCK_SUBSTITUTION` and is crossed with the GLiNER

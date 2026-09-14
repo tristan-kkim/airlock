@@ -21,6 +21,7 @@ from typing import Any
 from urllib.parse import unquote
 
 import protected
+import reuse
 
 HARNESS_VERSION = "1.0.0"
 
@@ -636,6 +637,78 @@ def summarize(
     }
 
 
+INDEPENDENCE_WARN_RATE = 0.5
+
+
+def _p50(values: list[float]) -> float | None:
+    return statistics.median(values) if values else None
+
+
+def independence_check(
+    raw_passes: list[list[dict[str, Any]]], detector_temperature: float | None
+) -> dict[str, Any]:
+    """Are the passes independent samples of the local detector?
+
+    `identical_outbound_rate` is the share of cases, among those that sent something in every
+    pass, whose outbound payloads are byte-identical (same SHA-256) in all passes. A sampling
+    detector (temperature > 0) that is really re-run should rarely repeat itself exactly, so a
+    high rate means the passes were served from a cache or a shared state. Detect time p50 per
+    pass shows the same thing from the latency side (a cached pass is much faster).
+    """
+    hashes: dict[str, list[str]] = defaultdict(list)
+    detect_p50 = []
+    for records in raw_passes:
+        detect = []
+        for r in records:
+            audit = r.get("audit") or {}
+            if audit.get("outbound"):
+                hashes[r["case_id"]].append(reuse.outbound_sha256(r))
+            t = (audit.get("timings_ms") or {}).get("detect")
+            if isinstance(t, int | float):
+                detect.append(float(t))
+        detect_p50.append(_p50(detect))
+    n_passes = len(raw_passes)
+    compared = [h for h in hashes.values() if len(h) == n_passes]
+    identical = sum(1 for h in compared if len(set(h)) == 1)
+    rate = identical / len(compared) if compared and n_passes > 1 else None
+    out: dict[str, Any] = {
+        "passes": n_passes,
+        "cases_compared": len(compared) if n_passes > 1 else 0,
+        "identical_outbound_cases": identical if n_passes > 1 else None,
+        "identical_outbound_rate": rate,
+        "detect_ms_p50_by_pass": detect_p50,
+        "detector_temperature": detector_temperature,
+        "warning": None,
+    }
+    if rate is not None and rate > INDEPENDENCE_WARN_RATE and (detector_temperature or 0) > 0:
+        out["warning"] = (
+            f"{rate * 100:.1f}% of cases sent byte-identical payloads in all {n_passes} passes "
+            f"although the detector samples at temperature {detector_temperature}; the passes "
+            "are probably not independent (was state reset before every pass?)"
+        )
+    return out
+
+
+def _independence_lines(ind: dict[str, Any] | None) -> list[str]:
+    if not ind or not ind.get("cases_compared"):
+        return []
+    p50 = " / ".join("n/a" if v is None else f"{v:,.0f}" for v in ind["detect_ms_p50_by_pass"])
+    temp = ind.get("detector_temperature")
+    lines = [
+        "",
+        "## Pass independence",
+        "",
+        f"- Byte-identical outbound payloads in all {ind['passes']} passes: "
+        f"{ind['identical_outbound_cases']} of {ind['cases_compared']} cases "
+        f"({ind['identical_outbound_rate'] * 100:.1f}%)",
+        f"- Detect time p50 by pass: {p50} ms",
+        f"- Detector temperature: {'unknown' if temp is None else temp}",
+    ]
+    if ind.get("warning"):
+        lines.append(f"- **Warning:** {ind['warning']}")
+    return lines
+
+
 # --------------------------------------------------------------------------------------------
 # Markdown
 # --------------------------------------------------------------------------------------------
@@ -749,6 +822,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
             )
         lines.append(f"| {lang} | " + " | ".join(cells) + " |")
 
+    lines += _independence_lines(summary.get("independence"))
     persistent, flaky = summary["persistent_leaks"], summary["flaky_leaks"]
     lines += [
         "",

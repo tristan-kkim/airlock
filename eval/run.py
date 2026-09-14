@@ -269,6 +269,41 @@ async def run_pass(
     return [r for r in results if r is not None]
 
 
+async def reset_state(client: httpx.AsyncClient, pass_no: int) -> dict[str, Any]:
+    """POST /vault/reset before one pass; a failed reset aborts the run."""
+    rr = await client.post("/vault/reset", json={})
+    if rr.status_code >= 400:
+        raise SystemExit(f"/vault/reset returned {rr.status_code}: {rr.text[:200]}")
+    try:
+        body = rr.json()
+    except ValueError:
+        body = {}
+    return {"pass": pass_no, **(body if isinstance(body, dict) else {})}
+
+
+async def run_passes(
+    client: httpx.AsyncClient, cases: list[dict[str, Any]], opts: argparse.Namespace
+) -> tuple[list[list[dict[str, Any]]], list[dict[str, Any]]]:
+    """Every pass; with --reset-vault each one starts from a clean server state.
+
+    Resetting only once would let Airlock serve passes 2..N from its detection cache, so they
+    would repeat pass 1's local-model output instead of sampling it again.
+    """
+    raw_passes, resets = [], []
+    for p in range(1, opts.passes + 1):
+        if getattr(opts, "reset_vault", False):
+            resets.append(await reset_state(client, p))
+        raw_passes.append(await run_pass(client, cases, p, opts))
+    return raw_passes, resets
+
+
+def detector_temperature(opts: argparse.Namespace, health: dict[str, Any] | None) -> float | None:
+    if getattr(opts, "detector_temperature", None) is not None:
+        return opts.detector_temperature
+    value = (health or {}).get("local_temperature")
+    return float(value) if isinstance(value, int | float) else None
+
+
 # --------------------------------------------------------------------------------------------
 # Scoring and output
 # --------------------------------------------------------------------------------------------
@@ -279,7 +314,11 @@ def score_and_summarize(
 ) -> tuple[list[list[dict[str, Any]]], dict[str, Any]]:
     by_id = {c["id"]: c for c in cases}
     scored_passes = [[scoring.score_case(by_id[r["case_id"]], r) for r in p] for p in raw_passes]
-    return scored_passes, scoring.summarize(cases, scored_passes, config)
+    summary = scoring.summarize(cases, scored_passes, config)
+    summary["independence"] = scoring.independence_check(
+        raw_passes, config.get("detector_temperature")
+    )
+    return scored_passes, summary
 
 
 def write_outputs(out: Path, raw_passes, scored_passes, summary) -> None:
@@ -333,6 +372,16 @@ def print_headline(summary: dict[str, Any]) -> None:
         f"  persistent leaks: {len(summary['persistent_leaks'])}  "
         f"flaky leaks: {len(summary['flaky_leaks'])}"
     )
+    ind = summary.get("independence") or {}
+    if ind.get("cases_compared"):
+        p50 = " / ".join("n/a" if v is None else f"{v:.0f}" for v in ind["detect_ms_p50_by_pass"])
+        print(
+            f"  independence: {ind['identical_outbound_rate'] * 100:.1f}% of "
+            f"{ind['cases_compared']} cases send byte-identical payloads in every pass; "
+            f"detect p50 by pass (ms): {p50}"
+        )
+    if ind.get("warning"):
+        print(f"WARNING: {ind['warning']}", file=sys.stderr)
 
 
 # --------------------------------------------------------------------------------------------
@@ -396,7 +445,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--reset-vault",
         action="store_true",
-        help="POST /vault/reset before the run (clears declared terms and conversation mappings)",
+        help="POST /vault/reset before every pass (clears declared terms, conversation mappings "
+        "and Airlock's in-memory detection cache, so passes are independent samples of the local "
+        "detector)",
+    )
+    ap.add_argument(
+        "--detector-temperature",
+        type=float,
+        default=None,
+        help="local detector sampling temperature, for the independence check (default: the "
+        "server's /healthz local_temperature, if it reports one)",
     )
     ap.add_argument("--label", default="airlock", help="free-text target label for the report")
     ap.add_argument(
@@ -442,10 +500,6 @@ async def main_async(opts: argparse.Namespace) -> Path:
             health = hr.json() if hr.status_code == 200 else {"status": hr.status_code}
         except (httpx.HTTPError, ValueError) as exc:
             health = {"error": str(exc)}
-        if opts.reset_vault:
-            rr = await client.post("/vault/reset", json={})
-            if rr.status_code >= 400:
-                raise SystemExit(f"/vault/reset returned {rr.status_code}: {rr.text[:200]}")
         server_level = (health or {}).get("protection_level")
         if opts.protection_level and server_level and server_level != opts.protection_level:
             print(
@@ -472,6 +526,8 @@ async def main_async(opts: argparse.Namespace) -> Path:
             "register_canaries": opts.register_canaries,
             "auto_approve_review": opts.auto_approve_review,
             "reset_vault": opts.reset_vault,
+            "reset_scope": "every pass" if opts.reset_vault else None,
+            "detector_temperature": detector_temperature(opts, health),
             "started_at": started.isoformat(),
             "harness_version": scoring.HARNESS_VERSION,
             "argv": sys.argv[1:],
@@ -481,9 +537,9 @@ async def main_async(opts: argparse.Namespace) -> Path:
         )
         write_jsonl(out / "cases_snapshot.jsonl", cases)
 
-        raw_passes = []
-        for p in range(1, opts.passes + 1):
-            raw_passes.append(await run_pass(client, cases, p, opts))
+        raw_passes, resets = await run_passes(client, cases, opts)
+        if resets:
+            config["resets"] = resets
 
         config["finished_at"] = datetime.now(UTC).isoformat()
         (out / "config.json").write_text(
