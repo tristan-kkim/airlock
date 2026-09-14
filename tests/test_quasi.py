@@ -157,6 +157,7 @@ def test_job_titles_are_not_organizations() -> None:
     assert quasi.is_job_title("직함 선임연구원")
     assert quasi.is_job_title("CTO")
     assert not quasi.is_job_title("해오름소프트")
+    assert quasi.is_job_title("김대리") and not quasi.is_job_title("김대리", exact=True)
 
 
 # ---- pipeline ------------------------------------------------------------------------------------
@@ -180,6 +181,7 @@ def test_public_figure_and_job_title_spans_are_dropped(client, harness) -> None:
     harness.entities = {
         "장영실이": ("PERSON", "mask", ""),
         "선임연구원": ("ORG", "mask", ""),
+        "책임연구원": ("PERSON", "mask", ""),
     }
     r = client.post(
         "/v1/chat/completions",
@@ -187,14 +189,14 @@ def test_public_figure_and_job_title_spans_are_dropped(client, harness) -> None:
             "messages": [
                 {
                     "role": "user",
-                    "content": "장영실이 만든 자격루 원리 설명해줘. 직함은 선임연구원.",
+                    "content": "장영실이 만든 자격루 원리 설명해줘. 직함은 선임연구원, 책임연구원.",
                 }
             ]
         },
     )
     assert r.status_code == 200, r.text
     sent = harness.upstream_requests[-1]["messages"][-1]["content"]
-    assert "장영실이" in sent and "선임연구원" in sent
+    assert "장영실이" in sent and "선임연구원" in sent and "책임연구원" in sent
 
 
 # ---- Korean benign searches ----------------------------------------------------------------------

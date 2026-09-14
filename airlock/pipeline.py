@@ -538,6 +538,7 @@ class Sanitizer:
                 if span.source in ("llm", "gliner") and (
                     (span.type == "PERSON" and public_figure(span.text))
                     or (span.type == "ORG" and quasi.is_job_title(span.text))
+                    or (span.type == "PERSON" and quasi.is_job_title(span.text, exact=True))
                 ):
                     # "장영실이" as a person, "직함 선임연구원" as an organization: a historical
                     # figure is the topic, and a job title names no organization.

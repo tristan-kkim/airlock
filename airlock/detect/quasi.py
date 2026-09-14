@@ -863,10 +863,15 @@ def _fit_article(text: str, start: int, replacement: str) -> tuple[int, str]:
     return start, replacement
 
 
-def is_job_title(text: str) -> bool:
-    """A job title or a title label, not an organization ("선임연구원", "직함 선임연구원")."""
+def is_job_title(text: str, *, exact: bool = False) -> bool:
+    """A job title, not a name or an organization ("선임연구원", "직함 선임연구원").
+
+    `exact`: the title alone, so "김대리" (a surname and a title) is not one.
+    """
     t = _PARTICLE_END.sub("", text.strip())
     t = re.sub(r"^(?:직함|직급|직책)\s*[:：]?\s*", "", t)
+    if exact:
+        return t in KO_JOB_TITLES
     return t in KO_JOB_TITLES or bool(
         re.fullmatch(rf"[가-힣]{{0,4}}(?:{_alt(sorted(KO_JOB_TITLES))})", t)
     )
