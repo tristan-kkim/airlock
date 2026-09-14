@@ -826,6 +826,29 @@ def read_env_key(name: str = "NEBIUS_API_KEY") -> str | None:
     return None
 
 
+class ProviderAbort(RuntimeError):
+    """Token Factory refused in a way that retrying case by case cannot fix.
+
+    HTTP 402 (budget exhausted) fails every later call too, and a 429 that outlasts the retries
+    means the batch is being throttled. Writing an error row per case and carrying on would
+    produce a results table full of zeros, so the whole batch stops instead.
+    """
+
+
+def check_provider_status(status: int, text: str, attempt: int, retries: int, model: str) -> None:
+    """Raise ProviderAbort for a 402, or for a 429 on the last attempt."""
+    if status == 402:
+        raise ProviderAbort(
+            f"HTTP 402 from Token Factory for {model}: {text[:200]}. Aborting the batch: add "
+            "funds, then rerun (completed passes are kept where the scripts allow)."
+        )
+    if status == 429 and attempt >= retries:
+        raise ProviderAbort(
+            f"HTTP 429 from Token Factory for {model} after {retries + 1} attempts: "
+            f"{text[:200]}. Aborting the batch: lower --concurrency or wait, then rerun."
+        )
+
+
 def make_llm(client: httpx.AsyncClient, model: str, retries: int = 4) -> LLM:
     """A schema-shaped JSON call to `model` through its request adapter.
 
@@ -881,9 +904,11 @@ def make_llm(client: httpx.AsyncClient, model: str, retries: int = 4) -> LLM:
                         "model": model,
                     }
                 last = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                check_provider_status(resp.status_code, resp.text, attempt, retries, model)
                 if resp.status_code not in (408, 409, 429) and resp.status_code < 500:
                     break
-            await asyncio.sleep(2**attempt)
+            if attempt < retries:
+                await asyncio.sleep(2**attempt)
         return {"content": "", "usage": {}, "error": last, "model": model}
 
     return call
@@ -1519,10 +1544,13 @@ def main(argv: list[str] | None = None) -> None:
     if opts.score_only:
         score_only(opts.rescore, opts.out_name)
         return
-    if opts.grade_situation:
-        asyncio.run(backfill_situation(opts))
-        return
-    asyncio.run(run_attack(opts))
+    try:
+        if opts.grade_situation:
+            asyncio.run(backfill_situation(opts))
+            return
+        asyncio.run(run_attack(opts))
+    except ProviderAbort as exc:
+        raise SystemExit(f"attack.py aborted: {exc}") from exc
 
 
 if __name__ == "__main__":

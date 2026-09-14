@@ -530,6 +530,7 @@ async def verify_distortions(
 
 
 async def complete(client: httpx.AsyncClient, body: dict[str, Any], retries: int = 4) -> dict:
+    """One answer call. Raises attack.ProviderAbort on HTTP 402 or a 429 past the retries."""
     last = ""
     for attempt in range(retries + 1):
         try:
@@ -547,9 +548,13 @@ async def complete(client: httpx.AsyncClient, body: dict[str, Any], retries: int
                     "usage": data.get("usage") or {},
                 }
             last = f"HTTP {resp.status_code}: {resp.text[:200]}"
+            attack.check_provider_status(
+                resp.status_code, resp.text, attempt, retries, str(body.get("model"))
+            )
             if resp.status_code not in (408, 409, 429) and resp.status_code < 500:
                 break
-        await asyncio.sleep(2**attempt)
+        if attempt < retries:
+            await asyncio.sleep(2**attempt)
     return {"content": "", "usage": {}, "error": last}
 
 
@@ -1054,7 +1059,10 @@ def main(argv: list[str] | None = None) -> None:
     if opts.score_only:
         write_summary(opts.results / opts.out_name)
         return
-    asyncio.run(run_utility(opts))
+    try:
+        asyncio.run(run_utility(opts))
+    except attack.ProviderAbort as exc:
+        raise SystemExit(f"utility.py aborted: {exc}") from exc
 
 
 if __name__ == "__main__":

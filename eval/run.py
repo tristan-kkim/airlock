@@ -127,7 +127,11 @@ async def execute_case(
                 # passes independent.
                 run_id = getattr(opts, "run_id", "run")
                 headers["x-airlock-conversation-id"] = f"eval-{run_id}-p{pass_no}-{case['id']}"
-            resp = await client.post("/v1/chat/completions", json=body, headers=headers)
+            for attempt in range(UPSTREAM_429_RETRIES + 1):
+                resp = await client.post("/v1/chat/completions", json=body, headers=headers)
+                if not check_upstream(resp, attempt):
+                    break
+                await asyncio.sleep(2**attempt * getattr(opts, "retry_base_s", 1.0))
         else:
             body = {
                 "query": case["query"],
@@ -174,6 +178,45 @@ async def execute_case(
         record["status"] = "error"
         record["error"] = f"{type(exc).__name__}: {exc}"
         return record
+
+
+class UpstreamAbort(RuntimeError):
+    """Airlock's cloud upstream refused in a way that later cases would hit too."""
+
+
+UPSTREAM_429_RETRIES = 4
+
+
+def upstream_refusal(resp: httpx.Response) -> int | None:
+    """The upstream status behind an Airlock 502 (`airlock_upstream_error`), if any."""
+    if resp.status_code != 502:
+        return None
+    try:
+        err = (resp.json() or {}).get("error") or {}
+    except (ValueError, AttributeError):
+        return None
+    if err.get("type") != "airlock_upstream_error":
+        return None
+    status = err.get("upstream_status")
+    return status if isinstance(status, int) else None
+
+
+def check_upstream(resp: httpx.Response, attempt: int) -> bool:
+    """Raise UpstreamAbort on an upstream 402 or a 429 past the retries; True means retry."""
+    status = upstream_refusal(resp)
+    if status == 402:
+        raise UpstreamAbort(
+            "Token Factory returned HTTP 402 (budget exhausted) through Airlock. Aborting the run: "
+            "add funds, then rerun."
+        )
+    if status == 429:
+        if attempt >= UPSTREAM_429_RETRIES:
+            raise UpstreamAbort(
+                f"Token Factory returned HTTP 429 through Airlock {attempt + 1} times in a row "
+                "for one case. Aborting the run: wait or lower --concurrency, then rerun."
+            )
+        return True
+    return False
 
 
 def classify_response(
@@ -572,7 +615,10 @@ def main(argv: list[str] | None = None) -> None:
         return
     if opts.passes < 1:
         raise SystemExit("--passes must be >= 1")
-    asyncio.run(main_async(opts))
+    try:
+        asyncio.run(main_async(opts))
+    except UpstreamAbort as exc:
+        raise SystemExit(f"run.py aborted: {exc}") from exc
 
 
 if __name__ == "__main__":
