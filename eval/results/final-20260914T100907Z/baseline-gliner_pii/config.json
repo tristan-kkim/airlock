@@ -1,0 +1,64 @@
+{
+  "base_url": "http://127.0.0.1:8804",
+  "target_label": "baseline:gliner_pii",
+  "passes": 3,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "cd40ce707652d30ffb2007c5ccaac62c61709d42382c4c623351b5114c850609",
+  "protection_level": "baseline:gliner_pii",
+  "server_health": {
+    "status": "ok",
+    "baseline": "gliner_pii",
+    "protection_level": "baseline:gliner_pii",
+    "description": "nvidia/gliner-PII span NER, threshold 0.3, 50 labels in two groups of 25",
+    "cloud_calls": false,
+    "model": "nvidia/gliner-PII",
+    "model_path_is_local": true,
+    "device": "mps",
+    "threshold": 0.3
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "subset": null,
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "reset_scope": "every pass",
+  "detector_temperature": null,
+  "started_at": "2026-09-14T10:09:33.064385+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8804",
+    "--passes",
+    "3",
+    "--out",
+    "eval/results/final-20260914T100907Z/baseline-gliner_pii",
+    "--label",
+    "baseline:gliner_pii",
+    "--reset-vault",
+    "--timeout",
+    "600"
+  ],
+  "resets": [
+    {
+      "pass": 1,
+      "reset": true,
+      "terms_removed": 0
+    },
+    {
+      "pass": 2,
+      "reset": true,
+      "terms_removed": 57
+    },
+    {
+      "pass": 3,
+      "reset": true,
+      "terms_removed": 57
+    }
+  ],
+  "finished_at": "2026-09-14T10:10:37.728321+00:00"
+}

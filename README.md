@@ -18,7 +18,11 @@ It works with tools you already use (scripts, notebooks, editors, agents) by cha
 
 ## Measured results
 
-Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables in [`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)): all 243 synthetic cases (122 Korean, 121 English), 3 passes, each system alone on an M3 Pro, Airlock at `e0ee6aa` with the GLiNER ensemble on, attacker and judges on Nemotron 3 Ultra. **Linkable disclosure** is the share of the 98 situation-sensitive cases where an attacker reading only the outbound payloads recovers an identity item and infers the private situation. Baseline outputs were identical across passes and scored once. The Airlock passes were not independent: the harness reset the server only before pass 1, so later passes reused cached detections. Airlock's ± is therefore not a measured spread.
+Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables in [`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)): all 243 synthetic cases (122 Korean, 121 English), 3 passes, each system alone on an M3 Pro, GLiNER ensemble on, attacker and judges on Nemotron 3 Ultra. **Linkable disclosure** is the share of the 98 situation-sensitive cases where an attacker reading only the outbound payloads recovers an identity item and infers the private situation.
+
+- **Placeholder row:** mean ± sd over 3 independent passes. The server was reset before every pass, and the per-pass detect time and payload check confirm the passes were independent.
+- **Baselines:** outputs were identical across passes and scored once.
+- **Surrogate row (†):** from an earlier run whose passes were not independent. That run reset the server only before pass 1, so later passes reused cached detections. Its numbers are means with no measured spread.
 
 | System | **Linkable disclosure** | Identity leak | Usefulness 1-5 | Utility ratio | Distortion | Over-redaction | Benign masked |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -26,15 +30,15 @@ Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables
 | regex only | 79.6% | 92.7% | 3.91 | 0.87 | 13.9% | 0.4% | 7.4% |
 | Presidio + ko/en spaCy | 53.1% | 76.7% | 3.01 | 0.66 | 33.7% | 16.7% | 66.7% |
 | NVIDIA GLiNER-PII alone | 9.2% | 18.9% | 2.69 | 0.59 | 24.5% | 14.1% | 59.3% |
-| **Airlock, placeholders (default)** | **15.3% ± 1.0** | 9.7% ± 0.0 | 4.13 ± 0.04 | 0.95 ± 0.02 | 14.7% ± 1.9 | 7.0% ± 0.3 | 11.1% |
-| Airlock, surrogates | 12.6% ± 1.2 | 8.3% ± 0.0 | 4.08 ± 0.05 | 0.94 ± 0.02 | 19.4% ± 1.6 | 6.4% ± 0.2 | 11.1% |
+| **Airlock, placeholders (default)** | **13.9% ± 0.6** | 8.6% ± 0.7 | 4.16 ± 0.03 | 0.95 ± 0.01 | 15.2% ± 1.4 | 7.1% ± 1.3 | 11.1% |
+| Airlock, surrogates † | 12.6% | 8.3% | 4.08 | 0.94 | 19.4% | 6.4% | 11.1% |
 
-- **Linkable disclosure falls from 84.7% to 15.3%, and usefulness is mostly kept.** Airlock with placeholders keeps a utility ratio of 0.95. Its distortion is 3.5 points above the reference answers judged in the same run (14.7% vs 11.2%).
-- **Every remaining linkable case is a quasi-identifier prompt.** There were 0 in finance, health and intent search. What links is a combination of attributes that each look harmless and that the answer often needs: a rank plus a cohort year, a role plus a small town, a rare personal fact.
+- **Linkable disclosure falls from 84.7% to 13.9%, and usefulness is mostly kept.** Airlock with placeholders keeps a utility ratio of 0.95. Its distortion is 15.2%, against 7.7% for the reference answers judged in the same run.
+- **Every remaining linkable case is a quasi-identifier prompt.** There were 0 in finance, health and intent search. What links is a combination of attributes that each look harmless and that the answer often needs: a rank plus a cohort, a role plus a small place, a rare personal fact.
 - **GLiNER-PII alone links less (9.2%), at a large utility cost.** It masks 59.3% of benign prompts and scores 2.69 for usefulness.
-- **Placeholders stay the default.** Surrogates link 2.7 points less but distort 4.7 points more.
-- **Korean costs more.** The utility ratio is 0.89 in Korean vs 1.02 in English, over-redaction 10.2% vs 3.8%, and all benign masks are Korean. Two benign Korean searches are blocked.
-- **Latency:** local overhead p50 3.9 s / p95 8.4 s per request in the first pass. Later passes reuse the detector's in-memory cache, so their latency is not representative; see the caveats in `FINAL.md`.
+- **Placeholders stay the default.** Surrogates link 1.3 points less but distort 4.2 points more, and they were judged in a different run with a different reference distortion.
+- **Korean costs more.** Identity leak is 10.6% in Korean vs 6.5% in English, the utility ratio 0.86 vs 1.04, and over-redaction 10.0% vs 4.3%. All benign masks are Korean, and two benign Korean searches are blocked.
+- **Latency:** local overhead p50 4.0 s / p95 8.8 s per request, stable across passes. Local detection alone is p50 3.4 s.
 
 These are lower bounds from one attacker on synthetic data, and the judge's noise is about ±0.05 in utility ratio and ±3 points in distortion. The subset and dev-split tables further down are earlier one-pass measurements kept for their diagnoses.
 

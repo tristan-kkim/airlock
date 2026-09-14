@@ -1,0 +1,2 @@
+~/.cache/uv/environments-v2/gliner-pii-53d6d25677c6c1c0/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
