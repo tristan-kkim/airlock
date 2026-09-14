@@ -142,6 +142,10 @@ def test_independence_check_flags_repeated_passes():
     assert "byte-identical" in ind["warning"] and "detect p50 fell" not in ind["warning"]
     assert scoring.independence_check(passes, 0.0)["warning"] is None  # deterministic detector
     assert scoring.independence_check(passes, None)["warning"] is None
+    # A deterministic baseline whose first pass warmed up (235 ms, then 0 ms) is not flagged.
+    warmup = [[record("a", {"m": 1}, 235)], [record("a", {"m": 1}, 0)], [record("a", {"m": 1}, 0)]]
+    assert scoring.independence_check(warmup, None)["warning"] is None
+    assert scoring.independence_check(cached, None)["warning"] is None
     assert "## Pass independence" in "\n".join(scoring._independence_lines(ind))
 
 

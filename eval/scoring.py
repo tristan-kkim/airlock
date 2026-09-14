@@ -644,6 +644,7 @@ def summarize(
 # latency drop is the reliable signature, identical payloads only a secondary one.
 INDEPENDENCE_WARN_RATE = 0.85
 INDEPENDENCE_DETECT_DROP = 0.5  # a later pass whose detect p50 is below half of pass 1's
+INDEPENDENCE_MIN_DETECT_MS = 200  # below this pass 1 did not run a model worth caching
 
 
 def _p50(values: list[float]) -> float | None:
@@ -690,12 +691,16 @@ def independence_check(
     }
     reasons = []
     first = detect_p50[0] if detect_p50 else None
-    if first and any(
-        v is not None and v < INDEPENDENCE_DETECT_DROP * first for v in detect_p50[1:]
+    sampling = (detector_temperature or 0) > 0  # deterministic systems repeat by design
+    if (
+        sampling
+        and first
+        and first >= INDEPENDENCE_MIN_DETECT_MS
+        and any(v is not None and v < INDEPENDENCE_DETECT_DROP * first for v in detect_p50[1:])
     ):
         later = ", ".join("n/a" if v is None else f"{v:.0f}" for v in detect_p50[1:])
         reasons.append(f"detect p50 fell from {first:.0f} ms in pass 1 to {later} ms later")
-    if rate is not None and rate > INDEPENDENCE_WARN_RATE and (detector_temperature or 0) > 0:
+    if sampling and rate is not None and rate > INDEPENDENCE_WARN_RATE:
         reasons.append(
             f"{rate * 100:.1f}% of cases sent byte-identical payloads in all {n_passes} passes "
             f"although the detector samples at temperature {detector_temperature}"

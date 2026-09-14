@@ -114,7 +114,7 @@ need. `eval/requirements.txt` lists the same dependencies for pip users.
 | `config.json` | arguments, dataset SHA-256, server `/healthz` snapshot, timestamps |
 | `cases_snapshot.jsonl` | the exact cases used, so `--rescore` needs nothing else |
 | `pass_NN.jsonl` | one line per case: `record` (HTTP outcome, answer, full audit record) and `score` |
-| `summary.json` | every metric per pass, across-pass statistics, per-case failure tables, and `independence`: the share of cases whose outbound payloads are byte-identical in every pass and the detect-time p50 per pass. The harness warns when a later pass's detect p50 is below half of pass 1's (the signature of a cached detection), or when more than 85% of payloads are identical while the detector temperature is above 0. The identical share alone is a weak signal: with every pass reset, Nemotron-3-Nano-4B at 0.6 still repeated 61% of payloads between two passes, while cached surrogate runs repeated only 32%. |
+| `summary.json` | every metric per pass, across-pass statistics, per-case failure tables, and `independence`: the share of cases whose outbound payloads are byte-identical in every pass and the detect-time p50 per pass. For a sampling detector (temperature above 0), the harness warns when a later pass's detect p50 is below half of pass 1's (the signature of a cached detection), or when more than 85% of payloads are identical while the detector temperature is above 0. The identical share alone is a weak signal: with every pass reset, Nemotron-3-Nano-4B at 0.6 still repeated 61% of payloads between two passes, while cached surrogate runs repeated only 32%. |
 | `summary.md` | the human-readable report |
 | `utility/` | only with `--judge`: `utility.py` output |
 
