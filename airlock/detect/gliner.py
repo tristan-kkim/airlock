@@ -12,7 +12,9 @@ steps, applied only to GLiNER's spans:
    password/key pattern, phone/ID/account labels need a digit or code shape, PERSON needs a
    name shape (a common surname plus 3-4 Hangul syllables by default, or capitalized Latin
    words), and age-, date- or money-like text under any other label is dropped as a mislabel.
-   Labels in AIRLOCK_GLINER_AGREEMENT_ONLY (default: city, date_of_birth) stop here.
+   Labels in AIRLOCK_GLINER_AGREEMENT_ONLY (default: city, date_of_birth) stop here, and so do
+   organization and place spans in a request about nobody (no person cue and no identity value
+   from another source): there the name is the topic of the question.
 3. Local adjudication. Survivors go to Nemotron-3-Nano-4B in one batched call per request: "is
    each span private to the user in this context?", JSON schema, temperature 0, thinking off.
    Only "yes" is accepted.
@@ -571,6 +573,34 @@ def _context(text: str, start: int, end: int, hidden: Sequence[Placement]) -> st
     return ("…" if left else "") + body + ("…" if right < len(text) else "")
 
 
+# GLiNER-only spans of these types need a person in the request (see `personal_context`).
+TOPIC_TYPES = frozenset({"ORG", "LOCATION"})
+_IDENTITY_TYPES = frozenset({"PERSON", "CONTACT", "ID_NUMBER", "FINANCIAL", "SECRET"})
+_PERSONAL_CUE = re.compile(
+    r"(?<![가-힣])(?:저|제|저는|제가|저의|저희|내|내가|나는|나|난|우리|본인)(?=\s|$|[,.?!])"
+    r"|(?:엄마|어머니|아빠|아버지|남편|아내|와이프|아들|딸|오빠|언니|누나|동생|할머니|할아버지|부모님|"
+    r"친구|동료|팀원|직원|고객|상사|회사|사장님|선생님|담당자|거래처)"
+    r"|[가-힣](?:님|씨)(?![가-힣])"
+    r"|\b(?:I|I'm|I've|I'd)\b"
+    r"|\b(?i:me|my|mine|we|our|dad|mom|father|mother|wife|husband|son|daughter|brother|sister|"
+    r"friend|coworker|colleague|boss|client|customer|employer)\b"
+)
+
+
+def personal_context(texts: Sequence[str], spans_by_text: Sequence[Sequence[Span]]) -> bool:
+    """The request is about someone: a person cue, or an identity value found by another source.
+
+    Without one ("KTX 서울 부산 소요시간"), a GLiNER-only organization or place is the topic of
+    the question, and masking it only breaks the request: in the final measurement both benign
+    Korean searches were masked this way and then blocked when the rewrite kept the name.
+    """
+    if any(_PERSONAL_CUE.search(t) for t in texts):
+        return True
+    return any(
+        s.type in _IDENTITY_TYPES and s.action != "keep" for spans in spans_by_text for s in spans
+    )
+
+
 class Ensemble:
     def __init__(self, settings: Settings, gliner: GlinerModel, local: LocalModel):
         self.settings = settings
@@ -599,6 +629,7 @@ class Ensemble:
             "gliner_rejected_mislabel": 0,
             "gliner_rejected_shape": 0,
             "gliner_rejected_label": 0,
+            "gliner_rejected_topic": 0,
             "gliner_remapped": 0,
             "gliner_candidates": 0,
             "adjudication_calls": 0,
@@ -609,6 +640,7 @@ class Ensemble:
         }
         accepted: list[list[Span]] = [[] for _ in texts]
         pending: list[tuple[Candidate, list[Placement]]] = []
+        personal = personal_context(texts, spans_by_text)
         for i, (text, existing, found) in enumerate(
             zip(texts, spans_by_text, entities, strict=True)
         ):
@@ -635,6 +667,11 @@ class Ensemble:
                     continue
                 if cand.label.name in self.agreement_only:
                     counts["gliner_rejected_label"] += 1
+                    continue
+                if cand.label.type in TOPIC_TYPES and not personal:
+                    # "KTX 서울 부산 소요시간", "경주 불국사 석굴암 여행 코스": with nobody in
+                    # the request, a company or place name is what the user asks about.
+                    counts["gliner_rejected_topic"] += 1
                     continue
                 value = text[cand.start : cand.end]
                 ko_min = self.settings.gliner_ko_name_min_syllables

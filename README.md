@@ -73,9 +73,9 @@ flowchart LR
 Request flow for `POST /v1/chat/completions`:
 
 1. **Detect.** Every text slot (message content, text parts, tool-call arguments) goes through these steps, in order:
-   1. **Deterministic spans first:** regex and entropy detectors, exact and variant matching against the vault (your declared terms and this conversation's earlier originals), and base64 blobs that hide a known value.
+   1. **Deterministic spans first:** regex and entropy detectors, exact and variant matching against the vault (your declared terms and this conversation's earlier originals), and base64 blobs that hide a known value. The regexes and the Korean name rules also run on a normalized copy of the text ([`obfuscation.py`](airlock/detect/obfuscation.py)), so a value nobody declared is still masked when it is written apart or encoded: `정.민.준`, `김 민 지`, separated jamo, `공일공 공구일일 …`, Hanja or full-width digits, a card number split over two lines, Cyrillic look-alike letters.
    2. **Mask before the model:** those spans are replaced by local tokens (`<SECRET_1>`) in the copy the local model reads. The model never receives raw secrets, cannot echo them, and has less to copy.
-   3. **Korean semantic rules** ([`airlock/detect/ko_rules.py`](airlock/detect/ko_rules.py)) propose spans the small model often misses in Korean: uniqueness cues (`유일한 여성 부사장`, `the only male nurse`), health terms in a sentence about a person (`공황장애 진단을 받았`), company and institution suffixes (`새론다움물류`, `㈜누리소프트`, `한빛병원`), and names before titles (`박지훈 고객`, `문태오 대리`). Each rule has negative lists (public figures, famous companies, generic words like `유일한 방법`, `초등학교`, `국회의원`) and never fires inside a placeholder.
+   3. **Korean semantic rules** ([`airlock/detect/ko_rules.py`](airlock/detect/ko_rules.py)) propose spans the small model often misses in Korean: uniqueness cues (`유일한 여성 부사장`, `the only male nurse`), health terms in a sentence about a person (`공황장애 진단을 받았`), company and institution suffixes (`새론다움물류`, `㈜누리소프트`, `한빛병원`), names before titles (`박지훈 고객`, `문태오 대리`), and names after a label or in a self-introduction (`예금주 강채원`, `박하은입니다`). Each rule has negative lists (public figures, famous companies, generic words like `유일한 방법`, `초등학교`, `국회의원`) and never fires inside a placeholder.
    4. **Local model:** Nemotron-3-Nano-4B reads the masked draft with a JSON-schema-constrained output (temperature 0.6, top_p 0.95, thinking off, output cap sized to the input). The prompt lives in [`airlock/prompts/detector.md`](airlock/prompts/detector.md).
    5. **Verify:** a model span whose text does not occur in the original (after the vault's normalization) is discarded, so hallucinated IDs never become redactions. Discard counts are recorded in the audit record.
    6. **Refine the whole request at once.** All slots of a request, agent turn or search go through one entry point (`Sanitizer.detect_many`), so the GLiNER ensemble and these steps apply on every path:
@@ -85,6 +85,8 @@ Request flow for `POST /v1/chat/completions`:
       - at `balanced`, what the task operates on is kept: amounts (also inside a short phrase, `90 days overdue, $46,500`), lab values (`fasting glucose 162 mg/dL`, `eGFR 88`), dosages, durations, clock schedules (`7시, 11시, 15시, 19시`), dates that are not a birth date, and diagnoses and short health terms (`HER2-positive`, `요추 추간판탈출증`, `체외수정 시술`) unless a small-group cue ("the only", "3학년 2반 쌍둥이") is present. A diagnosis the model labeled as a quasi-identifier is handled as a health term, not reworded;
       - a labeled birth date (`DOB 1953-01-15`, `생년월일 1990년 3월 2일`) and a wallet seed phrase are caught deterministically, without the local model;
       - employer + org unit + role are linked ([`org_rules.py`](airlock/detect/org_rules.py)): `동해누리정밀(주) 품질보증팀 박성훈 팀장` → `<ORG_1> 품질 부서 <PERSON_1> 관리자`, `the Payments Platform team at Halcyon Freight Systems` → `the engineering team at <ORG_1>`;
+      - combinations of quasi-identifiers are scored like k-anonymity ([`quasi.py`](airlock/detect/quasi.py)). Attributes fall in seven categories: place, named institution, cohort, rare fact, role, age and family structure. When the attributes still in the text reach k (3 at `balanced`, 2 at `strict`), the most identifying ones are coarsened until the score is below k: a small place to its region (`경북 새내군` → `경북의 한 군 지역`), a cohort year to its decade (`2022년 행정고시` → `2020년대 행정고시`), a specialty to its profession (`pediatric cardiologist` → `physician`), a rank to a band (`수석` → `상위권`). An attribute the question itself is about is kept, and only a message about a person (first person, a relative, a self-description or a request for anonymity) is scored;
+      - a model span that is a well-known public figure (`장영실`) or a job title labeled as an organization (`직함 선임연구원`) is dropped, and a GLiNER-only organization or place in a request about nobody (`KTX 서울 부산 소요시간`) is the topic, not a private value;
       - generalizations must be entailed by the original ([`generalize.py`](airlock/generalize.py)): ages and birth decades are computed from the text and today's date, places become a containing region (`성남시` → `경기도의 도시`, never `서울`), a health generalization is checked by Nano ("does X imply Y?") or falls back to its category, and the replacement stays in the language of the text;
       - a value detected in any slot is masked in every slot of the request before the gate.
 2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. `AIRLOCK_SUBSTITUTION` decides what replaces an identity value:
@@ -93,9 +95,9 @@ Request flow for `POST /v1/chat/completions`:
 
    Secrets and credentials always get `<SECRET_1>`, and quasi-identifiers get a generalization ("40대", "a plant in Oklahoma"). A generalization is rejected, and the span masked instead, when it still contains the original, a digit run or rare word from it, a proper noun, text in another language, or junk. Within a conversation or agent run, the same original always maps to the same placeholder or surrogate.
 3. **Gate.** The final outbound JSON is walked string by string, keys and numbers included. If any vault original, declared term, canary, or high-confidence secret or ID pattern is still present, or if the request contains content Airlock cannot inspect (images), the request is blocked with HTTP 422. "Present" covers variants, not only exact text:
-   - letter case, full-width characters, and zero-width or other invisible format characters
+   - letter case, full-width characters, Cyrillic or Greek look-alike letters, separated Hangul jamo (`ㄱㅣㅁ`), and zero-width or other invisible format characters
    - inserted spaces or punctuation (`새론 다움물류` matches `새론다움물류`)
-   - numbers written with separators, spaced-out digits, or Korean, Hanja or English numerals (`공일공 이삼사오 …`)
+   - numbers written with separators, spaced-out digits, or Korean, Hanja or English numerals (`공일공 이삼사오 …`); high-confidence patterns such as a resident registration number are also checked in that normalized form
    - values hidden inside JSON strings (tool-call arguments), percent-encoding, or base64/base64url, up to two layers deep
 
    The vault matcher uses the same normalized views, so a variant is usually masked rather than blocked. If the local model is down, times out, or malfunctions (prose instead of JSON, invalid JSON, output cut off at the token cap, a repetition loop), the request is also blocked after at most one resample of a short malformed answer. Airlock fails closed.
@@ -603,6 +605,8 @@ airlock/
   detect/verify.py  grounding check for model spans, generalization leak check
   detect/shape.py   type shape checks for local-model spans, trimming of honorifics, titles, ID labels
   detect/org_rules.py employer, org unit, site, role and age candidates and their request-level link
+  detect/quasi.py   k-anonymity-style scorer for quasi-identifier combinations and their coarsening
+  detect/obfuscation.py detection on the normalized text (spaced names, spelled or split numbers)
   detect/regions.py Korean admin regions and foreign cities, for containing-region generalizations
   generalize.py     entailed generalizations (ages, birth decades, places, health) and kept situation values
   surrogate.py      format-preserving surrogates and their rehydration (particles, possessives, streams)
@@ -612,7 +616,7 @@ airlock/
                     refinement -> cross-slot propagation -> vault substitution
   vault.py          original <-> placeholder mappings, declared terms (SQLite)
   gate.py           deterministic allow/block on the exact outbound payload
-  textnorm.py       normalized views (compact, digits, decoded) with raw offset maps
+  textnorm.py       normalized views (compact, digits, detection, decoded) with raw offset maps
   hashing.py        HMAC key loading for audit hashes
   upstream.py       Token Factory client with one-shot fallback
   rehydrate.py      placeholder and surrogate restoration, including streams and tool calls

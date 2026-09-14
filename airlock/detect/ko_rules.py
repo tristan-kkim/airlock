@@ -563,6 +563,12 @@ _PUBLIC_FIGURES = frozenset(
 )
 
 
+def public_figure(name: str) -> bool:
+    """A well-known Korean public or historical figure ("장영실이" with its particle)."""
+    t = name.strip()
+    return t in _PUBLIC_FIGURES or _split_particle(t) in _PUBLIC_FIGURES
+
+
 def _person(text: str) -> list[Span]:
     spans = []
     for m in _PERSON_RE.finditer(text):
@@ -585,6 +591,41 @@ def _person(text: str) -> list[Span]:
     return spans
 
 
+# A name after its label ("이름 정민준", "사용자: 정예준", "예금주 강채원") or in a
+# self-introduction ("박하은입니다"). The label says a person's name follows, so a 3-4 syllable
+# Hangul word with a surname is enough; common nouns and public figures are still excluded.
+_NAME_LABEL_RE = re.compile(
+    r"(?:이름|성함|성명|담당자|사용자|수신인|수신자|발신인|발신자|예금주|보호자|신청인|작성자|고객명|"
+    r"환자명|받는\s?분|보내는\s?분)\s*(?:은|는|이|가|:|：|=|-)?\s*"
+    rf"(?P<name>(?:{_COMPOUND_SURNAMES})[가-힣]{{1,2}}|[{_SURNAMES}][가-힣]{{2}})"
+    r"(?=(?:님|씨|이고|이며|입니다|이에요|예요|이|가|은|는|을|를|의|과|와|도|께|에게|한테)?(?![가-힣]))"
+)
+_NAME_INTRO_RE = re.compile(
+    rf"(?<![가-힣])(?P<name>(?:{_COMPOUND_SURNAMES})[가-힣]{{1,2}}|[{_SURNAMES}][가-힣]{{2}})"
+    r"(?:입니다|이에요|예요|이라고\s?합니다|라고\s?합니다)"
+)
+
+
+def _labeled_person(text: str) -> list[Span]:
+    spans = []
+    for pattern in (_NAME_LABEL_RE, _NAME_INTRO_RE):
+        for m in pattern.finditer(text):
+            name = m.group("name")
+            if name in _NAME_STOPWORDS or name in _PUBLIC_FIGURES or name[-1] in _NAME_BAD_LAST:
+                continue
+            if name[1:] in _TITLE_WORDS or name[:2] in _NAME_STOPWORDS:
+                continue
+            spans.append(
+                _span(text, m.start("name"), m.end("name"), "PERSON", "ko_labeled_name", None)
+            )
+    return spans
+
+
+def person_spans(text: str) -> list[Span]:
+    """Korean names from the honorific and label rules, with offsets."""
+    return _person(text) + _labeled_person(text)
+
+
 # ---- entry point --------------------------------------------------------------------------------
 
 
@@ -592,5 +633,5 @@ def detect_rules(text: str) -> list[Span]:
     """Deterministic semantic proposals with offsets. Never fires inside placeholders."""
     if not text.strip():
         return []
-    spans = _ko_quasi(text) + _en_quasi(text) + _health(text) + _org(text) + _person(text)
+    spans = _ko_quasi(text) + _en_quasi(text) + _health(text) + _org(text) + person_spans(text)
     return _outside_placeholders(text, spans)
