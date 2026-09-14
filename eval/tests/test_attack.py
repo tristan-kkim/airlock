@@ -243,7 +243,9 @@ def test_compare_builds_table_with_placeholder(tmp_path):
 
     live = tmp_path / "baseline-f0ba569"
     live.mkdir()
-    (live / "summary.json").write_text(json.dumps(_summary(0.05, 0.04, passes=10)))
+    live_summary = _summary(0.05, 0.04, passes=10)
+    live_summary["config"]["reset_scope"] = "every pass"
+    (live / "summary.json").write_text(json.dumps(live_summary))
     (live / "attack").mkdir()
     stat = {"n": 1, "mean": 0.1, "std": 0.0}
     (live / "attack" / "summary.json").write_text(
@@ -259,6 +261,16 @@ def test_compare_builds_table_with_placeholder(tmp_path):
     md = compare.build(tmp_path)
     assert "airlock (live, f0ba569)" in md and "pending" not in md
     assert "| airlock (live, f0ba569) | 1 | 10.0% |" in md
+    assert compare.NOT_INDEPENDENT_NOTE not in md
+
+    # A multi-pass live run reset only before pass 1 is marked as not independent.
+    old = tmp_path / "baseline-e0ee6aa-gliner-surrogate"
+    old.mkdir()
+    (old / "summary.json").write_text(json.dumps(_summary(0.05, 0.04, passes=3)))
+    md = compare.build(tmp_path)
+    assert f"airlock (live, e0ee6aa, gliner-surrogate) {compare.NOT_INDEPENDENT_MARK}" in md
+    assert compare.NOT_INDEPENDENT_NOTE in md
+    assert f"airlock (live, f0ba569) {compare.NOT_INDEPENDENT_MARK}" not in md
 
 
 def test_numeral_word_values_match_their_digits():

@@ -154,11 +154,36 @@ def reuse_notes(runs: list[tuple[str, Path]]) -> list[str]:
     return ["", f"\\* {REUSE_NOTE}: " + "; ".join(parts) + ". Other rows were scored normally."]
 
 
+NOT_INDEPENDENT_MARK = "†"
+NOT_INDEPENDENT_NOTE = (
+    "passes not independent (detector cache: the server was reset only before pass 1, so later "
+    "passes reused pass-1 detections); treat sd as not measured"
+)
+# Live Airlock runs whose passes shared server state; filled by build().
+_not_independent: set[str] = set()
+
+
+def passes_not_independent(name: str, path: Path) -> bool:
+    """A multi-pass live Airlock run made before run.py reset the server before every pass."""
+    if name in BASELINES:
+        return False
+    s = load_json(path / "summary.json") or {}
+    return (s.get("passes") or 0) > 1 and (s.get("config") or {}).get("reset_scope") != "every pass"
+
+
 def label_for(name: str) -> str:
     if name in LABELS:
         return LABELS[name]
     commit, _, variant = name.partition("-")
-    return f"airlock (live, {commit}{', ' + variant if variant else ''})"
+    mark = f" {NOT_INDEPENDENT_MARK}" if name in _not_independent else ""
+    return f"airlock (live, {commit}{', ' + variant if variant else ''}){mark}"
+
+
+def independence_notes(runs: list[tuple[str, Path]]) -> list[str]:
+    marked = [label_for(n) for n, _ in runs if n in _not_independent]
+    if not marked:
+        return []
+    return ["", f"{NOT_INDEPENDENT_MARK} {NOT_INDEPENDENT_NOTE}: " + "; ".join(marked) + "."]
 
 
 def headline_section(runs: list[tuple[str, Path]], has_airlock: bool) -> list[str]:
@@ -200,6 +225,7 @@ def headline_section(runs: list[tuple[str, Path]], has_airlock: bool) -> list[st
             f"| airlock (live, {AIRLOCK_PLACEHOLDER}) | pending |" + " |" * (len(HEADLINE) + 1)
         )
     lines += reuse_notes(runs)
+    lines += independence_notes(runs)
     lines += [
         "",
         "### By language",
@@ -263,6 +289,8 @@ def agent_section(agent_dir: Path | None) -> list[str]:
 
 def build(results: Path, extra: list[Path] | None = None, agent: Path | None = None) -> str:
     runs = discover(results, extra)
+    _not_independent.clear()
+    _not_independent.update(n for n, p in runs if passes_not_independent(n, p))
     has_airlock = any(name not in BASELINES for name, _ in runs)
     lines = [
         "# Comparison: Airlock vs local baselines",

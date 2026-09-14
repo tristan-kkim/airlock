@@ -421,7 +421,14 @@ def test_compare_headline_uses_reframe_and_agent_summaries(tmp_path):
     run = tmp_path / "baseline-1a2b3c4-gliner"
     run.mkdir()
     (run / "summary.json").write_text(
-        json.dumps({"passes": 3, "overall": {"overhead_ms_p50": stat(120.0, 3)}, "by_lang": {}})
+        json.dumps(
+            {
+                "passes": 3,
+                "overall": {"overhead_ms_p50": stat(120.0, 3)},
+                "by_lang": {},
+                "config": {"reset_scope": "every pass"},
+            }
+        )
     )
     overall = {
         "identity_leak_rate": stat(0.2, 3),
