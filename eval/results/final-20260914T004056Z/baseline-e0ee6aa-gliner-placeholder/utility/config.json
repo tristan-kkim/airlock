@@ -1,0 +1,91 @@
+{
+  "utility_version": "1.1.0",
+  "results_dir": "baseline-e0ee6aa-gliner-placeholder",
+  "target_label": "airlock@e0ee6aa gliner=1 substitution=placeholder",
+  "answer_source": "recorded",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "judge_reasoning": "none",
+  "default_upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "answer_max_tokens": 4096,
+  "passes": 3,
+  "limit": null,
+  "categories": null,
+  "reference_dir": "eval/results/_reference_answers",
+  "subset": null,
+  "reuse_identical_passes": false,
+  "reuse_from": null,
+  "reuse": {
+    "note": "scored once; outputs identical across passes, verified by payload hash",
+    "from": null,
+    "rows": 630,
+    "rows_reused": 0,
+    "rows_scored": 630,
+    "by_pass": [
+      {
+        "pass": 1,
+        "rows": 210,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 0
+      },
+      {
+        "pass": 2,
+        "rows": 210,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 0
+      },
+      {
+        "pass": 3,
+        "rows": 210,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 0
+      }
+    ]
+  },
+  "runs": [
+    {
+      "at": "2026-09-14T03:28:16.398468+00:00",
+      "estimate": {
+        "reference_calls": 0,
+        "system_answer_calls": 0,
+        "judge_calls": 629,
+        "prompt_tokens_est": 1438103,
+        "completion_tokens_typical": 157250,
+        "completion_tokens_max": 314500,
+        "rows": 630,
+        "rows_reused_planned": 0
+      },
+      "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "usage": {
+        "reference": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "system_answer": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "judge": {
+          "prompt_tokens": 1533959,
+          "completion_tokens": 135093,
+          "calls": 624
+        },
+        "verify": {
+          "prompt_tokens": 281149,
+          "completion_tokens": 10873,
+          "calls": 225
+        }
+      },
+      "cost_usd": {
+        "reference": 0.0,
+        "system_answer": 0.0,
+        "judge": 1.939238,
+        "verify": 0.313768
+      }
+    }
+  ]
+}

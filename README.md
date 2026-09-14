@@ -16,6 +16,28 @@ People and companies avoid cloud AI mainly because of leakage: names, customer d
 
 It works with tools you already use (scripts, notebooks, editors, agents) by changing one `base_url`.
 
+## Measured results
+
+Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables in [`eval/results/COMPARISON.md`](eval/results/COMPARISON.md)): all 243 synthetic cases (122 Korean, 121 English), 3 passes, each system alone on an M3 Pro, Airlock at `e0ee6aa` with the GLiNER ensemble on, attacker and judges on Nemotron 3 Ultra. **Linkable disclosure** is the share of the 98 situation-sensitive cases where an attacker reading only the outbound payloads recovers an identity item and infers the private situation. Airlock rows are mean ± sd over 3 passes; baseline outputs were identical across passes and scored once.
+
+| System | **Linkable disclosure** | Identity leak | Usefulness 1-5 | Utility ratio | Distortion | Over-redaction | Benign masked |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| raw (pass-through) | 84.7% | 98.5% | 4.52 | 1.05 | 7.7% | 0.0% | 0.0% |
+| regex only | 79.6% | 92.7% | 3.91 | 0.87 | 13.9% | 0.4% | 7.4% |
+| Presidio + ko/en spaCy | 53.1% | 76.7% | 3.01 | 0.66 | 33.7% | 16.7% | 66.7% |
+| NVIDIA GLiNER-PII alone | 9.2% | 18.9% | 2.69 | 0.59 | 24.5% | 14.1% | 59.3% |
+| **Airlock, placeholders (default)** | **15.3% ± 1.0** | 9.7% ± 0.0 | 4.13 ± 0.04 | 0.95 ± 0.02 | 14.7% ± 1.9 | 7.0% ± 0.3 | 11.1% |
+| Airlock, surrogates | 12.6% ± 1.2 | 8.3% ± 0.0 | 4.08 ± 0.05 | 0.94 ± 0.02 | 19.4% ± 1.6 | 6.4% ± 0.2 | 11.1% |
+
+- **Linkable disclosure falls from 84.7% to 15.3%, and usefulness is mostly kept.** Airlock with placeholders keeps a utility ratio of 0.95. Its distortion is 3.5 points above the reference answers judged in the same run (14.7% vs 11.2%).
+- **Every remaining linkable case is a quasi-identifier prompt.** There were 0 in finance, health and intent search. What links is a combination of attributes that each look harmless and that the answer often needs: a rank plus a cohort year, a role plus a small town, a rare personal fact.
+- **GLiNER-PII alone links less (9.2%), at a large utility cost.** It masks 59.3% of benign prompts and scores 2.69 for usefulness.
+- **Placeholders stay the default.** Surrogates link 2.7 points less but distort 4.7 points more.
+- **Korean costs more.** The utility ratio is 0.89 in Korean vs 1.02 in English, over-redaction 10.2% vs 3.8%, and all benign masks are Korean. Two benign Korean searches are blocked.
+- **Latency:** local overhead p50 3.9 s / p95 8.4 s per request in the first pass. Later passes reuse the detector's in-memory cache, so their latency is not representative; see the caveats in `FINAL.md`.
+
+These are lower bounds from one attacker on synthetic data, and the judge's noise is about ±0.05 in utility ratio and ±3 points in distortion. The subset and dev-split tables further down are earlier one-pass measurements kept for their diagnoses.
+
 ## Architecture
 
 ```mermaid
@@ -117,29 +139,19 @@ Over all 243 cases, an LLM attacker reading only the outbound payloads recovers 
 
 ### Detector round two (S6): measured
 
-What changed is described in *Architecture* (step 1.6, step 2) and *Surrogates*. Rules and thresholds were tuned on the 72-case dev split only; the table is the 171-case test split, one pass per config ([`eval/results/s6-split/REPORT.md`](eval/results/s6-split/REPORT.md)). Attack and utility columns use a stratified 90-case subset of the test split to stay within the Token Factory budget; attacker, graders and judge are Nemotron 3 Ultra. B1 is the GLiNER ensemble default before this round, scored on the same cases.
+What changed is described in *Architecture* (step 1.6, step 2) and *Surrogates*. Rules and thresholds were tuned on the 72-case dev split only. The one-pass numbers on the 171-case test split and its 90-case attack subset are in [`eval/results/s6-split/REPORT.md`](eval/results/s6-split/REPORT.md). The 3-pass full-dataset measurement in [`eval/results/FINAL.md`](eval/results/FINAL.md) supersedes them, including the placeholder vs surrogate comparison.
 
-| Test split | B1 (before) | S6 placeholder (default) | S6 surrogate |
-|---|---:|---:|---:|
-| Leak rate | 11.2% | 8.6% | 7.9% |
-| Identity leak | 12.5% | 9.0% | 8.3% |
-| **Linkable disclosure** (90) | 16.7% | **8.3%** | 11.1% |
-| Situation inferred (90) | 55.0% | 72.5% | 62.5% |
-| Utility ratio (90) | 0.91 | 0.87 | 0.85 |
-| Distortion (90) | 16.2% | 27.6% | 32.9% |
-| Distortion of the reference answers, same judge run (90) | 14.9% | 6.6% | 11.8% |
-| Over-redaction | 15.5% | 7.8% | 8.8% |
-| Benign masked / over-blocked | 21.1% / 10.5% | 21.1% / 10.5% | 21.1% / 10.5% |
-| Leak ko / en | 13.0% / 9.3% | 9.1% / 8.0% | 6.5% / 9.3% |
-| Linkable ko / en (90) | 11.1% / 22.2% | 5.6% / 11.1% | 5.6% / 16.7% |
-| Detect p50 / p95 (chat) | 3.9 s / 8.2 s | 3.4 s / 8.4 s | 3.5 s / 7.8 s |
+What that round found:
 
-How to read it:
+- **Linkable disclosure and over-redaction roughly halved against B1**, the ensemble before the round. Linking the employer, unit and role removes the combination that linked most, and amounts, lab values and common diagnoses now stay in the prompt. More situations are therefore visible to the cloud, as intended: the cloud may learn the problem, not who has it.
+- **Distortion rose.** The distorted answers included invented dates and wrong arithmetic in both configs, and a masked role read back as an ID number. In surrogate mode, answers were also built on the surrogate itself:
+  - a card "ending in" the surrogate's digits
+  - a surrogate name transliterated into Korean in a translation task
+  - a pronoun that did not match the surrogate's gender
+  - a clinic written without its suffix
 
-- **Linkable disclosure halves** (16.7% to 8.3%) and over-redaction halves (15.5% to 7.8%): the employer + unit + role link removes the combination that linked most, and amounts, lab values and common diagnoses now stay in the prompt. More situations are therefore visible to the cloud (72.5%), as intended: the cloud may learn the problem, not who has it.
-- **Distortion rose and utility did not improve.** The judge's distortion rate for the unchanged reference answers moved between 6.6% and 14.9% across these three runs, so one pass does not separate the configs well, but the gap to the reference (+21 points against +1 for B1) is a real signal. The distorted answers include invented dates and wrong arithmetic in both configs, a masked role read back as an ID number, and in surrogate mode answers built on the surrogate itself: a card "ending in" the surrogate's digits, a surrogate name transliterated into Korean in a translation task, a pronoun that did not match the surrogate's gender, a clinic written without its suffix. The last three kinds were fixed after the test run (card surrogates keep the last four digits, English first names are gender-neutral, an organization's stem alone is rehydrated); they are not reflected in the table.
-- **Placeholders stay the default.** Surrogates leak slightly less (identity leak 8.3% vs 9.0%) but link more on the 90-case subset and distort more, and answers that talk about placeholders or masked values were not rarer (22 vs 21 of about 163 answers; secrets keep placeholders in both modes). `AIRLOCK_SUBSTITUTION=surrogate` is available and tested.
-- **Benign masking is unchanged**: all four benign masks come from GLiNER-only spans the adjudicator accepted (`KTX` and `경주 불국사` as organizations in two search queries, which the gate then blocked, `장영실이` as a person, the number 479001600 in a factorial question as an account number).
+  Those three surrogate failure kinds were fixed afterwards: card surrogates keep the last four digits, English first names are gender-neutral, and an organization's stem alone is rehydrated. The distortion diagnosis and fixes are in *Answer distortion (S9)*.
+- **Benign masking is unchanged**: all four benign masks on the test split come from GLiNER-only spans the adjudicator accepted (`KTX` and `경주 불국사` as organizations in two search queries, which the gate then blocked, `장영실이` as a person, the number 479001600 in a factorial question as an account number).
 
 ### Answer distortion (S9): diagnosed and reduced on dev
 
@@ -165,7 +177,7 @@ On the 72 dev cases, one pass each with Ultra as upstream, attacker and judge:
 | Over-redaction | 9.9% | 6.0% |
 | Identity leak, this run / stub replay | 6.5% / 9.7% | 9.7% / 8.1% |
 
-The utility ratio is not shown: the same cached reference answers scored 4.45 in one judge run and 4.12 in the other, because the judge scores answer pairs. Identity-leak differences trace case by case to the local model's sampling, not to changed code. The test split has not been re-measured.
+The utility ratio is not shown: the same cached reference answers scored 4.45 in one judge run and 4.12 in the other, because the judge scores answer pairs. Identity-leak differences trace case by case to the local model's sampling, not to changed code. The full dataset with these fixes, 3 passes per config, is measured in [`eval/results/FINAL.md`](eval/results/FINAL.md).
 
 Agent mode, 4 scenarios (layoff and HR warning, Korean and English), airlock mode, 1 pass each ([`eval/results/s6-agent/`](eval/results/s6-agent/)). Identity facts found by the deterministic scanner in anything that left the machine: **0 of 19** with placeholders and 0 of 19 with surrogates. Before this round, team and employer names (`품질보증팀`, `영업2팀`, `Payments Platform`) survived all three passes of every run. The first agent attempt blocked every run at its third turn: GLiNER read the tool-argument key `doc_id` as an HTTP cookie. Object keys of tool-call arguments are now never rewritten and code identifiers are not secrets; a later surrogate attempt blocked once more (a title match crossed a line break and a surrogate organization contained that protected string), which was fixed before the runs counted here.
 

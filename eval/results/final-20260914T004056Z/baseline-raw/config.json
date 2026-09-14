@@ -1,0 +1,41 @@
+{
+  "base_url": "http://127.0.0.1:8801",
+  "target_label": "baseline:raw",
+  "passes": 3,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 243,
+  "dataset_sha256": "cd40ce707652d30ffb2007c5ccaac62c61709d42382c4c623351b5114c850609",
+  "protection_level": "baseline:raw",
+  "server_health": {
+    "status": "ok",
+    "baseline": "raw",
+    "protection_level": "baseline:raw",
+    "description": "pass-through, no masking (upper bound)",
+    "cloud_calls": false
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "subset": null,
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "started_at": "2026-09-14T00:40:59.388660+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8801",
+    "--passes",
+    "3",
+    "--out",
+    "eval/results/final-20260914T004056Z/baseline-raw",
+    "--label",
+    "baseline:raw",
+    "--reset-vault",
+    "--timeout",
+    "600"
+  ],
+  "finished_at": "2026-09-14T00:41:00.420105+00:00"
+}
