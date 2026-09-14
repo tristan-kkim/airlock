@@ -9,6 +9,9 @@
 # Options:
 #   --commit SHA        Airlock commit to measure (checked out into a temporary git worktree)
 #   --gliner on|off|both   AIRLOCK_GLINER for the Airlock runs (default: both = two variants)
+#   --substitution placeholder|surrogate|both
+#                       AIRLOCK_SUBSTITUTION for the Airlock runs, crossed with --gliner (default:
+#                       unset, the server default; the result dirs then carry no substitution suffix)
 #   --passes N          harness passes per system (default 3)
 #   --scoring-passes N  passes attacked and judged per system (default: --passes)
 #   --systems "..."     subset of: raw regex presidio_ko gliner_pii airlock (default: all)
@@ -42,6 +45,7 @@ cd "$ROOT"
 
 COMMIT=""
 GLINER="both"
+SUBSTITUTION=""
 PASSES=3
 SCORING_PASSES=""
 SYSTEMS="raw regex presidio_ko gliner_pii airlock"
@@ -61,6 +65,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --commit) COMMIT="$2"; shift 2 ;;
     --gliner) GLINER="$2"; shift 2 ;;
+    --substitution) SUBSTITUTION="$2"; shift 2 ;;
     --passes) PASSES="$2"; shift 2 ;;
     --scoring-passes) SCORING_PASSES="$2"; shift 2 ;;
     --systems) SYSTEMS="$2"; shift 2 ;;
@@ -80,7 +85,7 @@ while [ $# -gt 0 ]; do
     --seed) SEED="$2"; shift 2 ;;
     --no-reuse) REUSE=0; shift ;;
     --reuse-committed) REUSE_COMMITTED=1; shift ;;
-    -h|--help) sed -n '2,37p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -106,6 +111,18 @@ if [ "$RUN_AIRLOCK" = 1 ]; then
     both) VARIANTS=(nogliner gliner) ;;
     *) echo "--gliner must be on, off or both" >&2; exit 2 ;;
   esac
+  # Substitution variants are crossed with the GLiNER variants: <gliner>-<substitution>.
+  case "$SUBSTITUTION" in
+    "") SUBSTS=() ;;
+    placeholder|surrogate) SUBSTS=("$SUBSTITUTION") ;;
+    both) SUBSTS=(placeholder surrogate) ;;
+    *) echo "--substitution must be placeholder, surrogate or both" >&2; exit 2 ;;
+  esac
+  if [ "${#SUBSTS[@]}" -gt 0 ]; then
+    CROSSED=()
+    for g in "${VARIANTS[@]}"; do for sub in "${SUBSTS[@]}"; do CROSSED+=("$g-$sub"); done; done
+    VARIANTS=("${CROSSED[@]}")
+  fi
 fi
 
 echo "== Final measurement protocol"
@@ -230,11 +247,14 @@ if [ "$RUN_AIRLOCK" = 1 ]; then
   rmdir "$WORKTREE"
   git worktree add --detach "$WORKTREE" "$COMMIT" >/dev/null
   cp .env "$WORKTREE/.env"; chmod 600 "$WORKTREE/.env"
-  (cd "$WORKTREE" && uv sync --quiet)
+  SYNC_ARGS=(--quiet)
+  [ "$GLINER" != off ] && SYNC_ARGS+=(--extra gliner)  # AIRLOCK_GLINER=1 needs the gliner extra
+  (cd "$WORKTREE" && uv sync "${SYNC_ARGS[@]}")
   for variant in "${VARIANTS[@]}"; do
-    gliner_flag=0; [ "$variant" = gliner ] && gliner_flag=1
+    gliner_flag=0; [ "${variant%%-*}" = gliner ] && gliner_flag=1
+    subst=""; [ "$variant" != "${variant#*-}" ] && subst="${variant#*-}"
     dir="$OUT/baseline-$COMMIT-$variant"
-    echo "== airlock $COMMIT ($variant, AIRLOCK_GLINER=$gliner_flag)"
+    echo "== airlock $COMMIT ($variant, AIRLOCK_GLINER=$gliner_flag${subst:+, AIRLOCK_SUBSTITUTION=$subst})"
     llama_log="$OUT/logs/llama-server-$variant.log"
     llama-server -m "$MODEL_PATH" --alias nemotron-3-nano-4b \
       --host 127.0.0.1 --port "$LLAMA_PORT" -ngl 999 -fa on -c 8192 -np 1 --jinja \
@@ -251,6 +271,7 @@ if [ "$RUN_AIRLOCK" = 1 ]; then
       cd "$WORKTREE"
       export AIRLOCK_LOCAL_BASE_URL="http://127.0.0.1:$LLAMA_PORT/v1"
       export AIRLOCK_GLINER="$gliner_flag"
+      if [ -n "$subst" ]; then export AIRLOCK_SUBSTITUTION="$subst"; fi
       export AIRLOCK_VAULT_PATH=":memory:" AIRLOCK_AUDIT_DB=":memory:"
       export AIRLOCK_AUDIT_HASH_KEY="$HASH_KEY"
       export AIRLOCK_PROTECTION_LEVEL=balanced AIRLOCK_REVIEW=never
@@ -260,7 +281,7 @@ if [ "$RUN_AIRLOCK" = 1 ]; then
     SERVER_PID=$!
     wait_http "http://127.0.0.1:$AIRLOCK_EVAL_PORT/healthz" "$SERVER_PID" "$air_log"
     AIRLOCK_AUDIT_HASH_KEY="$HASH_KEY" run_harness "http://127.0.0.1:$AIRLOCK_EVAL_PORT" "$dir" \
-      "airlock@$COMMIT gliner=$gliner_flag" --protection-level balanced
+      "airlock@$COMMIT gliner=$gliner_flag${subst:+ substitution=$subst}" --protection-level balanced
     stop_pid "$SERVER_PID"; SERVER_PID=""
     stop_pid "$LLAMA_PID"; LLAMA_PID=""
   done

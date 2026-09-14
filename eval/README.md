@@ -144,7 +144,11 @@ eval/final_protocol.sh --commit <sha> --systems "airlock" --gliner on --passes 3
    random `AIRLOCK_AUDIT_HASH_KEY` shared with the harness (so gate saves are attributed),
    `balanced`, review off; every harness run uses `--reset-vault`.
 3. **3 passes** per system (`--passes`), into `eval/results/final-<UTC>/baseline-<name>/`; Airlock
-   variants land in `baseline-<sha>-gliner` / `baseline-<sha>-nogliner`.
+   variants land in `baseline-<sha>-gliner` / `baseline-<sha>-nogliner`. `--substitution
+   placeholder|surrogate|both` sets `AIRLOCK_SUBSTITUTION` and is crossed with the GLiNER
+   variants, so `--gliner on --substitution both` writes `baseline-<sha>-gliner-placeholder` and
+   `baseline-<sha>-gliner-surrogate`. The worktree is synced with `--extra gliner` unless
+   `--gliner off`.
 4. **Cloud scoring** on every system, over the same passes (`--scoring-passes`): `attack.py`
    (attacker, intent and situation graders), `utility.py` (reference answers, baseline answers,
    blind judge, distortion verifier), then `reframe.py results` and `compare.py`, which writes
