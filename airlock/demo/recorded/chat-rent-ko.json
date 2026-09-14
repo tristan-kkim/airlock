@@ -1,0 +1,71 @@
+{
+  "preset_id": "chat-rent-ko",
+  "title": "월세 송금 문자",
+  "mode": "chat",
+  "lang": "ko",
+  "source": "recorded",
+  "fallback_reason": null,
+  "recorded_at": "2026-09-14T13:33:27+00:00",
+  "models": {
+    "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "detector_backend": "cloud",
+    "upstream": "nvidia/Nemotron-3-Ultra-550b-a55b"
+  },
+  "typed": [
+    {
+      "label": "user",
+      "text": "김민수(주민번호 900101-1234567)에게 신한은행 110-234-567890 계좌로 이번 달 월세 85만원을 보내야 해. 집주인 이영희 님께 보낼 정중한 문자를 써줘."
+    }
+  ],
+  "cloud_saw": [
+    {
+      "destination": "upstream",
+      "label": "system",
+      "text": "Tokens like <PERSON_1> are placeholders for private values; copy them exactly. Do not guess or invent the hidden values. Each token stands for a real value the user gave, and the user sees your reply with the real values restored. Treat a token as that value: use it where the value belongs and never tell the user that a value is a placeholder, hidden or missing. Do not compute anything from a token (encodings, checksums, arithmetic, digits); show the steps or the command instead. In this conversation: <FINANCIAL_n> is a card number, bank account or money value; <ID_NUMBER_n> is an ID, account or reference number; <PERSON_n> is a person's name."
+    },
+    {
+      "destination": "upstream",
+      "label": "user",
+      "text": "<PERSON_1>(주민번호 <ID_NUMBER_1>)에게 신한은행 <FINANCIAL_1> 계좌로 이번 달 월세 85만원을 보내야 해. 집주인 <PERSON_2> 님께 보낼 정중한 문자를 써줘."
+    }
+  ],
+  "answer": "이영희 님, 안녕하세요. [본인 이름]입니다.\n\n이번 달 월세 85만 원을 아래 계좌로 송금드렸습니다.\n- 수취인: 김민수 (주민번호 900101-1234567)\n- 은행/계좌: 신한은행 110-234-567890\n\n확인 부탁드리며, 언제나 쾌적한 거주 환경 제공해 주셔서 감사합니다.\n좋은 하루 보내세요.",
+  "error": null,
+  "gate": {
+    "decision": "allow",
+    "reasons": []
+  },
+  "detections": [
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "llm"
+    },
+    {
+      "type": "ID_NUMBER",
+      "action": "mask",
+      "source": "regex"
+    },
+    {
+      "type": "FINANCIAL",
+      "action": "mask",
+      "source": "regex"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "rule"
+    }
+  ],
+  "timings_ms": {
+    "detect": 26575.86,
+    "substitute": 2.21,
+    "gate": 1.3,
+    "upstream": 1688.37,
+    "rehydrate": 0.2,
+    "total": 28268.98
+  },
+  "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "request_id": null,
+  "recorded_seconds": 28.3
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airlock demo: daily budget reached</title>
+<style>
+  body { margin: 0; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; background: #f6f7f9; color: #16181d; }
+  main { max-width: 640px; margin: 10vh auto; padding: 0 24px; }
+  h1 { font-size: 24px; margin: 0 0 12px; }
+  a { color: #3b5bdb; font-weight: 600; }
+  .card { background: #fff; border: 1px solid #e2e5ea; border-radius: 10px; padding: 20px 24px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0f1115; color: #e7e9ee; } .card { background: #171a21; border-color: #2a2f3a; } a { color: #7c93ff; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>The demo budget for today is used up</h1>
+    <p>This public demo calls paid cloud models, so it has a daily limit. It resets at 00:00 UTC.</p>
+    <p>You can still <a href="/">open the demo</a> and click any scenario: it shows a <strong>recorded run</strong>
+      of the same fictional input, with what was typed, what the cloud saw, and the answer.</p>
+    <p>For real privacy, Airlock is meant to run on your own machine, where detection never leaves it:
+      <a href="{{QUICKSTART_URL}}" target="_blank" rel="noopener noreferrer">README quickstart</a> (about five minutes).</p>
+  </div>
+</main>
+</body>
+</html>

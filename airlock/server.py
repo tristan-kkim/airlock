@@ -108,13 +108,19 @@ class Services:
         self.audit.close()
 
 
+LocalFactory = Callable[[Settings, httpx.AsyncClient], LocalModel]
+
+
 def build_services(
-    settings: Settings, transport: httpx.AsyncBaseTransport | None = None
+    settings: Settings,
+    transport: httpx.AsyncBaseTransport | None = None,
+    local_factory: LocalFactory | None = None,
 ) -> Services:
+    """`local_factory` swaps the detector backend (airlock.demo.cloud_detector); default: local."""
     http = httpx.AsyncClient(transport=transport, follow_redirects=False)
     vault = Vault(settings.vault_path)
     audit = AuditLog(settings.audit_db)
-    local = LocalModel(settings, http)
+    local = (local_factory or LocalModel)(settings, http)
     detector = LLMDetector(local, settings.protection_level)
     sanitizer = Sanitizer(settings, detector, vault)
     upstream = Upstream(settings, http)
@@ -276,9 +282,10 @@ def create_app(
     *,
     transport: httpx.AsyncBaseTransport | None = None,
     agent_settings: AgentSettings | None = None,
+    local_factory: LocalFactory | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
-    services = build_services(settings, transport)
+    services = build_services(settings, transport, local_factory)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
