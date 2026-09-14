@@ -197,7 +197,7 @@ def test_korean_particles_are_trimmed_and_names_remapped(gliner_client, harness,
         "F8YAXXGS이고": ("password", 0.8),
         "독고새론": ("password", 0.8),  # a name under PASSWORD: remapped to PERSON
     }
-    r = chat(gliner_client, "저는 조유나입니다. 비번 F8YAXXGS이고 담당자 독고새론 연락처 부탁.")
+    r = chat(gliner_client, "저는 조유나입니다. 비번 F8YAXXGS이고 독고새론 연락처 부탁.")
     assert r.status_code == 200, r.text
     sent = outbound(harness)
     assert "조유나" not in sent and "F8YAXXGS" not in sent and "독고새론" not in sent
@@ -344,8 +344,9 @@ def test_disabled_mode_matches_current_behavior(make_client, harness, monkeypatc
         "texts", "pattern_spans", "vault_spans", "masked_before_llm", "rule_spans", "llm_calls",
         "llm_proposed", "llm_kept", "llm_discarded_ungrounded", "llm_discarded_invalid",
         "generalize_rejected", "semantic_cues", "spans_trimmed", "llm_retyped",
-        "llm_dropped_shape", "kept_situation", "quasi_linked", "generalization_fixed",
-        "entailment_calls", "propagated", "surrogates",
+        "llm_dropped_shape", "kept_situation", "quasi_linked", "quasi_coarsened",
+        "public_or_title_dropped", "generalization_fixed", "entailment_calls", "propagated",
+        "surrogates",
     }  # fmt: skip
     assert adjudication_requests(harness) == []
 

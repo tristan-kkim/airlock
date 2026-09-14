@@ -5,8 +5,9 @@ one entry point, `Sanitizer.detect_many`, which takes all texts of a request or 
 
 Flow per text slot:
 
-1. Deterministic spans first: regex/entropy patterns, declared vault terms, base64 payloads that
-   hide a known value, and originals mapped earlier in the conversation.
+1. Deterministic spans first: regex/entropy patterns (also on the normalized text, for values
+   written apart, in numerals or over lines; `airlock.detect.obfuscation`), declared vault terms,
+   base64 payloads that hide a known value, and originals mapped earlier in the conversation.
 2. Those spans are masked (`<SECRET_1>`, ...) in the copy of the text the local model sees, so the
    model never receives raw secrets and cannot echo them.
 3. Deterministic semantic rules (`airlock.detect.ko_rules`) run on the original text.
@@ -19,7 +20,8 @@ Flow per text slot:
    model spans must have the shape of their type (`airlock.detect.shape`), values the task
    operates on are kept at `balanced` (amounts, lab values, non-birth dates, common diagnoses),
    employer + unit + role combinations are linked into generalizations
-   (`airlock.detect.org_rules`), generalizations are made entailed by their original
+   (`airlock.detect.org_rules`), combinations of quasi-identifiers that reach k are coarsened
+   (`airlock.detect.quasi`), generalizations are made entailed by their original
    (`airlock.generalize`), and a value detected in one slot is propagated to every slot.
 6. Protection-level policy -> overlap resolution (longest wins) -> placeholders, surrogates
    (`AIRLOCK_SUBSTITUTION=surrogate`, `airlock.surrogate`) or validated generalizations.
@@ -41,10 +43,11 @@ from typing import Any
 
 from airlock import generalize, placeholders, surrogate
 from airlock.config import ProtectionLevel, Settings, Substitution
-from airlock.detect import org_rules
+from airlock.detect import org_rules, quasi
 from airlock.detect.gliner import Ensemble, build_ensemble
-from airlock.detect.ko_rules import detect_rules
+from airlock.detect.ko_rules import detect_rules, public_figure
 from airlock.detect.llm import LLMDetector, LocalModelError, LocalModelMalformed, load_prompt
+from airlock.detect.obfuscation import detect_obfuscated
 from airlock.detect.patterns import HIGH_CONFIDENCE_RULES, detect_patterns, high_confidence_hits
 from airlock.detect.shape import check_llm_span, trim
 from airlock.detect.spans import (
@@ -165,6 +168,7 @@ class DetectStats:
     gliner_rejected_mislabel: int = 0  # age/date/money text under another label
     gliner_rejected_shape: int = 0  # failed the type-consistency check
     gliner_rejected_label: int = 0  # GLiNER-only span of an agreement-only label
+    gliner_rejected_topic: int = 0  # GLiNER-only organization or place in a request about nobody
     gliner_remapped: int = 0  # a name under another label, kept as PERSON
     gliner_candidates: int = 0  # GLiNER-only spans sent to adjudication
     adjudication_calls: int = 0
@@ -178,6 +182,8 @@ class DetectStats:
     llm_dropped_shape: int = 0  # local model span that cannot hold a value of its type
     kept_situation: int = 0  # amounts, lab values, non-birth dates, common diagnoses
     quasi_linked: int = 0  # employer/unit/site/role/age generalizations
+    quasi_coarsened: int = 0  # attributes coarsened by the quasi-identifier scorer
+    public_or_title_dropped: int = 0  # model spans that were a public figure or a job title
     generalization_fixed: int = 0  # replacement recomputed to be entailed by the original
     entailment_calls: int = 0  # local model "does X imply Y?" calls for health generalizations
     propagated: int = 0  # spans copied to another slot of the same request
@@ -405,7 +411,9 @@ class Sanitizer:
     # ---- detection ----------------------------------------------------------
     def deterministic(self, text: str, session: VaultSession) -> tuple[list[Span], DetectStats]:
         stats = DetectStats()
-        spans = detect_patterns(text)
+        # Values hidden from the rules (spaced or dotted names, numbers in Korean numerals or
+        # split over lines) are found on the normalized text and mapped back.
+        spans = detect_patterns(text) + detect_obfuscated(text)
         stats.pattern_spans = len(spans)
         declared = self.vault.terms("sensitive")
         vault_spans: list[Span] = []
@@ -527,6 +535,15 @@ class Sanitizer:
                 if trimmed is not span:
                     d.stats.spans_trimmed += 1
                 span = trimmed
+                if span.source in ("llm", "gliner") and (
+                    (span.type == "PERSON" and public_figure(span.text))
+                    or (span.type == "ORG" and quasi.is_job_title(span.text))
+                    or (span.type == "PERSON" and quasi.is_job_title(span.text, exact=True))
+                ):
+                    # "장영실이" as a person, "직함 선임연구원" as an organization: a historical
+                    # figure is the topic, and a job title names no organization.
+                    d.stats.public_or_title_dropped += 1
+                    continue
                 if _code_identifier(span, text):
                     d.stats.llm_dropped_shape += 1
                     continue  # doc_id, orders_rw, PAYMENTS_API_KEY: code, not a private value
@@ -578,6 +595,14 @@ class Sanitizer:
             if extra:
                 d.spans = d.spans + extra
                 first.quasi_linked += len(extra)
+
+        # Quasi-identifier combinations: coarsen the most identifying attributes until the
+        # message scores below k (`airlock.detect.quasi`).
+        for text, d in zip(texts, detected, strict=True):
+            coarse = quasi.coarsen(text, d.spans, self.settings.protection_level)
+            if coarse:
+                d.spans = d.spans + coarse
+                first.quasi_coarsened += len(coarse)
 
         await self._entail(texts, detected, first)
         if len(texts) > 1:

@@ -10,7 +10,9 @@ the payload (every JSON string, keys included):
 
 "Present" includes variants. Each string is examined as written, NFKC + casefolded with format
 characters removed, compacted (all whitespace and punctuation removed, so "새론 다움물류" matches
-"새론다움물류"), and as digit runs where Korean/Hanja/English numerals count as digits. Strings are
+"새론다움물류"), with jamo composed and Cyrillic/Greek homoglyphs folded, and as digit runs where
+Korean/Hanja/English numerals count as digits. High-confidence patterns are also checked on each
+string's detection view (spelled-out and full-width digits, spaced syllables). Strings are
 also decoded (embedded JSON, percent-encoding, base64/base64url tokens) up to two layers deep and
 the decoded text is examined the same way.
 
@@ -25,7 +27,7 @@ from typing import Any, Literal
 
 from airlock.detect.patterns import high_confidence_hits
 from airlock.detect.spans import normalize, term_pattern
-from airlock.textnorm import decoded_layers, fold, fuzzy_find
+from airlock.textnorm import decoded_layers, detection_view, fold, fuzzy_find
 
 _SEP = "\n\x00\n"
 
@@ -102,7 +104,10 @@ def check(
         if _present(needle, texts, folded_blob, raw_blob):
             reasons.append(reason(item.code, item.type, needle, hasher))
 
-    for rule_name, value in high_confidence_hits(raw_blob):
+    # High-confidence patterns, as written and in each string's detection view: a resident
+    # registration number in full-width digits or Korean numerals is still one.
+    views = [v for t in texts if (v := detection_view(t).text) != t]
+    for rule_name, value in high_confidence_hits(_SEP.join([raw_blob, *views])):
         r = reason("secret_pattern", rule_name, value, hasher)
         if r not in reasons:
             reasons.append(r)
