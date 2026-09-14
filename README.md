@@ -6,6 +6,18 @@ Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request 
 
 > The small local model does not solve the task. It only decides what is private. The big cloud model does the reasoning.
 
+## Try the demo
+
+**Hosted demo: TBD** (goes live in October 2026 and stays free and open until judging ends on 2026-12-15).
+
+Click any of the five fictional scenarios (chat, private web search, research agent; English and Korean) to see what you typed, what the cloud saw, and the answer. The hosted demo differs from real use in a few ways:
+
+- **Detection runs on the demo server, not your machine.** The hosted demo uses NVIDIA Nemotron-3-Nano-30B-A3B on Nebius Token Factory as the detector. A banner says so, and says not to paste real personal data. For real privacy, run Airlock locally ([Quickstart](#quickstart)), where the detector never leaves your device.
+- **Every visitor gets a separate in-memory session.** The vault and audit log are never written to disk and expire after 30 minutes idle.
+- **Usage is limited:** 20 requests per 10 minutes, 4,000 characters per input, and a daily budget. When the budget is used up, scenarios show a clearly labeled *recorded run* of the same input.
+
+Operators: see [`deploy/DEMO_RUNBOOK.md`](deploy/DEMO_RUNBOOK.md) (`AIRLOCK_DEMO=1`, `Dockerfile`, Nebius Serverless and Fly.io configs).
+
 ## Why
 
 People and companies avoid cloud AI mainly because of leakage: names, customer data, health details, credentials pasted into a prompt. Local-only models avoid the leak, but they are much weaker than frontier models. Airlock splits the job:
@@ -433,7 +445,10 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_GLINER_AGREEMENT_ONLY` | `city,date_of_birth` | Labels whose GLiNER-only spans are dropped; only agreement with another source confirms them. Empty adjudicates every label |
 | `AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES` | `3` | Shortest Hangul name GLiNER may add on its own |
 | `AIRLOCK_HOST` / `AIRLOCK_PORT` | `127.0.0.1` / `8787` | Bind address |
-| `AIRLOCK_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Accepted `Host` headers (DNS-rebinding protection); `*` disables |
+| `AIRLOCK_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Accepted `Host` headers (DNS-rebinding protection). Outside demo mode only loopback names are honored; other names and `*` are ignored with a warning |
+| `AIRLOCK_DEMO` | unset | `1` runs the hosted public demo: per-session in-memory state, rate limits, daily budget, presets, banner, security headers. Never for real data. See [`deploy/DEMO_RUNBOOK.md`](deploy/DEMO_RUNBOOK.md) |
+| `AIRLOCK_DETECTOR_BACKEND` | `local` | `cloud` runs the detector on Token Factory (`AIRLOCK_CLOUD_DETECTOR_MODEL`, default `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`). Refused unless `AIRLOCK_DEMO=1` |
+| `AIRLOCK_DEMO_*` | see `deploy/demo.env` | Demo guards: `IP_LIMIT`, `SESSION_LIMIT`, `WINDOW_S`, `MAX_INPUT_CHARS`, `MAX_BODY_BYTES`, `MAX_TOKENS`, `AGENT_MAX_STEPS`, `MAX_CONCURRENT`, `DAILY_REQUESTS`, `DAILY_CLOUD_CALLS`, `SESSION_TTL_S`, `MAX_SESSIONS`, `PRESETS` (`auto`/`recorded`), `TRUSTED_PROXY_HOPS`, `CLIENT_IP_HEADER` |
 | `AIRLOCK_AGENT_MAX_STEPS` | `8` | Planning turns per agent run (1-16) |
 | `AIRLOCK_AGENT_REASONING_EFFORT` | `none` | `reasoning_effort` sent with agent turns; empty omits it |
 | `AIRLOCK_SEARCH_JUDGE` | `nano` | Intent judge for agent searches: `nano`, `safety` or `both` |
@@ -627,6 +642,11 @@ airlock/
   cli.py            `airlock serve`, `airlock doctor`, `airlock agent`
   prompts/          detector, adjudication, search rewrite, re-rank, agent and search-judge prompts
   static/index.html demo UI
+  demo/             hosted public demo (AIRLOCK_DEMO=1): gateway, guards, sessions, presets and
+                    recorded runs, cloud detector adapter, banner UI
+Dockerfile            demo image (`demo`: cloud detector; `sidecar`: llama.cpp in the container)
+deploy/               demo runbook, Nebius Serverless and Fly.io configs, smoke test
+scripts/demo/         records the presets' fallback runs
 scripts/local_model/  llama.cpp serving for the local model
 eval/                 synthetic evaluation set and harness
 eval/agent/           agent-mode scenarios and the unguarded vs Airlock egress evaluation

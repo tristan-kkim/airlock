@@ -1,0 +1,50 @@
+# Option B: Airlock demo on Fly.io, one always-on shared-cpu-1x machine with 1 GB.
+# Deploy from the repo root (DEMO_RUNBOOK.md):
+#   fly deploy --config deploy/fly/fly.toml --dockerfile Dockerfile --ha=false
+# Non-secret settings mirror deploy/demo.env; keep the two in sync.
+
+app = "airlock-demo"          # TODO(October): must be globally unique on Fly.io
+primary_region = "ams"        # near Token Factory eu-north1, where the detector model runs
+
+[build]
+  build-target = "demo"
+
+[env]
+  AIRLOCK_DEMO = "1"
+  AIRLOCK_DETECTOR_BACKEND = "cloud"
+  AIRLOCK_CLOUD_DETECTOR_MODEL = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+  AIRLOCK_UPSTREAM_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
+  AIRLOCK_UPSTREAM_FALLBACK_MODEL = "nvidia/nemotron-3-super-120b-a12b"
+  AIRLOCK_PROTECTION_LEVEL = "balanced"
+  AIRLOCK_AGENT_MAX_STEPS = "6"
+  AIRLOCK_ALLOWED_HOSTS = "airlock-demo.fly.dev"   # TODO(October): <app>.fly.dev
+  # Fly Proxy sets Fly-Client-IP; its X-Forwarded-For ends with the app's own IP.
+  AIRLOCK_DEMO_CLIENT_IP_HEADER = "fly-client-ip"
+  AIRLOCK_DEMO_IP_LIMIT = "20"
+  AIRLOCK_DEMO_SESSION_LIMIT = "20"
+  AIRLOCK_DEMO_WINDOW_S = "600"
+  AIRLOCK_DEMO_MAX_INPUT_CHARS = "4000"
+  AIRLOCK_DEMO_MAX_TOKENS = "1024"
+  AIRLOCK_DEMO_DAILY_REQUESTS = "300"
+  AIRLOCK_DEMO_DAILY_CLOUD_CALLS = "1200"
+  AIRLOCK_DEMO_SESSION_TTL_S = "1800"
+  AIRLOCK_DEMO_PRESETS = "auto"
+
+[http_service]
+  internal_port = 8801
+  force_https = true
+  # Sessions, limits and the budget live in memory: one machine, never stopped.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    path = "/readyz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

@@ -97,6 +97,8 @@ class DemoSettings:
     presets: Literal["auto", "recorded"] = "auto"
     # Client IP from X-Forwarded-For, counting this many trusted proxies from the right.
     trusted_proxy_hops: int = 0
+    # Or from a header the platform proxy sets itself (e.g. Fly-Client-IP). Takes precedence.
+    client_ip_header: str = ""
     # Shown in the banner and runbook smoke test; empty until the URL exists.
     public_url: str = ""
     quickstart_url: str = README_QUICKSTART_URL
@@ -144,5 +146,6 @@ def load_demo_settings(env: Mapping[str, str] | None = None) -> DemoSettings:
         max_sessions=_int(env, "AIRLOCK_DEMO_MAX_SESSIONS", 300, 1),
         presets=presets,  # type: ignore[arg-type]
         trusted_proxy_hops=_int(env, "AIRLOCK_DEMO_TRUSTED_PROXY_HOPS", 0),
+        client_ip_header=(env.get("AIRLOCK_DEMO_CLIENT_IP_HEADER") or "").strip().lower(),
         public_url=(env.get("AIRLOCK_DEMO_PUBLIC_URL") or "").strip(),
     )

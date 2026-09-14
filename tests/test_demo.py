@@ -175,6 +175,9 @@ def test_client_ip_trusts_only_configured_proxy_hops():
     assert client_ip(scope, 0) == "10.0.0.9"  # header ignored without a trusted proxy
     assert client_ip(scope, 1) == "1.2.3.4"  # the entry the proxy appended, not the spoofable one
     assert client_ip(scope, 2) == "6.6.6.6"
+    fly = {**scope, "headers": [*scope["headers"], (b"fly-client-ip", b"9.9.9.9")]}
+    assert client_ip(fly, 1, "Fly-Client-IP") == "9.9.9.9"
+    assert client_ip(scope, 0, "fly-client-ip") == "10.0.0.9"  # header absent: socket peer
 
 
 def test_sliding_window_limiter_unit(clock):

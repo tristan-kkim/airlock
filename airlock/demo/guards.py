@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 from collections import OrderedDict, deque
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -65,7 +64,7 @@ class DailyBudget:
     """Global per-UTC-day counters. A limit of 0 disables that counter.
 
     `requests` counts admitted costly requests; `cloud_calls` counts every HTTP call that left the
-    demo server for Token Factory or Tavily (see CountingTransport). Either one reaching its limit
+    demo server for Token Factory or Tavily (see SharedTransport). Either one reaching its limit
     exhausts the budget until the next UTC day. In memory: a restart resets it, which is acceptable
     for a demo whose real ceiling is the Token Factory balance.
     """
@@ -168,29 +167,24 @@ def input_chars(value: Any) -> int:
     return 0
 
 
-def client_ip(scope: dict[str, Any], trusted_proxy_hops: int) -> str:
+def client_ip(scope: dict[str, Any], trusted_proxy_hops: int, header: str = "") -> str:
     """Client address. Behind N trusted proxies, the N-th X-Forwarded-For entry from the right.
 
     Entries left of that are client-controlled and never trusted. With 0 hops the socket peer is
-    used and X-Forwarded-For is ignored.
+    used and X-Forwarded-For is ignored. `header` names a header the platform proxy sets itself
+    (Fly.io: Fly-Client-IP); only configure it when the proxy overwrites a client-sent value.
     """
     peer = (scope.get("client") or ("unknown", 0))[0]
+    if header:
+        wanted = header.lower().encode("latin-1")
+        for name, value in scope.get("headers") or []:
+            if name == wanted and value.strip():
+                return value.decode("latin-1").strip()
     if trusted_proxy_hops <= 0:
         return peer
     forwarded: list[str] = []
     for name, value in scope.get("headers") or []:
         if name == b"x-forwarded-for":
             forwarded += [p.strip() for p in value.decode("latin-1").split(",") if p.strip()]
-    if len(forwarded) >= trusted_proxy_hops:
-        return forwarded[-trusted_proxy_hops]
-    return forwarded[0] if forwarded else peer
-
-
-@dataclass
-class Admission:
-    ok: bool
-    status: int = 200
-    error_type: str = ""
-    message: str = ""
-    retry_after_s: int = 0
-    fallback_reason: str = ""  # for presets: why a recorded run is served instead
+    # Fewer entries than trusted proxies: the header did not come through them, so ignore it.
+    return forwarded[-trusted_proxy_hops] if len(forwarded) >= trusted_proxy_hops else peer

@@ -434,7 +434,7 @@ class DemoGateway:
             await self._json(send, 200 if ready else 503, body)
             return
 
-        ip = client_ip(scope, self.demo.trusted_proxy_hops)
+        ip = client_ip(scope, self.demo.trusted_proxy_hops, self.demo.client_ip_header)
         if self.ip_requests.check(ip) > 0:
             await _send_simple(send, *_json_error(429, "demo_rate_limited", "Too many requests."))
             return
