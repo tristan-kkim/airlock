@@ -6,6 +6,7 @@ import os
 import stat
 from urllib.parse import quote
 
+import httpx
 import pytest
 
 from airlock import gate
@@ -212,6 +213,17 @@ def test_vault_reset_clears_the_detector_cache(client, harness) -> None:
     client.post("/v1/chat/completions", json=body, headers={"x-airlock-conversation-id": "p3"})
     assert detector_calls() == 2 * first  # after the reset the text is detected afresh
     assert client.post("/vault/reset", json={}).json()["detection_cache_cleared"] >= 1
+
+
+def test_upstream_error_is_a_502_json_error_not_a_crash(make_client, harness) -> None:
+    """An upstream refusal (for example HTTP 402, budget exhausted) reaches the client as 502."""
+    client = make_client(upstream_fallback_model="")
+    harness._upstream = lambda request: httpx.Response(402, json={"detail": "Payment Required"})
+    body = {"messages": [{"role": "user", "content": "hello there"}]}
+    r = client.post("/v1/chat/completions", json=body)
+    assert r.status_code == 502
+    err = r.json()["error"]
+    assert err["type"] == "airlock_upstream_error" and err["upstream_status"] == 402
 
 
 def test_audit_hash_key_file_is_created_private_and_stable(make_client, tmp_path) -> None:

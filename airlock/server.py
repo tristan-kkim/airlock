@@ -387,7 +387,11 @@ def create_app(
             record.stop("upstream")
             services.audit.write(record, originals)
             return _error(
-                502, "airlock_upstream_error", str(exc), record.request_id, status=exc.status
+                502,
+                "airlock_upstream_error",
+                str(exc),
+                record.request_id,
+                upstream_status=exc.status,
             )
         record.meta.update({"model_used": result.model_used, "fallback": result.fallback})
 
