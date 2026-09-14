@@ -286,8 +286,9 @@ def test_upstream_gets_placeholder_instruction_and_legacy_history_is_canonicaliz
     r1 = client.post("/v1/chat/completions", json={"messages": turn1})
     assert r1.json()["choices"][0]["message"]["content"] == f"Hello {NAME} / {NAME}"
     sent = harness.upstream_requests[0]["messages"]
-    assert sent[0] == {"role": "system", "content": PLACEHOLDER_NOTE}
+    assert sent[0]["role"] == "system" and sent[0]["content"].startswith(PLACEHOLDER_NOTE)
     assert "<PERSON_1>" in PLACEHOLDER_NOTE and "copy them exactly" in PLACEHOLDER_NOTE
+    assert "<PERSON_n> is a person's name" in sent[0]["content"]
 
     turn2 = [*turn1, {"role": "assistant", "content": "Hi [[PERSON_1]]"}]
     turn2.append({"role": "user", "content": "again"})

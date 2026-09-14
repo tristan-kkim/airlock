@@ -207,6 +207,19 @@ RULES: tuple[Rule, ...] = (
         priority=11,
     ),
     Rule(
+        # A wallet recovery phrase: 12 to 24 lower-case words after its name.
+        "seed_phrase",
+        "SECRET",
+        re.compile(
+            r"(?:(?:seed|recovery|mnemonic|backup|secret)\s+(?:phrase|words)|mnemonic|"
+            r"시드\s*(?:문구|구문)|복구\s*(?:문구|구문)|니모닉)"
+            r"[^\n\"'“‘]{0,20}?[\"'“‘]?((?:[a-z]{3,8}\s+){11,23}[a-z]{3,8})(?![a-z])",
+            re.IGNORECASE,
+        ),
+        group=1,
+        priority=12,
+    ),
+    Rule(
         "password_phrase",
         "SECRET",
         re.compile(
@@ -361,6 +374,7 @@ HIGH_CONFIDENCE_RULES: tuple[Rule, ...] = tuple(r for r in RULES if r.high_confi
 _TOKEN_RE = re.compile(r"(?<![A-Za-z0-9+/_=.\-])[A-Za-z0-9+/_=\-]{24,}(?![A-Za-z0-9+/_=\-])")
 _URL_RE = re.compile(r"https?://[^\s'\"<>)\]]+")
 ENTROPY_MIN_LEN = 24
+_ENV_KEY_HEAD = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=(?=[^=])")
 ENTROPY_THRESHOLD = 4.2  # bits/char; pure hex tops out at 4.0 so git SHAs and UUIDs pass
 
 
@@ -425,15 +439,18 @@ def detect_patterns(text: str) -> list[Span]:
                          rule="url_path_token")  # fmt: skip
                 )
     for m in _TOKEN_RE.finditer(text):
-        token = m.group(0)
-        if _looks_like_secret(token) and not _inside_placeholder(text, m.start(), m.end()):
+        token, start = m.group(0), m.start()
+        if (key := _ENV_KEY_HEAD.match(token)) and len(token) - key.end() >= 8:
+            # "PAYMENTS_API_KEY=pmk_live_...": the variable name is code the answer needs.
+            token, start = token[key.end() :], start + key.end()
+        if _looks_like_secret(token) and not _inside_placeholder(text, start, start + len(token)):
             spans.append(
                 Span(
                     text=token,
                     type="SECRET",
                     source="entropy",
-                    start=m.start(),
-                    end=m.end(),
+                    start=start,
+                    end=start + len(token),
                     rule="entropy",
                 )
             )

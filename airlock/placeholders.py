@@ -68,17 +68,62 @@ def intervals(text: str) -> list[tuple[int, int]]:
     return [(m.start(), m.end()) for m in LENIENT_RE.finditer(text)]
 
 
+# "last 4 digits: <FINANCIAL_1>", "ending in <FINANCIAL_1>", "끝자리 <FINANCIAL_1>": the cloud model
+# meant a partial value, so restoring the full card number there contradicts the sentence.
+_LAST_DIGITS_CUE = re.compile(
+    r"(?:last\s*(?:4|four)(?:\s*digits)?|ending\s+(?:in|with)|ends\s+(?:in|with)|끝\s*자리|"
+    r"뒷\s*자리|뒤\s*4\s*자리|마지막\s*4\s*자리)"
+    r"(?:[\s:*()\[\]\-–—,_`'\"]|only|number|no\.|is|are|of|번호|는|은|가|이){0,12}$",
+    re.IGNORECASE,
+)
+_PARTIAL_TYPES = ("FINANCIAL", "ID_NUMBER")
+
+
+def last_digits(key: str, original: str, before: str) -> str | None:
+    """The last four digits when `before` asks for them and the value is a long number."""
+    if not key.startswith(_PARTIAL_TYPES) or not _LAST_DIGITS_CUE.search(before[-48:]):
+        return None
+    digits = re.sub(r"\D", "", original)
+    return digits[-4:] if len(digits) >= 12 else None
+
+
 def rehydrate(
-    text: str, lookup: Callable[[str], str | None], transform: Callable[[str], str] = str
+    text: str,
+    lookup: Callable[[str], str | None],
+    transform: Callable[[str], str] = str,
+    *,
+    before: str = "",
 ) -> str:
-    """Replace every placeholder whose key `lookup` knows. Unknown tokens are left untouched."""
+    """Replace every placeholder whose key `lookup` knows. Unknown tokens are left untouched.
 
-    def sub(m: re.Match[str]) -> str:
+    Local only, so it may adapt to the sentence: a card number after "last 4 digits" is restored
+    as its last four digits, and a Korean particle after the token follows the restored value's
+    last syllable (`<PERSON_1>가` -> `남궁하람이`). `before` is text already released before
+    `text` (streaming).
+    """
+    from airlock.surrogate import fix_particle  # local import: surrogate imports this module
+
+    out: list[str] = []
+    cursor = 0
+    for m in _REHYDRATE_RE.finditer(text):
+        if m.start() < cursor:
+            continue
         raw = m.group("wrapped") or m.group("bare")
-        original = lookup(canonical_key(raw))
-        return m.group(0) if original is None else transform(original)
-
-    return _REHYDRATE_RE.sub(sub, text)
+        key = canonical_key(raw)
+        original = lookup(key)
+        out.append(text[cursor : m.start()])
+        cursor = m.end()
+        if original is None:
+            out.append(m.group(0))
+            continue
+        value = last_digits(key, original, before + "".join(out)) or original
+        out.append(transform(value))
+        fix = fix_particle(value, text[cursor : cursor + 4])
+        if fix is not None and text[cursor : cursor + fix[0]] != fix[1]:
+            out.append(fix[1])
+            cursor += fix[0]
+    out.append(text[cursor:])
+    return "".join(out)
 
 
 def canonicalize(text: str, known: Callable[[str], bool]) -> str:

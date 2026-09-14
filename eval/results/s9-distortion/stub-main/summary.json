@@ -1,0 +1,3658 @@
+{
+  "harness_version": "1.0.0",
+  "config": {
+    "base_url": "http://127.0.0.1:8799",
+    "target_label": "airlock 2e92453 (main), AIRLOCK_GLINER=on, placeholder, dev split, stub upstream (scanner metrics only)",
+    "passes": 3,
+    "cases_glob": "eval/results/s6-split/dev.jsonl",
+    "cases": 72,
+    "dataset_sha256": "96855eb04745e708a67efc966d6eb2d9d3226e8a4a9ff77f4a41691390c9c7ad",
+    "protection_level": "balanced",
+    "server_health": {
+      "status": "ok",
+      "version": "0.1.0",
+      "protection_level": "balanced",
+      "local_model": "nemotron-3-nano-4b",
+      "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "upstream_configured": true,
+      "search_configured": true
+    },
+    "model": "airlock",
+    "concurrency": 1,
+    "shuffle": true,
+    "conversation_scope": "pass",
+    "seed": 0,
+    "subset": null,
+    "register_canaries": false,
+    "auto_approve_review": false,
+    "reset_vault": true,
+    "started_at": "2026-09-14T00:14:16.574788+00:00",
+    "harness_version": "1.0.0",
+    "argv": [
+      "--base-url",
+      "http://127.0.0.1:8799",
+      "--passes",
+      "3",
+      "--reset-vault",
+      "--cases",
+      "eval/results/s6-split/dev.jsonl",
+      "--out",
+      "eval/results/s9-distortion/stub-main",
+      "--label",
+      "airlock 2e92453 (main), AIRLOCK_GLINER=on, placeholder, dev split, stub upstream (scanner metrics only)",
+      "--protection-level",
+      "balanced",
+      "--timeout",
+      "600"
+    ],
+    "finished_at": "2026-09-14T00:22:15.821981+00:00"
+  },
+  "dataset": {
+    "cases": 72,
+    "by_category": {
+      "adversarial": 8,
+      "benign": 8,
+      "direct_pii": 8,
+      "finance": 8,
+      "health": 8,
+      "intent_leak_search": 8,
+      "quasi_identifier": 8,
+      "secrets_in_code": 8,
+      "vault_terms": 8
+    },
+    "by_lang": {
+      "ko": 36,
+      "en": 36
+    },
+    "by_task": {
+      "chat": 62,
+      "search": 10
+    }
+  },
+  "passes": 3,
+  "overall": {
+    "cases": {
+      "n": 3,
+      "mean": 72.0,
+      "std": 0.0,
+      "min": 72.0,
+      "max": 72.0,
+      "values": [
+        72.0,
+        72.0,
+        72.0
+      ]
+    },
+    "errors": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "leak_rate": {
+      "n": 3,
+      "mean": 0.078125,
+      "std": 0.0,
+      "min": 0.078125,
+      "max": 0.078125,
+      "values": [
+        0.078125,
+        0.078125,
+        0.078125
+      ]
+    },
+    "value_leak_rate": {
+      "n": 3,
+      "mean": 0.0049261083743842365,
+      "std": 0.0,
+      "min": 0.0049261083743842365,
+      "max": 0.0049261083743842365,
+      "values": [
+        0.0049261083743842365,
+        0.0049261083743842365,
+        0.0049261083743842365
+      ]
+    },
+    "exact_leak_rate": {
+      "n": 3,
+      "mean": 0.015625,
+      "std": 0.0,
+      "min": 0.015625,
+      "max": 0.015625,
+      "values": [
+        0.015625,
+        0.015625,
+        0.015625
+      ]
+    },
+    "canary_leak_rate": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "quasi_reid_rate": {
+      "n": 3,
+      "mean": 0.2857142857142857,
+      "std": 0.0,
+      "min": 0.2857142857142857,
+      "max": 0.2857142857142857,
+      "values": [
+        0.2857142857142857,
+        0.2857142857142857,
+        0.2857142857142857
+      ]
+    },
+    "identity_leak_rate": {
+      "n": 3,
+      "mean": 0.09677419354838708,
+      "std": 0.0,
+      "min": 0.0967741935483871,
+      "max": 0.0967741935483871,
+      "values": [
+        0.0967741935483871,
+        0.0967741935483871,
+        0.0967741935483871
+      ]
+    },
+    "block_rate": {
+      "n": 3,
+      "mean": 0.013888888888888888,
+      "std": 0.013888888888888888,
+      "min": 0.0,
+      "max": 0.027777777777777776,
+      "values": [
+        0.027777777777777776,
+        0.013888888888888888,
+        0.0
+      ]
+    },
+    "block_rate_sensitive": {
+      "n": 3,
+      "mean": 0.015625,
+      "std": 0.015625,
+      "min": 0.0,
+      "max": 0.03125,
+      "values": [
+        0.03125,
+        0.015625,
+        0.0
+      ]
+    },
+    "over_block_benign": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "benign_false_positive_rate": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "over_redaction_rate": {
+      "n": 3,
+      "mean": 0.11837786760815198,
+      "std": 0.006773609604521528,
+      "min": 0.11242603550295859,
+      "max": 0.12574850299401197,
+      "values": [
+        0.12574850299401197,
+        0.11242603550295859,
+        0.11695906432748537
+      ]
+    },
+    "over_redaction_case_rate": {
+      "n": 3,
+      "mean": 0.25362173038229374,
+      "std": 0.01630058102582387,
+      "min": 0.23943661971830985,
+      "max": 0.2714285714285714,
+      "values": [
+        0.2714285714285714,
+        0.23943661971830985,
+        0.25
+      ]
+    },
+    "detector_miss_rate": {
+      "n": 3,
+      "mean": 0.022988505747126436,
+      "std": 0.01990862997205606,
+      "min": 0.0049261083743842365,
+      "max": 0.04433497536945813,
+      "values": [
+        0.04433497536945813,
+        0.019704433497536946,
+        0.0049261083743842365
+      ]
+    },
+    "gate_save_rate": {
+      "n": 3,
+      "mean": 0.5462962962962963,
+      "std": 0.4781759753213095,
+      "min": 0.0,
+      "max": 0.8888888888888888,
+      "values": [
+        0.8888888888888888,
+        0.75,
+        0.0
+      ]
+    },
+    "gate_save_rate_attributed": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "overhead_ms_mean": {
+      "n": 3,
+      "mean": 2213.6681944444445,
+      "std": 2004.58467678239,
+      "min": 974.8158333333334,
+      "max": 4526.402777777777,
+      "values": [
+        4526.402777777777,
+        1139.7859722222222,
+        974.8158333333334
+      ]
+    },
+    "overhead_ms_p50": {
+      "n": 3,
+      "mean": 1716.6633333333332,
+      "std": 2195.5578072572657,
+      "min": 448.395,
+      "max": 4251.875,
+      "values": [
+        4251.875,
+        449.71999999999997,
+        448.395
+      ]
+    },
+    "overhead_ms_p95": {
+      "n": 3,
+      "mean": 5035.574833333336,
+      "std": 4073.7833894754804,
+      "min": 2330.553500000001,
+      "max": 9720.930500000002,
+      "values": [
+        9720.930500000002,
+        3055.2405000000035,
+        2330.553500000001
+      ]
+    },
+    "client_ms_mean": {
+      "n": 3,
+      "mean": 2217.208888888889,
+      "std": 2004.306465257057,
+      "min": 978.46875,
+      "max": 4529.619583333333,
+      "values": [
+        4529.619583333333,
+        1143.5383333333332,
+        978.46875
+      ]
+    },
+    "gate_saved_attributed": {
+      "n": 3,
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "by_category": {
+    "adversarial": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.041666666666666664,
+        "std": 0.07216878364870322,
+        "min": 0.0,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.041666666666666664,
+        "std": 0.07216878364870322,
+        "min": 0.0,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.07539682539682539,
+        "std": 0.006873217490352687,
+        "min": 0.07142857142857142,
+        "max": 0.08333333333333333,
+        "values": [
+          0.08333333333333333,
+          0.07142857142857142,
+          0.07142857142857142
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.13095238095238096,
+        "std": 0.010309826235529026,
+        "min": 0.125,
+        "max": 0.14285714285714285,
+        "values": [
+          0.14285714285714285,
+          0.125,
+          0.125
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.06410256410256411,
+        "std": 0.11102889792108188,
+        "min": 0.0,
+        "max": 0.19230769230769232,
+        "values": [
+          0.19230769230769232,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 1,
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "values": [
+          1.0
+        ]
+      },
+      "gate_save_rate_attributed": {
+        "n": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0
+        ]
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2589.045833333333,
+        "std": 2414.180549545465,
+        "min": 836.30125,
+        "max": 5342.69875,
+        "values": [
+          5342.69875,
+          1588.1375,
+          836.30125
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1269.9083333333333,
+        "std": 1550.6252634851314,
+        "min": 372.89,
+        "max": 3060.415,
+        "values": [
+          3060.415,
+          376.42,
+          372.89
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 6239.119499999998,
+        "std": 4399.463018647502,
+        "min": 2128.5334999999995,
+        "max": 10879.482499999998,
+        "values": [
+          10879.482499999998,
+          5709.342499999997,
+          2128.5334999999995
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2592.3641666666667,
+        "std": 2413.6572443552636,
+        "min": 839.8612499999999,
+        "max": 5345.3925,
+        "values": [
+          5345.3925,
+          1591.8387500000001,
+          839.8612499999999
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "benign": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "value_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "exact_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "canary_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_block_benign": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "benign_false_positive_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.0588235294117647,
+        "std": 0.0,
+        "min": 0.058823529411764705,
+        "max": 0.058823529411764705,
+        "values": [
+          0.058823529411764705,
+          0.058823529411764705,
+          0.058823529411764705
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 1064.55,
+        "std": 856.3280955015504,
+        "min": 478.90125,
+        "max": 2047.3449999999998,
+        "values": [
+          2047.3449999999998,
+          667.40375,
+          478.90125
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 996.8733333333333,
+        "std": 1122.6092307692527,
+        "min": 347.475,
+        "max": 2293.15,
+        "values": [
+          2293.15,
+          349.995,
+          347.475
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 2163.580333333333,
+        "std": 1579.6553470167414,
+        "min": 925.7164999999999,
+        "max": 3942.719499999999,
+        "values": [
+          3942.719499999999,
+          1622.3049999999998,
+          925.7164999999999
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 1067.2216666666666,
+        "std": 856.211290001201,
+        "min": 481.60625,
+        "max": 2049.87625,
+        "values": [
+          2049.87625,
+          670.1825,
+          481.60625
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "direct_pii": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.043478260869565216,
+        "std": 0.0,
+        "min": 0.043478260869565216,
+        "max": 0.043478260869565216,
+        "values": [
+          0.043478260869565216,
+          0.043478260869565216,
+          0.043478260869565216
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2893.099166666667,
+        "std": 2824.0410264958564,
+        "min": 1193.39125,
+        "max": 6153.02625,
+        "values": [
+          6153.02625,
+          1193.39125,
+          1332.88
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 2451.5933333333332,
+        "std": 3407.888101017745,
+        "min": 476.945,
+        "max": 6386.675,
+        "values": [
+          6386.675,
+          476.945,
+          491.15999999999997
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 5015.077833333333,
+        "std": 2729.5925123249317,
+        "min": 3432.8954999999996,
+        "max": 8166.931499999999,
+        "values": [
+          8166.931499999999,
+          3445.406499999999,
+          3432.8954999999996
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2897.335833333333,
+        "std": 2823.55118650763,
+        "min": 1197.92375,
+        "max": 6156.6975,
+        "values": [
+          6156.6975,
+          1197.92375,
+          1337.38625
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "finance": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.24,
+        "std": 0.0,
+        "min": 0.24,
+        "max": 0.24,
+        "values": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2296.0470833333334,
+        "std": 2997.521032499536,
+        "min": 493.87874999999997,
+        "max": 5756.28625,
+        "values": [
+          5756.28625,
+          637.97625,
+          493.87874999999997
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 2164.75,
+        "std": 3033.761001418042,
+        "min": 411.65,
+        "max": 5667.835,
+        "values": [
+          5667.835,
+          414.765,
+          411.65
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 3891.1809999999987,
+        "std": 4677.946871054891,
+        "min": 826.6574999999996,
+        "max": 9275.676999999998,
+        "values": [
+          9275.676999999998,
+          1571.208499999999,
+          826.6574999999996
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2300.2429166666666,
+        "std": 2997.1046491469097,
+        "min": 498.23,
+        "max": 5759.99875,
+        "values": [
+          5759.99875,
+          642.5,
+          498.23
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "health": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.038461538461538464,
+        "std": 0.0,
+        "min": 0.038461538461538464,
+        "max": 0.038461538461538464,
+        "values": [
+          0.038461538461538464,
+          0.038461538461538464,
+          0.038461538461538464
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.08333333333333333,
+        "std": 0.07216878364870322,
+        "min": 0.0,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.08333333333333333,
+        "std": 0.07216878364870322,
+        "min": 0.0,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.23148148148148148,
+        "std": 0.016037507477489613,
+        "min": 0.2222222222222222,
+        "max": 0.25,
+        "values": [
+          0.2222222222222222,
+          0.2222222222222222,
+          0.25
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.5892857142857143,
+        "std": 0.03092947870658711,
+        "min": 0.5714285714285714,
+        "max": 0.625,
+        "values": [
+          0.5714285714285714,
+          0.5714285714285714,
+          0.625
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.11538461538461538,
+        "std": 0.06661733875264914,
+        "min": 0.038461538461538464,
+        "max": 0.15384615384615385,
+        "values": [
+          0.15384615384615385,
+          0.15384615384615385,
+          0.038461538461538464
+        ]
+      },
+      "gate_save_rate": {
+        "n": 3,
+        "mean": 0.5,
+        "std": 0.4330127018922193,
+        "min": 0.0,
+        "max": 0.75,
+        "values": [
+          0.75,
+          0.75,
+          0.0
+        ]
+      },
+      "gate_save_rate_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 3562.2645833333336,
+        "std": 2223.6822819851272,
+        "min": 1891.71875,
+        "max": 6086.24125,
+        "values": [
+          6086.24125,
+          2708.83375,
+          1891.71875
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 2292.21,
+        "std": 2790.6257829383003,
+        "min": 657.31,
+        "max": 5514.43,
+        "values": [
+          5514.43,
+          704.89,
+          657.31
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 9281.305999999995,
+        "std": 1975.578966258751,
+        "min": 7000.463999999995,
+        "max": 10456.82799999999,
+        "values": [
+          10386.625999999997,
+          10456.82799999999,
+          7000.463999999995
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 3565.9437500000004,
+        "std": 2223.1495324310595,
+        "min": 1895.8675,
+        "max": 6089.3325,
+        "values": [
+          6089.3325,
+          2712.63125,
+          1895.8675
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "intent_leak_search": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.42424242424242425,
+        "std": 0.10497277621629557,
+        "min": 0.36363636363636365,
+        "max": 0.5454545454545454,
+        "values": [
+          0.5454545454545454,
+          0.36363636363636365,
+          0.36363636363636365
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.5833333333333334,
+        "std": 0.14433756729740643,
+        "min": 0.5,
+        "max": 0.75,
+        "values": [
+          0.75,
+          0.5,
+          0.5
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2617.525416666667,
+        "std": 1357.0616815052645,
+        "min": 1811.575,
+        "max": 4184.30875,
+        "values": [
+          4184.30875,
+          1811.575,
+          1856.6924999999999
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 2596.8033333333333,
+        "std": 1419.4563291039753,
+        "min": 1736.1399999999999,
+        "max": 4235.15,
+        "values": [
+          4235.15,
+          1736.1399999999999,
+          1819.12
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 4019.3233333333324,
+        "std": 2122.9533998702336,
+        "min": 2447.3599999999997,
+        "max": 6434.3015,
+        "values": [
+          6434.3015,
+          3176.308499999999,
+          2447.3599999999997
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2620.2716666666665,
+        "std": 1357.1546938714819,
+        "min": 1814.40125,
+        "max": 4187.165,
+        "values": [
+          4187.165,
+          1814.40125,
+          1859.24875
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "quasi_identifier": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "value_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "quasi_reid_rate": {
+        "n": 3,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.625,
+        "std": 0.0,
+        "min": 0.625,
+        "max": 0.625,
+        "values": [
+          0.625,
+          0.625,
+          0.625
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 1031.6924999999999,
+        "std": 918.2237201282974,
+        "min": 437.64,
+        "max": 2089.285,
+        "values": [
+          2089.285,
+          437.64,
+          568.1525
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1071.9650000000001,
+        "std": 1206.74168916757,
+        "min": 374.49,
+        "max": 2465.3900000000003,
+        "values": [
+          2465.3900000000003,
+          374.49,
+          376.015
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 1971.1224999999995,
+        "std": 1630.2215341930525,
+        "min": 703.9494999999997,
+        "max": 3810.2489999999993,
+        "values": [
+          3810.2489999999993,
+          703.9494999999997,
+          1399.168999999999
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 1034.8245833333333,
+        "std": 917.9203301020101,
+        "min": 440.98125000000005,
+        "max": 2092.06875,
+        "values": [
+          2092.06875,
+          440.98125000000005,
+          571.42375
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "secrets_in_code": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.047619047619047616,
+        "std": 0.0,
+        "min": 0.047619047619047616,
+        "max": 0.047619047619047616,
+        "values": [
+          0.047619047619047616,
+          0.047619047619047616,
+          0.047619047619047616
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 1896.3041666666666,
+        "std": 1790.262030108273,
+        "min": 810.8475000000001,
+        "max": 3962.6387499999996,
+        "values": [
+          3962.6387499999996,
+          810.8475000000001,
+          915.4262500000001
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1299.5733333333335,
+        "std": 1290.2144064295412,
+        "min": 550.04,
+        "max": 2789.375,
+        "values": [
+          2789.375,
+          559.3050000000001,
+          550.04
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 4221.542833333333,
+        "std": 4039.341885092679,
+        "min": 1672.3509999999997,
+        "max": 8878.814999999999,
+        "values": [
+          8878.814999999999,
+          1672.3509999999997,
+          2113.4625
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 1900.14125,
+        "std": 1790.3187307218338,
+        "min": 814.905,
+        "max": 3966.55,
+        "values": [
+          3966.55,
+          814.905,
+          918.96875
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "vault_terms": {
+      "cases": {
+        "n": 3,
+        "mean": 8.0,
+        "std": 0.0,
+        "min": 8.0,
+        "max": 8.0,
+        "values": [
+          8.0,
+          8.0,
+          8.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "benign_false_positive_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.043478260869565216,
+        "std": 0.0,
+        "min": 0.043478260869565216,
+        "max": 0.043478260869565216,
+        "values": [
+          0.043478260869565216,
+          0.043478260869565216,
+          0.043478260869565216
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "gate_save_rate_attributed": {
+        "n": 0,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "values": []
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 1972.485,
+        "std": 2722.1866921790215,
+        "min": 399.39125,
+        "max": 5115.795,
+        "values": [
+          5115.795,
+          402.26875,
+          399.39125
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1827.9533333333331,
+        "std": 2480.006782421841,
+        "min": 392.245,
+        "max": 4691.615,
+        "values": [
+          4691.615,
+          400.0,
+          392.245
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 2718.1328333333336,
+        "std": 3928.410800701008,
+        "min": 448.41450000000003,
+        "max": 7254.2705000000005,
+        "values": [
+          7254.2705000000005,
+          451.7135,
+          448.41450000000003
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 1976.5341666666666,
+        "std": 2721.884299094429,
+        "min": 403.62625,
+        "max": 5119.495,
+        "values": [
+          5119.495,
+          406.48125,
+          403.62625
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "by_lang": {
+    "en": {
+      "cases": {
+        "n": 3,
+        "mean": 36.0,
+        "std": 0.0,
+        "min": 36.0,
+        "max": 36.0,
+        "values": [
+          36.0,
+          36.0,
+          36.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.00847457627118644,
+        "std": 0.0,
+        "min": 0.00847457627118644,
+        "max": 0.00847457627118644,
+        "values": [
+          0.00847457627118644,
+          0.00847457627118644,
+          0.00847457627118644
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.03125,
+        "std": 0.0,
+        "min": 0.03125,
+        "max": 0.03125,
+        "values": [
+          0.03125,
+          0.03125,
+          0.03125
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 3,
+        "mean": 0.5,
+        "std": 0.0,
+        "min": 0.5,
+        "max": 0.5,
+        "values": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.12903225806451613,
+        "std": 0.0,
+        "min": 0.12903225806451613,
+        "max": 0.12903225806451613,
+        "values": [
+          0.12903225806451613,
+          0.12903225806451613,
+          0.12903225806451613
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.009259259259259259,
+        "std": 0.016037507477489603,
+        "min": 0.0,
+        "max": 0.027777777777777776,
+        "values": [
+          0.027777777777777776,
+          0.0,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.010416666666666666,
+        "std": 0.018042195912175804,
+        "min": 0.0,
+        "max": 0.03125,
+        "values": [
+          0.03125,
+          0.0,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "benign_false_positive_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.13054571226080794,
+        "std": 0.013501388598191418,
+        "min": 0.11764705882352941,
+        "max": 0.14457831325301204,
+        "values": [
+          0.14457831325301204,
+          0.11764705882352941,
+          0.12941176470588237
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.2526455026455026,
+        "std": 0.03182859633734382,
+        "min": 0.2222222222222222,
+        "max": 0.2857142857142857,
+        "values": [
+          0.2857142857142857,
+          0.2222222222222222,
+          0.25
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.022598870056497175,
+        "std": 0.024463994457187534,
+        "min": 0.00847457627118644,
+        "max": 0.05084745762711865,
+        "values": [
+          0.05084745762711865,
+          0.00847457627118644,
+          0.00847457627118644
+        ]
+      },
+      "gate_save_rate": {
+        "n": 3,
+        "mean": 0.2777777777777778,
+        "std": 0.4811252243246882,
+        "min": 0.0,
+        "max": 0.8333333333333334,
+        "values": [
+          0.8333333333333334,
+          0.0,
+          0.0
+        ]
+      },
+      "gate_save_rate_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2179.1541666666667,
+        "std": 1990.7303856793305,
+        "min": 931.8830555555555,
+        "max": 4474.986944444445,
+        "values": [
+          4474.986944444445,
+          1130.5925,
+          931.8830555555555
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1770.8533333333332,
+        "std": 2211.389257957163,
+        "min": 492.47,
+        "max": 4324.344999999999,
+        "values": [
+          4324.344999999999,
+          495.745,
+          492.47
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 4901.650833333333,
+        "std": 4036.2520400709723,
+        "min": 2238.865,
+        "max": 9545.6725,
+        "values": [
+          9545.6725,
+          2920.415,
+          2238.865
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2182.712962962963,
+        "std": 1990.4444105524296,
+        "min": 935.5258333333334,
+        "max": 4478.210277777778,
+        "values": [
+          4478.210277777778,
+          1134.4027777777778,
+          935.5258333333334
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "ko": {
+      "cases": {
+        "n": 3,
+        "mean": 36.0,
+        "std": 0.0,
+        "min": 36.0,
+        "max": 36.0,
+        "values": [
+          36.0,
+          36.0,
+          36.0
+        ]
+      },
+      "errors": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "leak_rate": {
+        "n": 3,
+        "mean": 0.03125,
+        "std": 0.0,
+        "min": 0.03125,
+        "max": 0.03125,
+        "values": [
+          0.03125,
+          0.03125,
+          0.03125
+        ]
+      },
+      "value_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "exact_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "canary_leak_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "quasi_reid_rate": {
+        "n": 3,
+        "mean": 0.125,
+        "std": 0.0,
+        "min": 0.125,
+        "max": 0.125,
+        "values": [
+          0.125,
+          0.125,
+          0.125
+        ]
+      },
+      "identity_leak_rate": {
+        "n": 3,
+        "mean": 0.06451612903225806,
+        "std": 0.0,
+        "min": 0.06451612903225806,
+        "max": 0.06451612903225806,
+        "values": [
+          0.06451612903225806,
+          0.06451612903225806,
+          0.06451612903225806
+        ]
+      },
+      "block_rate": {
+        "n": 3,
+        "mean": 0.018518518518518517,
+        "std": 0.016037507477489603,
+        "min": 0.0,
+        "max": 0.027777777777777776,
+        "values": [
+          0.027777777777777776,
+          0.027777777777777776,
+          0.0
+        ]
+      },
+      "block_rate_sensitive": {
+        "n": 3,
+        "mean": 0.020833333333333332,
+        "std": 0.018042195912175804,
+        "min": 0.0,
+        "max": 0.03125,
+        "values": [
+          0.03125,
+          0.03125,
+          0.0
+        ]
+      },
+      "over_block_benign": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "benign_false_positive_rate": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "over_redaction_rate": {
+        "n": 3,
+        "mean": 0.10631229235880398,
+        "std": 0.0014385804049575326,
+        "min": 0.10465116279069768,
+        "max": 0.10714285714285714,
+        "values": [
+          0.10714285714285714,
+          0.10714285714285714,
+          0.10465116279069768
+        ]
+      },
+      "over_redaction_case_rate": {
+        "n": 3,
+        "mean": 0.25476190476190474,
+        "std": 0.004123930494211598,
+        "min": 0.25,
+        "max": 0.2571428571428571,
+        "values": [
+          0.2571428571428571,
+          0.2571428571428571,
+          0.25
+        ]
+      },
+      "detector_miss_rate": {
+        "n": 3,
+        "mean": 0.023529411764705882,
+        "std": 0.020377068324339734,
+        "min": 0.0,
+        "max": 0.03529411764705882,
+        "values": [
+          0.03529411764705882,
+          0.03529411764705882,
+          0.0
+        ]
+      },
+      "gate_save_rate": {
+        "n": 2,
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "values": [
+          1.0,
+          1.0
+        ]
+      },
+      "gate_save_rate_attributed": {
+        "n": 2,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0
+        ]
+      },
+      "overhead_ms_mean": {
+        "n": 3,
+        "mean": 2248.182222222222,
+        "std": 2018.5910089046731,
+        "min": 1017.748611111111,
+        "max": 4577.818611111111,
+        "values": [
+          4577.818611111111,
+          1148.9794444444444,
+          1017.748611111111
+        ]
+      },
+      "overhead_ms_p50": {
+        "n": 3,
+        "mean": 1657.2983333333332,
+        "std": 2094.0292208164938,
+        "min": 448.225,
+        "max": 4075.2749999999996,
+        "values": [
+          4075.2749999999996,
+          448.225,
+          448.395
+        ]
+      },
+      "overhead_ms_p95": {
+        "n": 3,
+        "mean": 4789.321666666667,
+        "std": 4093.0346587986623,
+        "min": 2292.7625000000003,
+        "max": 9512.99,
+        "values": [
+          9512.99,
+          2562.2125,
+          2292.7625000000003
+        ]
+      },
+      "client_ms_mean": {
+        "n": 3,
+        "mean": 2251.7048148148147,
+        "std": 2018.3211895759953,
+        "min": 1021.4116666666666,
+        "max": 4581.028888888889,
+        "values": [
+          4581.028888888889,
+          1152.673888888889,
+          1021.4116666666666
+        ]
+      },
+      "gate_saved_attributed": {
+        "n": 3,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "per_pass": [
+    {
+      "cases": 72,
+      "errors": 0,
+      "leak_rate": 0.078125,
+      "value_leak_rate": 0.0049261083743842365,
+      "exact_leak_rate": 0.015625,
+      "canary_leak_rate": 0.0,
+      "quasi_reid_rate": 0.2857142857142857,
+      "identity_leak_rate": 0.0967741935483871,
+      "block_rate": 0.027777777777777776,
+      "block_rate_sensitive": 0.03125,
+      "over_block_benign": 0.0,
+      "benign_false_positive_rate": 0.0,
+      "over_redaction_rate": 0.12574850299401197,
+      "over_redaction_case_rate": 0.2714285714285714,
+      "detector_miss_rate": 0.04433497536945813,
+      "gate_save_rate": 0.8888888888888888,
+      "gate_save_rate_attributed": 0.0,
+      "overhead_ms_mean": 4526.402777777777,
+      "overhead_ms_p50": 4251.875,
+      "overhead_ms_p95": 9720.930500000002,
+      "client_ms_mean": 4529.619583333333,
+      "value_outcomes": {
+        "removed_unattributed": 60,
+        "detected_removed": 134,
+        "gate_saved": 8,
+        "missed_leaked": 1
+      },
+      "gate_saved_attributed": 0
+    },
+    {
+      "cases": 72,
+      "errors": 0,
+      "leak_rate": 0.078125,
+      "value_leak_rate": 0.0049261083743842365,
+      "exact_leak_rate": 0.015625,
+      "canary_leak_rate": 0.0,
+      "quasi_reid_rate": 0.2857142857142857,
+      "identity_leak_rate": 0.0967741935483871,
+      "block_rate": 0.013888888888888888,
+      "block_rate_sensitive": 0.015625,
+      "over_block_benign": 0.0,
+      "benign_false_positive_rate": 0.0,
+      "over_redaction_rate": 0.11242603550295859,
+      "over_redaction_case_rate": 0.23943661971830985,
+      "detector_miss_rate": 0.019704433497536946,
+      "gate_save_rate": 0.75,
+      "gate_save_rate_attributed": 0.0,
+      "overhead_ms_mean": 1139.7859722222222,
+      "overhead_ms_p50": 449.71999999999997,
+      "overhead_ms_p95": 3055.2405000000035,
+      "client_ms_mean": 1143.5383333333332,
+      "value_outcomes": {
+        "removed_unattributed": 61,
+        "detected_removed": 138,
+        "gate_saved": 3,
+        "missed_leaked": 1
+      },
+      "gate_saved_attributed": 0
+    },
+    {
+      "cases": 72,
+      "errors": 0,
+      "leak_rate": 0.078125,
+      "value_leak_rate": 0.0049261083743842365,
+      "exact_leak_rate": 0.015625,
+      "canary_leak_rate": 0.0,
+      "quasi_reid_rate": 0.2857142857142857,
+      "identity_leak_rate": 0.0967741935483871,
+      "block_rate": 0.0,
+      "block_rate_sensitive": 0.0,
+      "over_block_benign": 0.0,
+      "benign_false_positive_rate": 0.0,
+      "over_redaction_rate": 0.11695906432748537,
+      "over_redaction_case_rate": 0.25,
+      "detector_miss_rate": 0.0049261083743842365,
+      "gate_save_rate": 0.0,
+      "gate_save_rate_attributed": 0.0,
+      "overhead_ms_mean": 974.8158333333334,
+      "overhead_ms_p50": 448.395,
+      "overhead_ms_p95": 2330.553500000001,
+      "client_ms_mean": 978.46875,
+      "value_outcomes": {
+        "removed_unattributed": 61,
+        "detected_removed": 141,
+        "missed_leaked": 1
+      },
+      "gate_saved_attributed": 0
+    }
+  ],
+  "persistent_leaks": [
+    {
+      "case_id": "hlt-en-08",
+      "category": "health",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {
+        "1953-01-15": {
+          "passes": 3,
+          "variants": [
+            "exact"
+          ],
+          "destinations": [
+            "upstream"
+          ]
+        }
+      },
+      "missing_keep": {
+        "HER2-positive": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": true
+    },
+    {
+      "case_id": "qid-en-04",
+      "category": "quasi_identifier",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 3,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 0,
+      "leaked_values": {},
+      "missing_keep": {},
+      "evaluated_passes": 3,
+      "persistent": true
+    },
+    {
+      "case_id": "qid-en-06",
+      "category": "quasi_identifier",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 3,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 0,
+      "leaked_values": {},
+      "missing_keep": {},
+      "evaluated_passes": 3,
+      "persistent": true
+    },
+    {
+      "case_id": "qid-en-10",
+      "category": "quasi_identifier",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 3,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 0,
+      "leaked_values": {},
+      "missing_keep": {},
+      "evaluated_passes": 3,
+      "persistent": true
+    },
+    {
+      "case_id": "qid-ko-14",
+      "category": "quasi_identifier",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 3,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 0,
+      "leaked_values": {},
+      "missing_keep": {},
+      "evaluated_passes": 3,
+      "persistent": true
+    }
+  ],
+  "flaky_leaks": [],
+  "leak_frequency_histogram": {
+    "3": 5
+  },
+  "benign_issues": [
+    {
+      "case_id": "ben-en-07",
+      "category": "benign",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 0,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "free-threaded": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    }
+  ],
+  "over_redaction_cases": [
+    {
+      "case_id": "adv-ko-09",
+      "category": "adversarial",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "내일 오전": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "ben-en-07",
+      "category": "benign",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 0,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "free-threaded": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "fin-en-07",
+      "category": "finance",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "capital gains": 3,
+        "14 months": 3,
+        "120 shares": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "fin-en-10",
+      "category": "finance",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "standard deduction": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "fin-ko-10",
+      "category": "finance",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "연말정산": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "fin-ko-13",
+      "category": "finance",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "월 소득": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "hlt-en-03",
+      "category": "health",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "fasting glucose": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "hlt-en-08",
+      "category": "health",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 3,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {
+        "1953-01-15": {
+          "passes": 3,
+          "variants": [
+            "exact"
+          ],
+          "destinations": [
+            "upstream"
+          ]
+        }
+      },
+      "missing_keep": {
+        "HER2-positive": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": true
+    },
+    {
+      "case_id": "hlt-en-10",
+      "category": "health",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "fasting glucose": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "hlt-ko-04",
+      "category": "health",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "체외수정": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-ko-06",
+      "category": "intent_leak_search",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 0,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "징계 수위": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-ko-09",
+      "category": "intent_leak_search",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "사업장 변경": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-ko-13",
+      "category": "intent_leak_search",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "익명검사": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "pii-en-03",
+      "category": "direct_pii",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "replacement": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "sec-en-04",
+      "category": "secrets_in_code",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "6379": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "vlt-ko-01",
+      "category": "vault_terms",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 3,
+      "leaked_values": {},
+      "missing_keep": {
+        "2주 지연": 3
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-en-13",
+      "category": "intent_leak_search",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 2,
+      "leaked_values": {},
+      "missing_keep": {
+        "keep house": 2
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-ko-02",
+      "category": "intent_leak_search",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 2,
+      "leaked_values": {},
+      "missing_keep": {
+        "인수합병": 2
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "hlt-ko-11",
+      "category": "health",
+      "lang": "ko",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 2,
+      "fp_passes": 1,
+      "over_redaction_passes": 1,
+      "leaked_values": {},
+      "missing_keep": {
+        "체외수정": 1
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    },
+    {
+      "case_id": "int-en-08",
+      "category": "intent_leak_search",
+      "lang": "en",
+      "passes": 3,
+      "errors": 0,
+      "leaked_passes": 0,
+      "quasi_reid_passes": 0,
+      "blocked_passes": 0,
+      "fp_passes": 3,
+      "over_redaction_passes": 1,
+      "leaked_values": {},
+      "missing_keep": {
+        "divorce lawyer": 1
+      },
+      "evaluated_passes": 3,
+      "persistent": false
+    }
+  ]
+}

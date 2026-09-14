@@ -54,13 +54,15 @@ Request flow for `POST /v1/chat/completions`:
    5. **Verify:** a model span whose text does not occur in the original (after the vault's normalization) is discarded, so hallucinated IDs never become redactions. Discard counts are recorded in the audit record.
    6. **Refine the whole request at once.** All slots of a request, agent turn or search go through one entry point (`Sanitizer.detect_many`), so the GLiNER ensemble and these steps apply on every path:
       - spans lose honorifics, titles and ID labels (`정다은님` → `정다은`, `invoice 9UUT-9586` → `9UUT-9586`);
-      - a local-model span must have the shape of its type ([`shape.py`](airlock/detect/shape.py)): a phone number labeled as an organization becomes CONTACT, `ci-runner` as ORG or `체외수정 시술` as SECRET is dropped;
-      - at `balanced`, what the task operates on is kept: amounts, lab values, dosages, durations, dates that are not a birth date, and common diagnoses and medications;
+      - a local-model span must have the shape of its type ([`shape.py`](airlock/detect/shape.py)): a phone number labeled as an organization becomes CONTACT, `ci-runner` as ORG or `체외수정 시술` as SECRET is dropped, a job title labeled as an ID number is dropped even when GLiNER agreed, and code is never a value (`orders_rw`, `PAYMENTS_API_KEY`, the key of `redisUrl: '...'`, a number the request computes with such as `479001600` in "equal to 12 factorial");
+      - a model span that swallows a declared term and the words around it is dropped, so the term is masked alone (`데이터 이관은 <PERSON_2> 담당`, not `데이터 <PERSON_2> 담당`);
+      - at `balanced`, what the task operates on is kept: amounts (also inside a short phrase, `90 days overdue, $46,500`), lab values (`fasting glucose 162 mg/dL`, `eGFR 88`), dosages, durations, clock schedules (`7시, 11시, 15시, 19시`), dates that are not a birth date, and diagnoses and short health terms (`HER2-positive`, `요추 추간판탈출증`, `체외수정 시술`) unless a small-group cue ("the only", "3학년 2반 쌍둥이") is present. A diagnosis the model labeled as a quasi-identifier is handled as a health term, not reworded;
+      - a labeled birth date (`DOB 1953-01-15`, `생년월일 1990년 3월 2일`) and a wallet seed phrase are caught deterministically, without the local model;
       - employer + org unit + role are linked ([`org_rules.py`](airlock/detect/org_rules.py)): `동해누리정밀(주) 품질보증팀 박성훈 팀장` → `<ORG_1> 품질 부서 <PERSON_1> 관리자`, `the Payments Platform team at Halcyon Freight Systems` → `the engineering team at <ORG_1>`;
       - generalizations must be entailed by the original ([`generalize.py`](airlock/generalize.py)): ages and birth decades are computed from the text and today's date, places become a containing region (`성남시` → `경기도의 도시`, never `서울`), a health generalization is checked by Nano ("does X imply Y?") or falls back to its category, and the replacement stays in the language of the text;
       - a value detected in any slot is masked in every slot of the request before the gate.
 2. **Resolve and substitute.** Overlapping spans are resolved with a longest-span-wins rule. `AIRLOCK_SUBSTITUTION` decides what replaces an identity value:
-   - `placeholder`: a typed token (`<PERSON_1>`, `<ORG_1>`, ...).
+   - `placeholder`: a typed token (`<PERSON_1>`, `<ORG_1>`, ...). A declared term without a type gets one from its surface: a company suffix is `ORG`, `프로젝트 X` / `Project X` is `PROJECT`, the leading word of a declared organization is `ORG`, a name is `PERSON`, anything else `TERM`. Before this, every declared term was `PERSON`, and the cloud model wrote about "two people" behind two companies.
    - `surrogate`: a realistic, format-preserving fake value (see *Surrogates* below).
 
    Secrets and credentials always get `<SECRET_1>`, and quasi-identifiers get a generalization ("40대", "a plant in Oklahoma"). A generalization is rejected, and the span masked instead, when it still contains the original, a digit run or rare word from it, a proper noun, text in another language, or junk. Within a conversation or agent run, the same original always maps to the same placeholder or surrogate.
@@ -71,8 +73,8 @@ Request flow for `POST /v1/chat/completions`:
    - values hidden inside JSON strings (tool-call arguments), percent-encoding, or base64/base64url, up to two layers deep
 
    The vault matcher uses the same normalized views, so a variant is usually masked rather than blocked. If the local model is down, times out, or malfunctions (prose instead of JSON, invalid JSON, output cut off at the token cap, a repetition loop), the request is also blocked after at most one resample of a short malformed answer. Airlock fails closed.
-4. **Upstream.** The exact bytes that passed the gate go to Token Factory. When placeholders are present, a one-line system note says: "Tokens like <PERSON_1> are placeholders for private values; copy them exactly." If the primary model returns 5xx or reports itself unavailable, Airlock retries once on the fallback model. That attempt is also audited.
-5. **Rehydrate.** Placeholders and surrogates in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
+4. **Upstream.** The exact bytes that passed the gate go to Token Factory. When placeholders are present, a system note says that tokens like `<PERSON_1>` are placeholders to copy exactly, that each stands for a real value the user gave and will see restored (so the answer must never call a value a placeholder or missing), that nothing may be computed from a token (encodings, checksums, arithmetic), and what kind of value each token type in the request is (`<ORG_n> is an organization's name; <SECRET_n> is a password, key, token or connection string, exactly as the user wrote it`). The legend is built from the placeholder types already in the payload, so it adds no private information. Without it, answers told users that the number they typed "is a placeholder" and base64-encoded `<SECRET_1>` into a "fixed" config. If the primary model returns 5xx or reports itself unavailable, Airlock retries once on the fallback model. That attempt is also audited.
+5. **Rehydrate.** Placeholders and surrogates in the answer, including tool-call arguments and streamed deltas, are mapped back to the originals on your machine. Matching is lenient about what a model may do to the brackets (`< PERSON_1 >`, `&lt;PERSON_1&gt;`, `[[PERSON_1]]`, `⟨PERSON_1⟩`, full-width brackets, lower case) but only replaces keys that exist in the conversation, so `List<T>` or HTML is left alone. A card or account number right after "last 4 digits", "ending in" or `끝자리` is restored as its last four digits, and a Korean particle after a restored value follows its last syllable (`<PERSON_1>가` → `남궁하람이`). The older `[[PERSON_1]]` syntax is still accepted in client histories and old vault files.
 6. **Audit.** One record per request stores the outbound payloads verbatim, detections as SHA-256 hashes, the gate decision, and timings.
 
 ### Optional: NVIDIA GLiNER-PII ensemble
@@ -138,6 +140,32 @@ How to read it:
 - **Distortion rose and utility did not improve.** The judge's distortion rate for the unchanged reference answers moved between 6.6% and 14.9% across these three runs, so one pass does not separate the configs well, but the gap to the reference (+21 points against +1 for B1) is a real signal. The distorted answers include invented dates and wrong arithmetic in both configs, a masked role read back as an ID number, and in surrogate mode answers built on the surrogate itself: a card "ending in" the surrogate's digits, a surrogate name transliterated into Korean in a translation task, a pronoun that did not match the surrogate's gender, a clinic written without its suffix. The last three kinds were fixed after the test run (card surrogates keep the last four digits, English first names are gender-neutral, an organization's stem alone is rehydrated); they are not reflected in the table.
 - **Placeholders stay the default.** Surrogates leak slightly less (identity leak 8.3% vs 9.0%) but link more on the 90-case subset and distort more, and answers that talk about placeholders or masked values were not rarer (22 vs 21 of about 163 answers; secrets keep placeholders in both modes). `AIRLOCK_SUBSTITUTION=surrogate` is available and tested.
 - **Benign masking is unchanged**: all four benign masks come from GLiNER-only spans the adjudicator accepted (`KTX` and `경주 불국사` as organizations in two search queries, which the gate then blocked, `장영실이` as a person, the number 479001600 in a factorial question as an account number).
+
+### Answer distortion (S9): diagnosed and reduced on dev
+
+[`eval/results/s9-distortion/DIAGNOSIS.md`](eval/results/s9-distortion/DIAGNOSIS.md) reads every S6 answer that was distorted on the test subset against what was sent.
+
+- **Noise and embellishment, 10 of 14.** Of the 14 answers distorted under S6 but not B1, 6 had a payload identical to B1's. In 4 more, S6 had kept a diagnosis or date that B1 generalized, and Ultra embellished around it.
+- **Caused by masking.** Across all 21 S6 distortions, the masking-related ones were mostly placeholder misreads, usually caused by a wrong token type:
+  - a user's number called "a placeholder"
+  - base64 of `<SECRET_1>` in a "fixed" config
+  - two companies declared without a type, sent as `<PERSON_n>`, and written up as "두 분"
+  - a job title sent as `<ID_NUMBER_1>`
+  - a full card number restored under "last 4 digits"
+
+The fixes are described in *Architecture*: the placeholder legend, typed declared terms, sentence-aware rehydration, kept schedules, lab values, amounts and health terms, code that is never a value, and deterministic birth dates and seed phrases.
+
+On the 72 dev cases, one pass each with Ultra as upstream, attacker and judge:
+
+| Dev split | main 2e92453 | feat/distortion 91d21f3 |
+|---|---:|---:|
+| Distortion | 35.7% | **6.7%** |
+| Usefulness, system / reference (1-5) | 3.43 / 4.45 | 4.42 / 4.12 |
+| Linkable disclosure | 13.3% | 13.3% |
+| Over-redaction | 9.9% | 6.0% |
+| Identity leak, this run / stub replay | 6.5% / 9.7% | 9.7% / 8.1% |
+
+The utility ratio is not shown: the same cached reference answers scored 4.45 in one judge run and 4.12 in the other, because the judge scores answer pairs. Identity-leak differences trace case by case to the local model's sampling, not to changed code. The test split has not been re-measured.
 
 Agent mode, 4 scenarios (layoff and HR warning, Korean and English), airlock mode, 1 pass each ([`eval/results/s6-agent/`](eval/results/s6-agent/)). Identity facts found by the deterministic scanner in anything that left the machine: **0 of 19** with placeholders and 0 of 19 with surrogates. Before this round, team and employer names (`품질보증팀`, `영업2팀`, `Payments Platform`) survived all three passes of every run. The first agent attempt blocked every run at its third turn: GLiNER read the tool-argument key `doc_id` as an HTTP cookie. Object keys of tool-call arguments are now never rewritten and code identifiers are not secrets; a later surrogate attempt blocked once more (a title match crossed a line break and a surrogate organization contained that protected string), which was fixed before the runs counted here.
 
@@ -401,7 +429,7 @@ Protection levels:
 | Level | Direct identifiers and secrets | Quasi-identifiers and precise location | Kept as-is (the situation) |
 |---|---|---|---|
 | `strict` | masked | masked with placeholders; the detector is told to flag aggressively | nothing the detectors flag |
-| `balanced` | masked (or surrogates) | generalized, entailed by the original ("마흔다섯" → "40대", "Tulsa" → "a city in Oklahoma"); employer + unit + role linked into one generalization | amounts, lab values, dosages, durations, dates that are not a birth date, common diagnoses and medications; a health generalization that is not entailed |
+| `balanced` | masked (or surrogates) | generalized, entailed by the original ("마흔다섯" → "40대", "Tulsa" → "a city in Oklahoma"); employer + unit + role linked into one generalization | amounts, lab values, dosages, durations, clock schedules, dates that are not a birth date, diagnoses, medications and short health terms without a small-group cue; a health generalization that is not entailed |
 | `minimal` | masked (or surrogates) | `QUASI_IDENTIFIER` spans are left as-is; location is still generalized | as `balanced` |
 
 ### Surrogates
@@ -418,7 +446,7 @@ Protection levels:
 | Street address | same region, fictional street and numbers (`경기도 성남시 분당구 은행나무샘길 88, 111동 2304호` → `경기도 성남시 분당구 새솔길 137, 441동 4511호`) |
 | Secret, credential | never a surrogate: `<SECRET_1>` |
 
-A value without a recognised shape (a project name declared as PERSON) falls back to a placeholder. Surrogates are drawn with a keyed hash (not predictable from the original), stored in the vault (consistent for the conversation or agent run), and rejected when they occur in the request, contain another original, repeat another surrogate, or match a high-confidence secret pattern. Rehydration finds a surrogate as written or reformatted (`01000004821`), restores a name's first or last part used alone, keeps English possessives, and corrects the Korean particle after the restored value (`해솔물류과의` → `새론다움물류와의`, `김서준이` → `박지우가`), also across streamed chunks. The placeholder note is only added when a placeholder remains.
+A value without a recognised shape (a declared project name) falls back to a placeholder. Surrogates are drawn with a keyed hash (not predictable from the original), stored in the vault (consistent for the conversation or agent run), and rejected when they occur in the request, contain another original, repeat another surrogate, or match a high-confidence secret pattern. Rehydration finds a surrogate as written or reformatted (`01000004821`), restores a name's first or last part used alone, keeps English possessives, and corrects the Korean particle after the restored value (`해솔물류과의` → `새론다움물류와의`, `김서준이` → `박지우가`), also across streamed chunks. The placeholder note is only added when a placeholder remains.
 
 ## API
 
@@ -507,10 +535,10 @@ Returns `{"request_id", "outbound_query", "results": [{"title", "url", "content"
 ### `POST /vault/terms`
 
 ```json
-{"terms": ["Jane Park", "Hanbit Labs"], "type": "PERSON", "kind": "sensitive"}
+{"terms": ["Jane Park", "Hanbit Labs"], "kind": "sensitive"}
 ```
 
-`kind: "sensitive"` terms are always masked and enforced by the gate. `kind: "canary"` terms are never masked: if one reaches an outbound payload, the request is blocked. Returns `{"added", "total", "kind"}`.
+`type` is optional. Without it, each term's type is inferred (`Jane Park` → `PERSON`, `Hanbit Labs` → `ORG`, `Project Nightjar` → `PROJECT`, otherwise `TERM`); pass `"type": "PERSON"` to set one for every term in the request. `kind: "sensitive"` terms are always masked and enforced by the gate. `kind: "canary"` terms are never masked: if one reaches an outbound payload, the request is blocked. Returns `{"added", "total", "kind"}`.
 
 ### `DELETE /vault/terms`
 

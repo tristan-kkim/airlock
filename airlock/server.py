@@ -150,7 +150,8 @@ class ReviewDecision(BaseModel):
 
 class TermsRequest(BaseModel):
     terms: list[str] = Field(min_length=1, max_length=500)
-    type: str = Field(default="PERSON", pattern=r"^[A-Z][A-Z_]{1,30}$")
+    # Omitted: inferred per term (ORG, PROJECT, PERSON or TERM; airlock.detect.term_type).
+    type: str | None = Field(default=None, pattern=r"^[A-Z][A-Z_]{1,30}$")
     kind: Literal["sensitive", "canary"] = "sensitive"
 
 

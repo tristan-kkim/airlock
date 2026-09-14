@@ -491,15 +491,22 @@ def test_no_language_switching() -> None:
 def test_health_generalization_uses_local_entailment(client, harness) -> None:
     client.app.state.services.sanitizer.settings = client.app.state.services.sanitizer.settings
     harness.entities = {
-        "lumbar disc herniation": ("HEALTH", "generalize", "back pain"),
+        "a herniated disc that my physio found": ("HEALTH", "generalize", "back pain"),
+        "a torn rotator cuff from my tennis days": ("HEALTH", "generalize", "a shoulder injury"),
         "Fabry disease": ("HEALTH", "generalize", "a rare genetic disorder"),
     }
     harness.entail = lambda o, r: "no" if r == "back pain" else "yes"
-    r = chat(client, "My MRI shows lumbar disc herniation and I also have Fabry disease. Explain.")
+    r = chat(
+        client,
+        "MRI: a herniated disc that my physio found, and a torn rotator cuff from my tennis days. "
+        "I also have Fabry disease.",
+    )
     assert r.status_code == 200, r.text
     sent = sent_text(harness)
     assert "a spinal disc condition" in sent and "back pain" not in sent
-    assert "a rare genetic disorder" in sent
+    assert "a shoulder injury" in sent
+    # A health term named without identifiers is the situation at balanced: kept, not reworded.
+    assert "Fabry disease" in sent and "a rare genetic disorder" not in sent
     stats = client.get(f"/audit/{r.headers['x-airlock-request-id']}").json()["meta"]["detector"]
     assert stats["entailment_calls"] == 1
 
