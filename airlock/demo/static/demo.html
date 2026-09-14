@@ -1,0 +1,23 @@
+<div class="demo-banner" id="demo-banner" role="note">
+  <p class="demo-banner-text"><strong>{{BANNER_TEXT}}</strong>
+    <a href="{{QUICKSTART_URL}}" target="_blank" rel="noopener noreferrer">Run it locally (README quickstart)</a></p>
+  <p class="demo-banner-detail">Detector: {{DETECTOR}} · All scenario data is fictional · Your session's vault and audit live in memory and expire.
+    <span id="demo-budget-note"></span></p>
+</div>
+<!-- scenarios -->
+<section class="card demo-scenarios" id="demo-scenarios" aria-labelledby="demo-scenarios-title">
+  <div class="demo-head">
+    <h2 id="demo-scenarios-title">Try a scenario in one click</h2>
+    <span class="meta">Fictional people and documents. Each run shows what you typed, what the cloud saw, and the answer.</span>
+  </div>
+  <div class="demo-presets" id="demo-presets"></div>
+  <p class="meta" id="demo-run-status" aria-live="polite"></p>
+  <div id="demo-result" hidden>
+    <div class="demo-result-head" id="demo-result-head"></div>
+    <div class="demo-panes">
+      <div class="card pane"><h2>What you typed</h2><div class="body" id="demo-typed"></div></div>
+      <div class="card pane"><h2>What the cloud saw</h2><div class="body" id="demo-cloud"></div></div>
+      <div class="card pane"><h2 id="demo-answer-title">Answer</h2><div class="body" id="demo-answer"></div></div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,96 @@
+{
+  "preset_id": "search-layoff-en",
+  "title": "Private web search: layoff",
+  "mode": "search",
+  "lang": "en",
+  "source": "recorded",
+  "fallback_reason": null,
+  "recorded_at": "2026-09-14T13:34:38+00:00",
+  "models": {
+    "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "detector_backend": "cloud",
+    "upstream": "nvidia/Nemotron-3-Ultra-550b-a55b"
+  },
+  "typed": [
+    {
+      "label": "query",
+      "text": "Can my employer cut my role without severance?"
+    },
+    {
+      "label": "private context",
+      "text": "I'm Minji Lee, a senior analyst at Seoul Mirae Bank, employee ID 20231187. HR told me on Friday that my role is being cut at the end of the month."
+    }
+  ],
+  "cloud_saw": [
+    {
+      "destination": "tavily",
+      "label": "search query",
+      "text": "Can a company eliminate a position without severance"
+    }
+  ],
+  "answer": null,
+  "results": [
+    {
+      "rank": 1,
+      "title": "Severance Pay | U.S. Department of Labor",
+      "url": "https://www.dol.gov/general/topic/wages/severancepay",
+      "snippet": "Severance pay is often granted to employees upon termination of employment. It is usually based on length of employment for which an employee is eligible upon termination. There is no requirement in the Fair Labor Standards Act (FLSA) for severance pay. Severance pay is a matter \n… (764 more characters)"
+    },
+    {
+      "rank": 2,
+      "title": "Employee Position Eliminations and Reductions in Force: Best Practices",
+      "url": "https://www.americanbar.org/groups/business_law/resources/business-law-today/2025-november/employee-position-eliminations-reductions-best-practices",
+      "snippet": "obtain new employment. Where an employee separation results from a position elimination as opposed to performance concerns, severance packages often guarantee a positive or mutually agreed-upon job reference. The terms of any severance package are negotiable, although again, it w\n… (931 more characters)"
+    },
+    {
+      "rank": 3,
+      "title": "Layoffs vs. Terminations: Know the Differences and Alternatives - Employers Council",
+      "url": "https://www.employerscouncil.org/resources/layoffs-vs-terminations-know-the-differences-and-alternatives",
+      "snippet": "When an employee is terminated for performance or behavioral reasons, severance is generally not offered. However, if appropriate given the circumstances surrounding the termination, severance may be used to mitigate the risk of litigation.  \n When faced with a decision to cut it\n… (1007 more characters)"
+    },
+    {
+      "rank": 4,
+      "title": "What To Do When You Receive a Position Eliminated Letter",
+      "url": "https://www.indeed.com/career-advice/career-development/position-eliminated",
+      "snippet": "Learn what position eliminated means, what a position eliminated letter looks like and the steps to take when you receive this letter."
+    },
+    {
+      "rank": 5,
+      "title": "Can Employer Replace You After Position Elimination?",
+      "url": "https://www.justanswer.com/employment-law/n9n7y-company-say-position-eliminated-let-go.html",
+      "snippet": "As long as the termination is not based on discrimination or a contract, employers have the discretion to let employees go. In your situation, if they let go of"
+    }
+  ],
+  "error": null,
+  "gate": {
+    "decision": "allow",
+    "reasons": []
+  },
+  "detections": [
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "llm"
+    },
+    {
+      "type": "ORG",
+      "action": "mask",
+      "source": "rule"
+    },
+    {
+      "type": "ID_NUMBER",
+      "action": "mask",
+      "source": "llm"
+    }
+  ],
+  "timings_ms": {
+    "detect": 19713.18,
+    "rewrite": 17045.02,
+    "gate": 1.55,
+    "tavily": 2449.64,
+    "rerank": 14752.01,
+    "total": 53961.84
+  },
+  "request_id": null,
+  "recorded_seconds": 54.0
+}

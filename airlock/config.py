@@ -9,6 +9,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from airlock.demo.config import resolve_allowed_hosts
+
 
 class ProtectionLevel(StrEnum):
     STRICT = "strict"
@@ -105,7 +107,8 @@ class Settings:
 
     host: str = "127.0.0.1"
     port: int = 8787
-    # Host headers the server answers to (DNS-rebinding protection). "*" disables the check.
+    # Host headers the server answers to (DNS-rebinding protection). "*" disables the check;
+    # load_settings keeps only loopback names unless demo mode is on.
     allowed_hosts: tuple[str, ...] = ("127.0.0.1", "localhost", "::1")
 
     def with_overrides(self, **kwargs: object) -> Settings:
@@ -189,9 +192,6 @@ def load_settings(env_file: str | Path | None = ".env") -> Settings:
         gliner_ko_name_min_syllables=int(env.get("AIRLOCK_GLINER_KO_NAME_MIN_SYLLABLES") or 3),
         host=env.get("AIRLOCK_HOST") or "127.0.0.1",
         port=int(env.get("AIRLOCK_PORT") or 8787),
-        allowed_hosts=tuple(
-            h.strip()
-            for h in (env.get("AIRLOCK_ALLOWED_HOSTS") or "127.0.0.1,localhost,::1").split(",")
-            if h.strip()
-        ),
+        # Loopback names only, unless AIRLOCK_DEMO=1 (airlock.demo.config.resolve_allowed_hosts).
+        allowed_hosts=resolve_allowed_hosts(env),
     )

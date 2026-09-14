@@ -1,0 +1,26 @@
+
+  .demo-banner { position: sticky; top: 0; z-index: 10; background: var(--gen-bg); color: var(--gen-ink);
+    border-bottom: 1px solid var(--line); padding: 10px 24px; font-size: 14px; }
+  .demo-banner p { margin: 0; }
+  .demo-banner a { color: inherit; font-weight: 600; margin-left: 6px; }
+  .demo-banner-detail { font-size: 12px; opacity: .9; margin-top: 2px !important; }
+  .demo-banner .exhausted { font-weight: 600; }
+  .demo-scenarios { margin-bottom: 16px; }
+  .demo-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .demo-head h2 { margin: 0; font-size: 16px; }
+  .demo-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 12px; }
+  .demo-preset { text-align: left; background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+    display: grid; gap: 4px; padding: 10px 12px; }
+  .demo-preset:hover { border-color: var(--accent); }
+  .demo-preset .t { font-weight: 600; }
+  .demo-preset .b { font-size: 12px; color: var(--muted); }
+  .demo-preset .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .demo-result-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 12px 0; }
+  .demo-result-head h3 { margin: 0; font-size: 15px; }
+  .badge.recorded { background: var(--gen-bg); color: var(--gen-ink); }
+  .badge.live { background: var(--ok-bg); color: var(--ok); }
+  .demo-panes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 1100px) { .demo-panes { grid-template-columns: 1fr; } }
+  .demo-panes .body { max-height: 520px; overflow: auto; }
+  .demo-item { padding: 8px 0; border-top: 1px dashed var(--line); }
+  .demo-item:first-child { border-top: 0; }

@@ -1,0 +1,91 @@
+{
+  "preset_id": "chat-medical-en",
+  "title": "Medical leave note",
+  "mode": "chat",
+  "lang": "en",
+  "source": "recorded",
+  "fallback_reason": null,
+  "recorded_at": "2026-09-14T13:38:59+00:00",
+  "models": {
+    "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "detector_backend": "cloud",
+    "upstream": "nvidia/Nemotron-3-Ultra-550b-a55b"
+  },
+  "typed": [
+    {
+      "label": "user",
+      "text": "Hi, I'm Jane Park (jane.park@example.com, 010-5555-0142). I'm 34 and was just diagnosed with type 1 diabetes at Hanbit Clinic. Draft a short note to my manager, Tom Reyes, asking for flexible hours for the next two months."
+    }
+  ],
+  "cloud_saw": [
+    {
+      "destination": "upstream",
+      "label": "system",
+      "text": "Tokens like <PERSON_1> are placeholders for private values; copy them exactly. Do not guess or invent the hidden values. Each token stands for a real value the user gave, and the user sees your reply with the real values restored. Treat a token as that value: use it where the value belongs and never tell the user that a value is a placeholder, hidden or missing. Do not compute anything from a token (encodings, checksums, arithmetic, digits); show the steps or the command instead. In this conversation: <CONTACT_n> is a phone number, e-mail address or handle; <ORG_n> is an organization's name; <PERSON_n> is a person's name."
+    },
+    {
+      "destination": "upstream",
+      "label": "user",
+      "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm 30s and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for flexible hours for the next two months."
+    }
+  ],
+  "answer": "Subject: Request for Flexible Hours – Medical Accommodation  \n\nHi Tom Reyes,\n\nI’m writing to let you know that I was recently diagnosed with type 1 diabetes at Hanbit Clinic. As I adjust to the new treatment plan over the next two months, I would appreciate the flexibility to adjust my start/end times and occasionally work remotely when needed. I’ll ensure all deliverables stay on track and am happy to discuss any specific scheduling details that work best for the team.\n\nThank you for your understanding.\n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
+  "error": null,
+  "gate": {
+    "decision": "allow",
+    "reasons": []
+  },
+  "detections": [
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "llm"
+    },
+    {
+      "type": "CONTACT",
+      "action": "mask",
+      "source": "regex"
+    },
+    {
+      "type": "CONTACT",
+      "action": "mask",
+      "source": "regex"
+    },
+    {
+      "type": "QUASI_IDENTIFIER",
+      "action": "generalize",
+      "source": "llm"
+    },
+    {
+      "type": "ORG",
+      "action": "mask",
+      "source": "rule"
+    },
+    {
+      "type": "PERSON",
+      "action": "mask",
+      "source": "llm"
+    },
+    {
+      "type": "HEALTH",
+      "action": "keep",
+      "source": "rule"
+    },
+    {
+      "type": "HEALTH",
+      "action": "keep",
+      "source": "llm"
+    }
+  ],
+  "timings_ms": {
+    "detect": 2461.78,
+    "substitute": 1.28,
+    "gate": 3.97,
+    "upstream": 1587.69,
+    "rehydrate": 0.66,
+    "total": 4055.92
+  },
+  "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "request_id": null,
+  "recorded_seconds": 4.1
+}

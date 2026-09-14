@@ -12,6 +12,7 @@ import httpx
 
 from airlock import __version__
 from airlock.config import Settings, load_settings
+from airlock.demo.config import DemoConfigError, ignored_hosts, load_demo_settings
 from airlock.detect import gliner
 from airlock.detect.llm import LLMDetector, LocalModel, LocalModelError
 
@@ -211,12 +212,39 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     settings = load_settings()
+    try:
+        demo = load_demo_settings()
+    except DemoConfigError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     if args.command == "serve":
         import uvicorn
 
         host = args.host or settings.host
         port = args.port or settings.port
+        if demo.enabled:
+            # Public demo (deploy/DEMO_RUNBOOK.md): per-session in-memory state, rate limits,
+            # budget, presets. It binds wherever it is told; the Host allowlist still applies.
+            print(
+                f"Airlock demo mode · detector: {demo.detector_label} · hosts: "
+                f"{','.join(settings.allowed_hosts)}",
+                file=sys.stderr,
+            )
+            uvicorn.run(
+                "airlock.demo.app:create_demo_app",
+                factory=True,
+                host=host,
+                port=port,
+                proxy_headers=False,  # client IPs come from AIRLOCK_DEMO_TRUSTED_PROXY_HOPS
+                server_header=False,
+            )
+            return 0
+        if dropped := ignored_hosts():
+            print(
+                f"warning: ignoring non-loopback AIRLOCK_ALLOWED_HOSTS {dropped} outside demo mode",
+                file=sys.stderr,
+            )
         if settings.gliner and (problem := gliner.availability_problem(settings)):
             print(f"error: AIRLOCK_GLINER=on but GLiNER cannot run: {problem}", file=sys.stderr)
             return 1
