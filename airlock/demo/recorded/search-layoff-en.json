@@ -5,7 +5,7 @@
   "lang": "en",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T13:34:38+00:00",
+  "recorded_at": "2026-09-14T14:53:22+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -25,7 +25,7 @@
     {
       "destination": "tavily",
       "label": "search query",
-      "text": "Can a company eliminate a position without severance"
+      "text": "Can an employer terminate a position without severance pay?"
     }
   ],
   "answer": null,
@@ -34,31 +34,31 @@
       "rank": 1,
       "title": "Severance Pay | U.S. Department of Labor",
       "url": "https://www.dol.gov/general/topic/wages/severancepay",
-      "snippet": "Severance pay is often granted to employees upon termination of employment. It is usually based on length of employment for which an employee is eligible upon termination. There is no requirement in the Fair Labor Standards Act (FLSA) for severance pay. Severance pay is a matter \n… (764 more characters)"
+      "snippet": "Severance pay is often granted to employees upon termination of employment. It is usually based on length of employment for which an employee is eligible upon termination. There is no requirement in the Fair Labor Standards Act (FLSA) for severance pay. Severance pay is a matter \n… (355 more characters)"
     },
     {
       "rank": 2,
-      "title": "Employee Position Eliminations and Reductions in Force: Best Practices",
-      "url": "https://www.americanbar.org/groups/business_law/resources/business-law-today/2025-november/employee-position-eliminations-reductions-best-practices",
-      "snippet": "obtain new employment. Where an employee separation results from a position elimination as opposed to performance concerns, severance packages often guarantee a positive or mutually agreed-upon job reference. The terms of any severance package are negotiable, although again, it w\n… (931 more characters)"
+      "title": "I got laid off. Does my employer have to offer severance pay? - Alan Lescht",
+      "url": "https://www.dcemploymentattorney.com/resources/blog/i-got-laid-off-does-my-employer-have-to-offer-severance-pay",
+      "snippet": "Generally, a private-sector employer must pay severance only if they signed a contract agreeing to do so.  For example, a corporate executive may have an employment agreement that says the employer will pay six months of severance if it decides to terminate the executive’s employ\n… (1123 more characters)"
     },
     {
       "rank": 3,
-      "title": "Layoffs vs. Terminations: Know the Differences and Alternatives - Employers Council",
-      "url": "https://www.employerscouncil.org/resources/layoffs-vs-terminations-know-the-differences-and-alternatives",
-      "snippet": "When an employee is terminated for performance or behavioral reasons, severance is generally not offered. However, if appropriate given the circumstances surrounding the termination, severance may be used to mitigate the risk of litigation.  \n When faced with a decision to cut it\n… (1007 more characters)"
+      "title": "Severance packages: What employers need to know | Thomson Reuters",
+      "url": "https://legal.thomsonreuters.com/en/insights/articles/what-employers-need-to-know-about-severance-packages",
+      "snippet": "Brand and reputation management. To let go of employees without providing any kind of severance package at all might outwardly appear impulsive and heartless. That is not good for morale among remaining employees and might cause investors to question the judgment of a company’s d\n… (724 more characters)"
     },
     {
       "rank": 4,
-      "title": "What To Do When You Receive a Position Eliminated Letter",
-      "url": "https://www.indeed.com/career-advice/career-development/position-eliminated",
-      "snippet": "Learn what position eliminated means, what a position eliminated letter looks like and the steps to take when you receive this letter."
+      "title": "Fired with No Reason, No Warning, No Severance: The Case for Replacing At-Will Employment with a Just Cause Standard - National Employment Law Project",
+      "url": "https://www.nelp.org/insights-research/fired-with-no-reason-no-warning-no-severance-the-case-for-replacing-at-will-employment-with-a-just-cause-standard",
+      "snippet": "The context for the new survey is the reality that almost everywhere in the United States, employees may be fired without a good reason, advance notice, or severance pay. This default rule, known as “at will” employment, can wreak havoc on the lives of workers and their families,\n… (1020 more characters)"
     },
     {
       "rank": 5,
-      "title": "Can Employer Replace You After Position Elimination?",
-      "url": "https://www.justanswer.com/employment-law/n9n7y-company-say-position-eliminated-let-go.html",
-      "snippet": "As long as the termination is not based on discrimination or a contract, employers have the discretion to let employees go. In your situation, if they let go of"
+      "title": "Fired With No Warning? | Texas Wrongful Termination Lawyer",
+      "url": "https://www.fightsforright.com/blog/can-you-be-fired-without-warning-in-texas",
+      "snippet": "Texas follows the doctrine of at-will employment. This means that, in most cases, an employer may terminate an employee at any time, for almost any reason, or for no stated reason at all—with or without warning. Likewise, employees are generally free to leave a job at any time. H\n… (1170 more characters)"
     }
   ],
   "error": null,
@@ -84,13 +84,18 @@
     }
   ],
   "timings_ms": {
-    "detect": 19713.18,
-    "rewrite": 17045.02,
-    "gate": 1.55,
-    "tavily": 2449.64,
-    "rerank": 14752.01,
-    "total": 53961.84
+    "detect": 1747.04,
+    "rewrite": 789.96,
+    "gate": 1.64,
+    "tavily": 2414.74,
+    "rerank": 637.26,
+    "total": 5590.88
   },
   "request_id": null,
-  "recorded_seconds": 54.0
+  "leak_check": {
+    "outbound_payloads": 1,
+    "private_values": 7,
+    "found": 0
+  },
+  "recorded_seconds": 5.6
 }

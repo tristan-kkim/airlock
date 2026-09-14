@@ -5,7 +5,7 @@
   "lang": "en",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T13:38:59+00:00",
+  "recorded_at": "2026-09-14T14:54:51+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -26,10 +26,10 @@
     {
       "destination": "upstream",
       "label": "user",
-      "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm 30s and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for flexible hours for the next two months."
+      "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm age and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for flexible hours for the next two months."
     }
   ],
-  "answer": "Subject: Request for Flexible Hours – Medical Accommodation  \n\nHi Tom Reyes,\n\nI’m writing to let you know that I was recently diagnosed with type 1 diabetes at Hanbit Clinic. As I adjust to the new treatment plan over the next two months, I would appreciate the flexibility to adjust my start/end times and occasionally work remotely when needed. I’ll ensure all deliverables stay on track and am happy to discuss any specific scheduling details that work best for the team.\n\nThank you for your understanding.\n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
+  "answer": "Subject: Request for Flexible Hours – Medical Accommodation  \n\nDear Tom Reyes,  \n\nI’m writing to let you know that I was recently diagnosed with type 1 diabetes at Hanbit Clinic. As I adjust to the new treatment plan over the next two months, I would appreciate a flexible schedule (e.g., adjusted start/end times or occasional remote work) to attend medical appointments and manage my health.  \n\nI remain fully committed to my responsibilities and will ensure all deliverables stay on track. Please let me know if we should discuss any specific arrangements.  \n\nThank you for your understanding.  \n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -72,20 +72,25 @@
       "source": "rule"
     },
     {
-      "type": "HEALTH",
+      "type": "QUASI_IDENTIFIER",
       "action": "keep",
       "source": "llm"
     }
   ],
   "timings_ms": {
-    "detect": 2461.78,
-    "substitute": 1.28,
-    "gate": 3.97,
-    "upstream": 1587.69,
+    "detect": 2100.36,
+    "substitute": 0.74,
+    "gate": 4.19,
+    "upstream": 1690.35,
     "rehydrate": 0.66,
-    "total": 4055.92
+    "total": 3796.77
   },
   "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "request_id": null,
-  "recorded_seconds": 4.1
+  "leak_check": {
+    "outbound_payloads": 1,
+    "private_values": 12,
+    "found": 0
+  },
+  "recorded_seconds": 3.8
 }
