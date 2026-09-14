@@ -1,0 +1,79 @@
+{
+  "utility_version": "1.1.0",
+  "results_dir": "dev-branch",
+  "target_label": "airlock 39281fb (feat/s10-hardening), AIRLOCK_GLINER=on, placeholder, dev split",
+  "answer_source": "recorded",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "judge_reasoning": "none",
+  "default_upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "answer_max_tokens": 4096,
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "reference_dir": "eval/results/_reference_answers",
+  "subset": null,
+  "reuse_identical_passes": false,
+  "reuse_from": null,
+  "reuse": {
+    "note": "scored once; outputs identical across passes, verified by payload hash",
+    "from": null,
+    "rows": 62,
+    "rows_reused": 0,
+    "rows_scored": 62,
+    "by_pass": [
+      {
+        "pass": 1,
+        "rows": 62,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 0
+      }
+    ]
+  },
+  "runs": [
+    {
+      "at": "2026-09-14T14:30:06.055757+00:00",
+      "estimate": {
+        "reference_calls": 0,
+        "system_answer_calls": 0,
+        "judge_calls": 61,
+        "prompt_tokens_est": 139617,
+        "completion_tokens_typical": 15250,
+        "completion_tokens_max": 30500,
+        "rows": 62,
+        "rows_reused_planned": 0
+      },
+      "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "usage": {
+        "reference": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "system_answer": {
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "calls": 0
+        },
+        "judge": {
+          "prompt_tokens": 133085,
+          "completion_tokens": 12718,
+          "calls": 59
+        },
+        "verify": {
+          "prompt_tokens": 22484,
+          "completion_tokens": 692,
+          "calls": 16
+        }
+      },
+      "cost_usd": {
+        "reference": 0.0,
+        "system_answer": 0.0,
+        "judge": 0.171239,
+        "verify": 0.02456
+      }
+    }
+  ]
+}

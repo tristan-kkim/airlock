@@ -1,0 +1,9 @@
+qid-ko-07
+qid-ko-08
+qid-ko-10
+qid-ko-11
+qid-ko-14
+qid-en-04
+qid-en-08
+qid-en-10
+qid-en-11

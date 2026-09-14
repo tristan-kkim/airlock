@@ -1,0 +1,86 @@
+{
+  "base_url": "http://127.0.0.1:8800",
+  "target_label": "airlock 39281fb (feat/s10-hardening), stub upstream, diag ids (local scan only)",
+  "passes": 2,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 9,
+  "dataset_sha256": "cd40ce707652d30ffb2007c5ccaac62c61709d42382c4c623351b5114c850609",
+  "protection_level": "balanced",
+  "server_health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "protection_level": "balanced",
+    "local_model": "nemotron-3-nano-4b",
+    "local_temperature": 0.6,
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "upstream_configured": true,
+    "search_configured": true
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "subset": {
+    "spec": "ids:eval/results/s10-hardening/diag-ids.txt",
+    "seed": null,
+    "cases": 9,
+    "of": 243,
+    "strata": {
+      "quasi_identifier/en": 4,
+      "quasi_identifier/ko": 5
+    },
+    "case_ids": [
+      "qid-en-04",
+      "qid-en-08",
+      "qid-en-10",
+      "qid-en-11",
+      "qid-ko-07",
+      "qid-ko-08",
+      "qid-ko-10",
+      "qid-ko-11",
+      "qid-ko-14"
+    ]
+  },
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "reset_scope": "every pass",
+  "detector_temperature": 0.6,
+  "started_at": "2026-09-14T14:38:53.596183+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8800",
+    "--passes",
+    "2",
+    "--reset-vault",
+    "--timeout",
+    "600",
+    "--protection-level",
+    "balanced",
+    "--out",
+    "eval/results/s10-hardening/diag-branch",
+    "--label",
+    "airlock 39281fb (feat/s10-hardening), stub upstream, diag ids (local scan only)",
+    "--subset",
+    "ids:eval/results/s10-hardening/diag-ids.txt"
+  ],
+  "resets": [
+    {
+      "pass": 1,
+      "reset": true,
+      "terms_removed": 0,
+      "mappings_removed": 0,
+      "detection_cache_cleared": 0
+    },
+    {
+      "pass": 2,
+      "reset": true,
+      "terms_removed": 0,
+      "mappings_removed": 26,
+      "detection_cache_cleared": 10
+    }
+  ],
+  "finished_at": "2026-09-14T14:39:34.570884+00:00"
+}
