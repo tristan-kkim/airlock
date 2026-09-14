@@ -146,6 +146,10 @@ def check_llm_span(span: Span, text: str) -> tuple[Span | None, str]:
     if typ == "FINANCIAL":
         if digits >= 3:
             return span, "ok"
+        if code_token(t):
+            return replace(span, type="ID_NUMBER"), "retyped"  # "Q4MGD7UBTYHL", a policy number
+        if _looks_like_secret(t) or _password_like(t):
+            return replace(span, type="SECRET"), "retyped"
         return None, "dropped"
     if typ == "PERSON":
         if digits >= 4:

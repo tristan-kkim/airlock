@@ -531,10 +531,13 @@ class Sanitizer:
                     span = replace(span, type="HEALTH")
                     d.stats.llm_retyped += 1
                 if span.source == "llm" or (
-                    span.source == "gliner" and span.type in ("ID_NUMBER", "FINANCIAL", "SECRET")
+                    span.source == "gliner"
+                    and span.type in ("ID_NUMBER", "FINANCIAL", "SECRET")
+                    and not re.search(r"\d", span.text)
                 ):
                     # GLiNER spans that agreed with another source skipped GLiNER's own shape
-                    # check: "직함 선임연구원" went out as an ID number.
+                    # check: "직함 선임연구원" went out as an ID number. Only digit-free ones are
+                    # checked here, so a value is never lost to a label disagreement.
                     checked, outcome = check_llm_span(span, text)
                     if checked is None:
                         d.stats.llm_dropped_shape += 1
@@ -980,6 +983,8 @@ class Sanitizer:
 _IDENTIFIER = re.compile(r"[a-z]+(?:_[a-z]+)+")
 # snake_case or UPPER_SNAKE with at most two digits: service accounts, env variable names.
 _SNAKE = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)+|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+")
+_CAMEL = re.compile(r"[a-z][a-z0-9]*(?:[A-Z][a-z0-9]+)+")
+_KEY_AFTER = re.compile(r"""["'`]?\s*[:=]""")
 _ACCOUNT_NAME_CUE = re.compile(
     r"(?:user(?:name)?|role|account|login|owner|db_user)\s*[\"'`=:]*\s*$|for user\s*[\"'`]?$",
     re.IGNORECASE,
@@ -991,6 +996,9 @@ def _code_identifier(span: Span, text: str) -> bool:
     t = span.text.strip()
     if span.type in ("SECRET", "ORG", "ID_NUMBER") and _IDENTIFIER.fullmatch(t):
         return True
+    if _CAMEL.fullmatch(t) and span.type in ("SECRET", "ORG", "ID_NUMBER", "PERSON"):
+        # An object key written in camelCase ("redisUrl: '...'"), not its value.
+        return any(_KEY_AFTER.match(text, m.end()) for m in re.finditer(re.escape(t), text))
     if not _SNAKE.fullmatch(t) or sum(ch.isdigit() for ch in t) > 2:
         return False
     if span.type in ("SECRET", "ORG", "ID_NUMBER", "PERSON"):

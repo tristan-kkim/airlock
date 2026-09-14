@@ -225,6 +225,11 @@ def test_a_job_title_is_not_an_id_number_even_when_gliner_agrees(
     r = chat(client, "명함 정보 정리해줘: 이름 정민준, 직함 선임연구원.")
     assert r.status_code == 200, r.text
     assert "직함 선임연구원" in sent(harness)[-1]["content"]
+    # A code with two digits under a money label is still masked, as an ID number.
+    harness.entities = {"Q4MGD7UBTYHL": ("FINANCIAL", "mask", "")}
+    fake_gliner.entities = {"Q4MGD7UBTYHL": ("account_number", 0.9)}
+    chat(client, "실손보험 청구해줘. 증권번호 Q4MGD7UBTYHL, 도수치료 10회 받았어.")
+    assert "증권번호 <ID_NUMBER_1>" in sent(harness)[-1]["content"]
 
 
 # ---- code --------------------------------------------------------------------------------------
@@ -246,6 +251,13 @@ def test_variable_names_and_service_accounts_are_not_masked(client, harness) -> 
     assert "PAYMENTS_API_KEY=<SECRET_1>" in out and "KeyError: 'PAYMENTS_API_KEY'" in out
     assert "DB_USER: <SECRET_2>" in out and 'for user "orders_rw"' in out
     assert "pmk_live" not in out
+
+
+def test_camel_case_object_keys_are_not_masked(client, harness) -> None:
+    harness.entities = {"redisUrl": ("SECRET", "mask", ""), "hunterTwo": ("SECRET", "mask", "")}
+    chat(client, "config: { redisUrl: 'redis://db:6379/0' } and my password is hunterTwo")
+    out = sent(harness)[-1]["content"]
+    assert "redisUrl: 'redis://db:6379/0'" in out and "hunterTwo" not in out
 
 
 def test_entropy_span_leaves_the_variable_name() -> None:
