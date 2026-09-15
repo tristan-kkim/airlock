@@ -151,11 +151,13 @@ def age_from_birth(born: date, today: date | None = None) -> int:
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
 
-def decade_phrase(age: int, lang: str) -> str:
+def decade_phrase(age: int, lang: str, pronoun: str = "their") -> str:
     decade = age // 10 * 10
     if lang == "ko":
         return "10대" if decade == 10 else f"{decade}대" if decade else "10세 미만"
-    return f"in their {decade}s" if decade >= 10 else "under 10"
+    if decade == 10:
+        return f"in {pronoun} teens"
+    return f"in {pronoun} {decade}s" if decade >= 10 else "under 10"
 
 
 def birth_decade_phrase(year: int, lang: str) -> str:
@@ -163,24 +165,185 @@ def birth_decade_phrase(year: int, lang: str) -> str:
     return f"{decade}년대생" if lang == "ko" else f"born in the {decade}s"
 
 
+# ---- fitting an age phrase to its slot ---------------------------------------------------------
+#
+# The demo recording `chat-medical-en` sent "I'm age": the model proposed the bare "34" with a
+# free-form replacement, and nothing checked it because an age was only recognized with its unit
+# inside the span. A bare number is an age when its slot says so (a copula, "aged", "나이는",
+# or a unit right after it), and the replacement is built for that slot: the span takes in its
+# unit or cue ("34 years old", "aged 34", "만 34세"), the pronoun comes from the subject before
+# it ("I'm 34" -> "I'm in my 30s", "she's 34" -> "she's in her 30s"), an adjective stays one
+# ("34-year-old" -> "30-something"), and Korean keeps the particle rules ("34살입니다" ->
+# "30대입니다").
+
+_BARE_AGE = re.compile(r"^\s*(\d{1,3})\s*$")
+_AGE_CUE_BEFORE = re.compile(
+    r"(?:\b(?:I'?m|I am|I was|you'?re|you are|she'?s|he'?s|she is|he is|she was|he was|"
+    r"is|was|am|are|aged?|turned|turning|turns)\b\s*:?|나이는|나이가|나이|올해|만)\s*$",
+    re.IGNORECASE,
+)
+_NOT_AN_AGE_AFTER = re.compile(
+    r"^\s*(?:%|percent|kg|lbs?|cm|mm|km|miles?|hours?|minutes?|seconds?|days?|weeks?|months?|"
+    r"years?\s+(?:of|in|at|ago)|dollars?|won|원|만원|명|개|시간|분|일|주|개월|년|회|건|장|점)",
+    re.IGNORECASE,
+)
+_AGE_UNIT_AFTER = re.compile(
+    r"^\s*(?:(?:-?\s*years?\s*-?\s*old\b|-?\s*yrs?\b|-?\s*y/?o\b)(?![가-힣A-Za-z])|살|세(?![대기]))",
+    re.IGNORECASE,
+)  # "34살입니다" keeps its copula; "34세대" (households) and "34세기" are not ages
+_BARE_YEAR = re.compile(r"^\s*((?:19|20)\d{2})\s*$")
+_BIRTH_CUE_BEFORE = re.compile(
+    r"(?:\bborn(?:\s+(?:in|on))?|생년월일|출생\s*연도|태어난\s*해는?|출생)\s*(?:is|was|:|：|-|=)?\s*$",
+    re.IGNORECASE,
+)
+_BIRTH_CUE_AFTER = re.compile(r"^\s*년\s*생")
+_AGE_CUE_IN_SPAN = re.compile(r"^(?P<cue>aged?|turned|turning|turns)\s+", re.IGNORECASE)
+_AGE_CUE_ENDS_BEFORE = re.compile(r"\b(?P<cue>aged?|turned|turning|turns)\s*:?\s*$", re.IGNORECASE)
+_ADJECTIVAL_AGE = re.compile(r"-\s*year\s*-\s*old\s*$", re.IGNORECASE)
+# A span that is (nearly) only the age: "34", "34 years old", "turned 52", "만 34세", "서른넷".
+_AGE_ONLY = re.compile(r"\s*(?:만\s*)?(?:올해\s*)?[\w\s\-'/]{0,14}\s*$")
+_KO_MAN_BEFORE = re.compile(r"만\s*$")
+_SUBJECT_CUES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\b(?:I'?m|I am|I was|I|my|me|myself)\b", re.I), "my"),
+    (re.compile(r"\b(?:she|her|hers|wife|mother|mom|daughter|sister|girlfriend)\b", re.I), "her"),
+    (re.compile(r"\b(?:he|his|him|husband|father|dad|son|brother|boyfriend)\b", re.I), "his"),
+    (re.compile(r"\b(?:you|your)\b", re.I), "your"),
+)
+_VERB_FOR = {"my": "am", "your": "are", "her": "is", "his": "is", "their": "is"}
+
+
+def _pronoun(before: str) -> str:
+    """The possessive that fits the subject closest before the span; "their" without one."""
+    best, pronoun = -1, "their"
+    for pattern, pron in _SUBJECT_CUES:
+        for m in pattern.finditer(before[-48:]):
+            if m.start() > best:
+                best, pronoun = m.start(), pron
+    return pronoun
+
+
+def _span_bounds(span: Span, text: str) -> tuple[int, int] | None:
+    """The span's offsets, or the first occurrence whose slot says the bare number is an age."""
+    if span.start is not None and span.end is not None:
+        return span.start, span.end
+    hits = [(s, e) for s, e in _occurrences(text, span.text)]
+    if not hits:
+        return None
+    if not _BARE_AGE.match(span.text):
+        return hits[0]
+    for s, e in hits:
+        if _age_slot(text[:s], text[e:]):
+            return s, e
+    return None
+
+
+def _occurrences(text: str, needle: str) -> list[tuple[int, int]]:
+    needle = needle.strip()
+    if not needle:
+        return []
+    return [(m.start(), m.end()) for m in re.finditer(re.escape(needle), text)]
+
+
+def _age_slot(before: str, after: str) -> bool:
+    if _NOT_AN_AGE_AFTER.match(after):
+        return False
+    return bool(_AGE_CUE_BEFORE.search(before[-24:]) or _AGE_UNIT_AFTER.match(after))
+
+
+def age_in_context(span: Span, text: str) -> int | None:
+    """The age a span states, with its unit inside ("34세", "turned 52") or from its slot ("34"
+    after "I'm" or before "살")."""
+    age = age_of(span.text)
+    if age is not None:
+        return age
+    m = _BARE_AGE.match(span.text)
+    if not m:
+        return None
+    bounds = _span_bounds(span, text)
+    if bounds is None:
+        return None
+    n = int(m.group(1))
+    return n if 0 < n < 120 else None
+
+
+def fit_age(span: Span, text: str, lang: str) -> Span | None:
+    """The age span widened to its unit or cue, with a decade phrase that reads in its slot.
+
+    None when the span states no age. The result carries offsets when the span was widened or
+    was a bare number, so only that occurrence is replaced.
+    """
+    age = age_in_context(span, text)
+    if age is None or not _AGE_ONLY.match(span.text) or len(span.text) > 24:
+        return None  # an age inside a longer phrase ("... 통역사로 일하는 58세 남성") is not refit
+    bounds = _span_bounds(span, text)
+    if bounds is None:
+        return None
+    start, end = bounds
+    original = span.text
+    widened = False
+    before, after = text[:start], text[end:]
+    if _BARE_AGE.match(original) and (unit := _AGE_UNIT_AFTER.match(after)):
+        end += unit.end()
+        widened = True
+    ko = lang == "ko" or bool(_HANGUL.search(text[start:end]))
+    if ko:
+        if m := _KO_MAN_BEFORE.search(before):
+            start -= len(m.group())  # "만 34세" -> "30대", not "만 30대"
+            widened = True
+        replacement = decade_phrase(age, "ko")
+    elif _ADJECTIVAL_AGE.search(text[start:end]):
+        # "a 34-year-old woman" -> "a 30-something woman": the adjective stays one
+        replacement = f"{age // 10 * 10}-something"
+    else:
+        cue = _AGE_CUE_IN_SPAN.match(text[start:end])
+        if cue is None and (m := _AGE_CUE_ENDS_BEFORE.search(before)):
+            start -= len(m.group())  # "aged 34" / "turned 34": the cue joins the span
+            widened = True
+            cue = m
+        pronoun = _pronoun(text[:start])
+        replacement = decade_phrase(age, "en", pronoun)
+        if cue is not None and cue.group("cue").lower().startswith("turn"):
+            replacement = f"{_VERB_FOR[pronoun]} {replacement}"  # "I turned 52" -> "I am in my 50s"
+    new = replace(span, replacement=replacement, rule="entailed")
+    if widened or _BARE_AGE.match(original) or span.start is not None:
+        new = replace(new, text=text[start:end], start=start, end=end)
+    return new
+
+
+def dedupe_prefix(before: str, replacement: str) -> str:
+    """Drop the leading words of `replacement` that the text before the slot already ends with.
+
+    "born in " + "born in the 1990s" -> "the 1990s"; "born " + "born in the 1990s" ->
+    "in the 1990s". Word-wise and case-insensitive; the replacement keeps at least one word.
+    """
+    words = replacement.split()
+    tail = before.rstrip().casefold()
+    for n in range(len(words) - 1, 0, -1):
+        head = " ".join(words[:n]).casefold()
+        if tail.endswith(head) and (len(tail) == len(head) or not tail[-len(head) - 1].isalnum()):
+            return " ".join(words[n:])
+    return replacement
+
+
 _KO_DECADE = re.compile(r"(\d)0\s*대")
 _EN_DECADE = re.compile(
-    r"(?<!\d)(\d)0\s*'?s\b|\b(twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)\b",
+    r"(?<!\d)(\d)0\s*(?:'?s\b|-\s*something\b)|\b(?:in (?:my|your|his|her|their) )?(?P<word>"
+    r"teens|twenties|thirties|forties|fifties|sixties|seventies|eighties|nineties)\b",
     re.IGNORECASE,
 )  # noqa: E501
-_EN_DECADE_WORDS = {"twenties": 20, "thirties": 30, "forties": 40, "fifties": 50, "sixties": 60,
-                    "seventies": 70, "eighties": 80, "nineties": 90}  # fmt: skip
+_EN_DECADE_WORDS = {"teens": 10, "twenties": 20, "thirties": 30, "forties": 40, "fifties": 50,
+                    "sixties": 60, "seventies": 70, "eighties": 80, "nineties": 90}  # fmt: skip
 _RANGE = re.compile(r"(?<!\d)(\d{1,3})\s*(?:-|~|–|to|에서)\s*(\d{1,3})(?!\d)")
 
 
 def stated_ranges(replacement: str) -> list[tuple[int, int]]:
-    """Age ranges a replacement states: "40대" (40-49), "mid-40s", "35-44"."""
+    """Age ranges a replacement states: "40대" (40-49), "mid-40s", "30-something", "35-44"."""
     out = []
     for m in _KO_DECADE.finditer(replacement):
         lo = int(m.group(1)) * 10
         out.append((lo, lo + 9))
     for m in _EN_DECADE.finditer(replacement):
-        lo = int(m.group(1)) * 10 if m.group(1) else _EN_DECADE_WORDS[m.group(2).lower()]
+        lo = int(m.group(1)) * 10 if m.group(1) else _EN_DECADE_WORDS[m.group("word").lower()]
         if lo >= 10:
             out.append((lo, lo + 9))
     for m in _RANGE.finditer(replacement):
@@ -194,6 +357,7 @@ def _swap_decades(replacement: str, age: int, lang: str) -> str:
     decade = age // 10 * 10
     out = _KO_DECADE.sub(f"{decade}대", replacement)
     out = re.sub(r"(?<!\d)\d0\s*'?s\b", f"{decade}s", out)
+    out = re.sub(r"(?<!\d)\d0\s*-\s*something\b", f"{decade}-something", out)
     return re.sub(
         r"(?<!\d)(\d{1,3})\s*(?:-|~|–|to)\s*(\d{1,3})(?!\d)", f"{decade}-{decade + 9}", out
     )
@@ -521,32 +685,39 @@ def fix_generalization(span: Span, text: str) -> tuple[Span, str | None]:
     lang = text_lang(text)
     repl = (span.replacement or "").strip()
 
-    # Birth dates and birth years: say the birth decade.
+    # Birth dates and birth years: say the birth decade, fitted after "born in" or a label.
     if DOB_CUE.search(original) or (
         date_in(original) and is_birth_date(text, span.start, span.end, original)
     ):
         year = birth_year(original)
         if year:
-            want = birth_decade_phrase(year, lang)
+            want = _fit_birth_decade(span, text, year, lang)
             return (span if repl == want else _set(span, want)), (None if repl == want else "fixed")
+    if m := _BARE_YEAR.match(original):
+        fitted = _fit_birth_year(span, text, int(m[1]), lang)
+        if fitted is not None:
+            return fitted, "fixed"
     if date_in(original) and (d := date_in(original)) is not None:
         age = age_from_birth(d)
         if not any(lo <= age <= hi for lo, hi in stated_ranges(repl)) and stated_ranges(repl):
             return _set(span, decade_phrase(age, lang)), "fixed"
 
-    # Ages: the stated range must contain the value.
+    # Ages: the phrase built for the slot ("I'm 34" -> "I'm in my 30s"), unless the model's is
+    # already that phrase.
+    fitted = fit_age(span, text, lang)
+    if fitted is not None:
+        if fitted.text == original and fitted.replacement == repl:
+            return span, None
+        return fitted, "fixed"
     age = age_of(original)
     if age is not None:
+        # An age inside a longer phrase: the stated range must contain the value.
         ranges = stated_ranges(repl)
         if ranges and all(lo <= age <= hi for lo, hi in ranges) and _lang_ok(repl, lang, original):
             return span, None
-        age_only = (
-            re.fullmatch(r"\s*(?:만\s*)?(?:올해\s*)?[\w\s\-']{0,14}\s*", original)
-            and len(original) <= 24
-        )
         if ranges and _lang_ok(repl, lang, original):
             return _set(span, _swap_decades(repl, age, lang)), "fixed"
-        if age_only or not _lang_ok(repl, lang, original):
+        if not _lang_ok(repl, lang, original):
             return _set(span, decade_phrase(age, lang)), "fixed"
 
     # Places: a named region must contain the original; place-only spans get a container.
@@ -568,6 +739,49 @@ def fix_generalization(span: Span, text: str) -> tuple[Span, str | None]:
             return _set(span, cat), "fixed"
         return span, "rejected"
     return span, None
+
+
+_DOB_LABEL_BEFORE = re.compile(
+    r"(?:생년월일|생일|출생(?:일|연도)?|\bDOB\b|\bD\.O\.B\.?|date of birth|birth\s*date|birthday)"
+    r"\s*(?:is|was|:|：|-|=)?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _fit_birth_decade(span: Span, text: str, year: int, lang: str) -> str:
+    """ "born in the 1990s" fitted to its slot: after "born in" only "the 1990s" remains, after a
+    label ("DOB:", "생년월일:") the decade alone ("the 1990s", "1990년대")."""
+    phrase = birth_decade_phrase(year, lang)
+    bounds = _span_bounds(span, text)
+    if bounds is None:
+        return phrase
+    before = text[: bounds[0]]
+    if _DOB_LABEL_BEFORE.search(before[-24:]):
+        return f"{year // 10 * 10}년대" if lang == "ko" else f"the {year // 10 * 10}s"
+    return dedupe_prefix(before, phrase)
+
+
+def _fit_birth_year(span: Span, text: str, year: int, lang: str) -> Span | None:
+    """A bare year in a birth slot ("born in 1992", "1992년생", "출생: 1992") as its decade.
+
+    The span takes in a following "년생", so "1992년생" becomes "1990년대생" and not "1990년대년생".
+    """
+    bounds = _span_bounds(span, text)
+    if bounds is None:
+        return None
+    start, end = bounds
+    before, after = text[:start], text[end:]
+    if m := _BIRTH_CUE_AFTER.match(after):
+        end += m.end()
+        return replace(
+            span, text=text[start:end], start=start, end=end,
+            replacement=birth_decade_phrase(year, "ko"), rule="entailed",
+        )  # fmt: skip
+    if not _BIRTH_CUE_BEFORE.search(before[-24:]):
+        return None
+    ko = lang == "ko" or bool(_HANGUL.search(before[-24:]))
+    want = _fit_birth_decade(replace(span, start=start, end=end), text, year, "ko" if ko else "en")
+    return replace(span, start=start, end=end, replacement=want, rule="entailed")
 
 
 def _lang_ok(replacement: str, lang: str, original: str) -> bool:

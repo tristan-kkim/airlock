@@ -20,6 +20,7 @@ import re
 from dataclasses import replace
 
 from airlock.detect.gliner import _HANDLE, _digit_count, code_token, ko_name, latin_name
+from airlock.detect.ko_rules import plausible_name
 from airlock.detect.patterns import _looks_like_secret, _password_like, detect_patterns
 from airlock.detect.spans import MIN_SPAN_CHARS, Span
 
@@ -153,6 +154,10 @@ def check_llm_span(span: Span, text: str) -> tuple[Span | None, str]:
         return None, "dropped"
     if typ == "PERSON":
         if digits >= 4:
+            return None, "dropped"
+        if hangul and not latin and not plausible_name(t):
+            # 실업급여, 고용보험, 근로기준법 proposed as people: a Hangul name has a name's shape
+            # (`airlock.detect.ko_rules.plausible_name`); a common noun does not.
             return None, "dropped"
         return span, "ok"
     return span, "ok"

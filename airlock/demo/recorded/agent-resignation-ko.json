@@ -5,7 +5,7 @@
   "lang": "ko",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T14:58:11+00:00",
+  "recorded_at": "2026-09-15T02:19:11+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -44,35 +44,35 @@
     {
       "destination": "tavily",
       "label": "step 3 → Tavily (rewritten)",
-      "text": "voluntary resignation severance unemployment benefits eligibility"
+      "text": "voluntary resignation severance benefits eligibility unemployment insurance law"
     },
     {
       "destination": "upstream",
       "label": "step 4 → Nemotron 3 Ultra (allow)",
-      "text": "[assistant] web_search({\"query\": \"희망퇴직 위로금 실업급여 수급 자격 자발적 퇴직 고용보험법\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them."
+      "text": "[assistant] web_search({\"query\": \"희망퇴직 위로금 실업급여 수급자격 자발적 퇴사 고용보험법\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them."
     },
     {
       "destination": "tavily",
-      "label": "step 4 → Tavily (block)",
-      "text": "(nothing: search blocked)"
+      "label": "step 4 → Tavily (rewritten)",
+      "text": "voluntary resignation unemployment benefits eligibility and severance package conditions"
     },
     {
       "destination": "upstream",
       "label": "step 5 → Nemotron 3 Ultra (allow)",
-      "text": "[assistant] web_search({\"query\": \"희망퇴직 위로금 실업급여 수급 자격 자발적 퇴직 고용보험법\"})\n\n[tool] web_search was withheld by the user's privacy firewall: the query would reveal private details. Continue without it, or search for a more general topic."
+      "text": "[assistant] web_search({\"query\": \"희망퇴직 위로금 실업급여 수급자격 자발적 퇴사 고용보험법\"})\n\n[tool] [{\"title\": \"Impact of Voluntary Layoff on Unemployment Benefits\", \"url\": \"https://pershingsquarelaw.com/posts/impact-of-voluntary-layoff-on-unemployment-benefits\", \"content\": \"Accepting a severance package as part of a voluntary layoff can significantly affect eligibility and the number of unemployment benefits that may be accepted. Severance pay in California does not repeatedly disqualify you from receiving unemployment benefits. But it can mark the amount and timing of your benefits. Accepting how severance is preserved by the engineering department (EDD).\\n\\n### Voluntary Layoff Unemployment Benefits [...] Before accepting a voluntary layoff, e\"}, {\"title\": \"Voluntary Quit - Section 8-1001 - Maryland Unemployment ...\", \"url\": \"https://www.labor.maryland.gov/uiappeals/decisions/8-1001.shtml\", \"content\": \"the inducement by arranging it so that the longer the employee stayed on and thought about the severance package, the less money he would receive. Each employee knew or was led to believe that eventually he would be laid off, with or without the severance package, which induced him to accept the layoff sooner, rather than later. This is not a voluntary quit. Bishop et al. v. <ORG_3>, 270-BH-91. [...] The intent to quit can be shown by actions as well as words. An express re\"}, {\"title\": \"Division of <ORG_2> | What if you quit or were fired?\", \"url\": \"https://myunemployment.nj.gov/before/about/who/quitfired.shtml\", \"content\": \"To remove a disqualification for voluntary leaving, you must return to work (in covered employment) for at least eight weeks, earn at least 10 times your weekly benefit rate, and then become unemployed through no fault of your own.\\n\\n###\\n\\nIf you were fired or discharged from your job, you may not be eligible for benefits. A claims examiner will determine if there was any misconduct connected to your separation.\\n\\nThere are two types of misconduct: misconduct and gross misconduct. [...] If you quit\"}, {\"title\": \"Dismissal/Severance Pay and Pensions Frequently Asked ...\", \"url\": \"https://dol.ny.gov/dismissalseverance-pay-and-pensions-frequently-asked-questions\", \"content\": \"| Will I be eligible for benefits if I receive my first dismissal/severance payment more than 30 days after my last day of employment? | Yes. If you receive your first dismissal/severan\n… (928 more characters)"
     },
     {
       "destination": "tavily",
       "label": "step 5 → Tavily (rewritten)",
-      "text": "퇴직 합의서 위로금 실업급여 조건 고용보험법"
+      "text": "Korea unemployment benefits eligibility for voluntary retirement"
     },
     {
       "destination": "upstream",
       "label": "step 6 → Nemotron 3 Ultra (allow)",
-      "text": "[assistant] web_search({\"query\": \"<PERSON_8> 수급 자격 <PERSON_7>법\"})\n\n[tool] These web_search results were withheld by the user's privacy firewall because they contained a private value. Continue without them.\n\n[user] Step limit reached. Call finish now with the best answer you can give."
+      "text": "[assistant] web_search({\"query\": \"한국 희망퇴직 위로금 실업급여 수급자격 고용보험법 제58조\"})\n\n[tool] []\n\n[user] Step limit reached. Call finish now with the best answer you can give."
     }
   ],
-  "answer": "**결론부터 말씀드리면: 서명하지 않는 것이 좋습니다.**  \n\n---\n\n### 1. 서명 여부  \n- **서명 마감일:** 2026-09-25 (문서 2)  \n- **문서 1(합의서) 핵심 조항**  \n  1. “자발적 의사로 2026-10-31일자로 **퇴직**한다” → **자진 퇴직**로 처리됨  \n  2. “법정 퇴직금 외 위로금 3개월분 지급”  \n  3. “퇴직과 관련한 어떠한 민·형사상 이의도 제기하지 않는다” → **권리 포기 각서**  \n  4. “내용을 제3자에게 누설하지 않는다” → 비밀유지 의무  \n\n**자진 퇴직으로 처리되면**  \n- 희망퇴직 수급이 **최대 3개월 제한(수급제한)** 또는 **전면 배제**될 수 있음  \n- 부당퇴직 구제신청·손해배상 청구 등 **모든 법적 구제수단 봉쇄**  \n- 위로금 3개월분(약 1,650만 원)이 그 대가로 **충분한지** 별도 검토 필요  \n\n따라서 **현재 문구 그대로 서명하면 불이익이 큽니다.**  \n\n---\n\n### 2. 위로금 조건 적정성  \n- 제시액: **통상임금 3개월분 ≈ 1,650만 원**  \n- 참고 기준(대법원·노동위 판례):  \n  - 부당퇴직 위자료 통상 **3~6개월분**  \n  - 희망퇴직 수급제한 기간(3개월) 동안의 소득상실분 + 구제절차 비용·정신적 손해 고려 시 **최소 4~6개월분**이 통상적  \n- **현 제시액은 하한선 수준** → 협상 여지 있음  \n\n---\n\n### 3. 실업급여(희망퇴직) 수급 가능성  \n| 시나리오 | 희망퇴직 수급 |\n|---|---|\n| **현재 합의서 서명(자진 퇴직)** | **수급제한 3개월**(최장) 또는 **전면 배제** 가능성 높음 |\n| **서명 거부 → 회사 직권 퇴직 통보** | **비자발적 퇴직**로 인정돼 **즉시 수급 가능**(대기 7일만) |\n| **부당퇴직 구제신청 후 화해·판정** | 화해금·위자료 별도 수령 + 희망퇴직 정상 수급 |\n\n**핵심:** “자발적 의사” 문구만 지워도 희망퇴직 수급길이 열립니다.  \n\n---\n\n### 4. 즉시 할 일(실무 체크리스트)  \n1. **서명 보류** – 마감일(9/25) 전까지 **서명하지 말고** 회사에 “검토 중” 통보  \n2. **노무사·변호사 1회 상담** – 위로금 증액(4~6개월분) + “자발적” 문구 삭제 + 비밀유지 조항 완화 협상 위임  \n3. **증거 확보** – 문서 2(통보서), 합의서 초안, 근로계약서, 임금명세서, 퇴직 사유 관련 메일·메신저 캡처  \n4. **병행 준비** – 회사 직권 퇴직 통보 시 즉시 **관할 고용센터 희망퇴직 신청** + **지방노동위 부당퇴직 구제신청(30일 내)**  \n\n---\n\n### 5. 한 줄 요약  \n> **“자발적 퇴직” 문구가 있는 한 서명하지 마세요. 위로금 3개월분은 낮고, 희망퇴직은 막힙니다. 전문가 동행해 ‘비자발적 퇴직’로 전환하거나 위로금 4~6개월분+권리유보 조건으로 재협상하십시오.**  \n\n필요하면 노무사 추천·구제신청서 초안·협상 이메일 템플릿 등 실무 자료도 바로 드릴 수 있습니다.",
+  "answer": "두 문서를 검토했습니다. 핵심 내용을 정리하고 판단 기준을 드립니다.\n\n---\n\n### 1. 서명해야 할까요? (신중히 결정하세요)\n\n**서명 시 법적 효과**\n- **자발적 퇴직 확정**: 합의서 1항에 \"자발적 의사로 퇴직한다\"고 명시되어 있습니다. 서명하면 **회사 귀책사유가 아닌 본인 자발적 퇴사**로 법적으로 확정됩니다.\n- **청구권 포기**: 3항 \"어떠한 민·형사상 이의도 제기하지 않는다\"는 부당해고 구제신청, 임금체불 진정, 퇴직금/위로금 추가 청구 등 **모든 법적 권리 포기**를 의미합니다.\n- **비밀유지 의무**: 4항 위반 시 손해배상 청구 가능합니다.\n\n**서명 전 확인할 것**\n- **부당해고 여부**: \"조직 개편에 따른 부서 통합\"이 정당한 정리해고 요건(긴박한 경영상 필요, 해고회피 노력, 합리적 기준, 근로자대표와 성실 협의)을 갖췄는지 검토 필요합니다. 요건 미충족 시 부당해고 구제신청 가능(노동위원회, 3개월 내).\n- **위로금 적정성**: 통상임금 3개월분(약 1,650만 원) → 월 통상임금 약 550만 원 수준. 동종업계·직급·근속연수 대비 적정한지 비교 필요합니다.\n- **협상 여지**: 위로금 증액, 퇴직일 조정, 전직지원 서비스, 비밀유지 완화 등 협상 가능합니다.\n\n**권장**: 노동전문가(공인노무사·변호사) 상담 후 결정하세요. 기한(9월 25일) 전까지 시간이 있으니 서두르지 마시고 검토하세요.\n\n---\n\n### 2. 위로금 조건(3개월분, 약 1,650만 원)이 괜찮은가요?\n\n**판단 기준**\n| 항목 | 확인 필요 사항 |\n|------|----------------|\n| **법정 퇴직금** | 근속연수 × 30일분 평균임금(또는 통상임금) 별도 지급 확인 |\n| **위로금 산정 기준** | \"통상임금 3개월분\"이 기본급만인지, 고정수당 포함인지, 성과급 제외인지 확인 |\n| **비교 기준** | 동일 업종·규모 기업의 희망퇴직/정리해고 위로금 관행(보통 6~24개월분) |\n| **세금** | 위로금은 퇴직소득세(기타소득) 과세 대상, 실수령액 확인 필요 |\n| **기타** | 잔여 연차수당 별도 정산(통보문 3항), 건강보험·경조사 지원 등 부가혜택 여부 |\n\n**간단 체크리스트**\n- [ ] 법정 퇴직금 별도 지급 명시 여부\n- [ ] 통상임금 구성항목(기본급+고정수당) 확인\n- [ ] 근속연수 대비 업계 관행 비교\n- [ ] 세후 실수령액 계산\n\n---\n\n### 3. 실업급여(구직급여) 받을 수 있나요?\n\n**원칙: 수급 어렵습니다.**\n- **자발적 이직자(고용보험법 제58조)**: \"자발적 의사로 퇴직한다\"는 합의서 서명 시 **자발적 퇴사자**로 분류되어 **수급자격 제한(일반적으로 3개월간 수급불가)** 대상이 됩니다.\n- **예외(자발적 이직자라도 수급 가능)**: 임금체불, 최저임금 미만, 성희롱, 근로조건 현저 악화, 사업장 이전 등 **정당한 이직사유**가 입증되면 가능. 단, \"조직 개편·부서 통합\"만으로는 정당한 사유로 인정받기 어렵습니다.\n- **회사 귀책사유(비자발적) 인정받으려면**: 합의서 서명 **전**에 부당해고 구제신청 등으로 \"정리해고 무효\" 판정을 받거나, 회사가 **권고사직·희망퇴직 강요** 사실을 노동청에 신고해 인정받아야 합니다. 합의서 1항 문구 자체가 불리합니다.\n\n**실무적 조언**\n1. **실업급여가 생계에 필수라면** 서명 전 고용센터 상담(익명 가능) → \"자발적 퇴사 시 수급제한 기간·예외사유\" 확인.\n2. **부당해고 소지 가능성**이 있다면 노동위원회 구제신청(3개월 내) 검토 → 승소 시 비자발적 퇴사로 실업급여 수급 가능.\n3. **위로금 수령 후 실업급여 신청** 시 고용센터에서 \"자발적 퇴사\"로 처리될 확률 높음.\n\n---\n\n### 4. 당장 할 일(체크리스트)\n\n| 순서 | 행동 | 기한/비고 |\n|------|------|-----------|\n| 1 | 합의서·통보문 사본 보관(사진·스캔) | 즉시 |\n| 2 | 근로계약서·취업규칙·퇴직금규정·임금명세표 확보 | 즉시 |\n| 3 | 공인노무사/노동전문 변호사 상담(초회 무료 많음) | 9월 20일 전 |\n| 4 | 고용센터 익명 상담: \"희망퇴직 권유받음, 실업급여 영향은?\" | 9월 20일 전 |\n| 5 | 부당해고 구제신청 가능성 검토(근속·규모·해고회피 노력 등) | 9월 20일 전 |\n| 6 | 위로금 산정내역서 요구(통상임금 구성항목, 법정퇴직금 별도 내역) | 회사 인사팀 요청 |\n| 7 | 협상안 준비(위로금 증액, 퇴직일 연장, 전직지원, 비밀유지 완화) | 상담 후 |\n| 8 | 최종 결정: 서명 / 협상 / 구제신청 / 거부 | 9월 25일 전까지 |\n\n---\n\n### 5. 한 줄 요약\n\n> **서명하면 자발적 퇴사 확정 → 실업급여 3개월 제한, 모든 이의제기권 포기.**  \n> **위로금 3개월분(약 1,650만 원)은 업계 관행 대비 낮은 편일 수 있으니 산정내역 확인 후 협상 검토.**  \n> **9월 25일 전까지 전문가 상담 받고 결정하세요.**\n\n---\n\n**참고**: 위 내용은 일반적인 법리·실무 안내이며, 귀하의 근속연수·직급·임금구조·회사 규모·정리해고 절차 적법성 등 개별 사정에 따라 결론이 달라질 수 있습니다. 반드시 **공인노무사 또는 노동전문 변호사의 개별 상담**을 받으시기 바랍니다.",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -120,7 +120,7 @@
       "source": "rule"
     },
     {
-      "type": "QUASI_IDENTIFIER",
+      "type": "PERSON",
       "action": "mask",
       "source": "vault"
     },
@@ -161,81 +161,41 @@
     },
     {
       "type": "QUASI_IDENTIFIER",
+      "action": "generalize",
+      "source": "vault"
+    },
+    {
+      "type": "ORG",
+      "action": "mask",
+      "source": "rule"
+    },
+    {
+      "type": "ORG",
       "action": "mask",
       "source": "vault"
     },
     {
-      "type": "QUASI_IDENTIFIER",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "QUASI_IDENTIFIER",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "QUASI_IDENTIFIER",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "QUASI_IDENTIFIER",
-      "action": "mask",
-      "source": "llm"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
-      "action": "mask",
-      "source": "vault"
-    },
-    {
-      "type": "PERSON",
+      "type": "ORG",
       "action": "mask",
       "source": "vault"
     }
   ],
   "timings_ms": {
-    "run": 55363.7,
-    "total": 55363.73
+    "run": 36325.5,
+    "total": 36325.52
   },
   "stats": {
     "status": "finished",
     "steps": 6,
     "searches": 3,
-    "search_rewritten": 2,
-    "search_blocked": 1
+    "search_rewritten": 3,
+    "search_blocked": 0
   },
   "request_id": null,
   "leak_check": {
-    "outbound_payloads": 16,
+    "outbound_payloads": 18,
     "private_values": 13,
     "found": 0
   },
-  "recorded_seconds": 55.4
+  "recorded_seconds": 36.3
 }
