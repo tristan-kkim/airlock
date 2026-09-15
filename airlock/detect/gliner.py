@@ -43,6 +43,7 @@ from airlock.detect.ko_rules import (
     _NAME_STOPWORDS,
     _PUBLIC_FIGURES,
     _SURNAMES,
+    noun_shaped,
 )
 from airlock.detect.ko_rules import (
     _TITLE_WORDS as _TITLE_STEMS,
@@ -369,6 +370,8 @@ def ko_name(text: str, min_syllables: int = 2) -> str | None:
         name[:-1] in _NAME_STOPWORDS or name[:-1] in _TITLE_STEMS
     ):
         return None  # "이장이", "사장님" + particle: a title with a particle, not a name
+    if noun_shaped(name):
+        return None  # 고용보험, 자격증, 위로금: a common noun that starts with a surname syllable
     return name
 
 

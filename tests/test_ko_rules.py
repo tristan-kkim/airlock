@@ -1,8 +1,13 @@
 """Deterministic Korean/English semantic rules: positives and benign negatives."""
 
+import json
+
 import pytest
 
-from airlock.detect.ko_rules import detect_rules
+from airlock.detect.gliner import ko_name
+from airlock.detect.ko_rules import detect_rules, noun_shaped, plausible_name
+from airlock.detect.shape import check_llm_span
+from airlock.detect.spans import Span
 
 
 def found(text: str) -> set[tuple[str, str]]:
@@ -100,3 +105,74 @@ def test_rule_spans_carry_offsets_and_generalizations() -> None:
     assert text[quasi.start : quasi.end] == quasi.text
     assert quasi.action == "generalize" and quasi.replacement and quasi.source == "rule"
     assert health.action == "generalize" and health.replacement == "건강 문제"
+
+
+# ---- name shape: common nouns are not people ----------------------------------------------------
+#
+# The demo recording `agent-resignation-ko` sent "<PERSON_8> 수급 자격 <PERSON_7>법": the model had
+# proposed legal terms as people and nothing checked the shape of a Hangul PERSON span.
+
+LEGAL_TERMS = [
+    "실업급여", "퇴직금", "근로기준법", "수급 자격", "수급자격", "희망퇴직", "고용보험",
+    "고용보험법", "위로금", "연차수당", "통상임금", "노무사", "자격증", "관리비", "권고사직",
+    "정규직", "합의서", "임금", "급여", "서명",
+]  # fmt: skip
+NAMES = [
+    "박성훈", "김민수", "이영희", "남궁민수", "황보이든", "선우다온", "정다은", "김진실", "박순금",
+    "오세린", "문태오", "강채원", "박하은", "권소율", "김태형", "예진", "다은", "박 성훈",
+    "김철수 이영희",
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("term", LEGAL_TERMS)
+def test_legal_and_common_terms_are_not_names(term) -> None:
+    assert not plausible_name(term)
+    span, outcome = check_llm_span(Span(text=term, type="PERSON", source="llm"), f"질문: {term}")
+    assert span is None and outcome == "dropped"
+    if " " not in term:
+        assert ko_name(term) is None  # the GLiNER ensemble applies the same shape
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_names_keep_their_shape(name) -> None:
+    assert plausible_name(name)
+    span, outcome = check_llm_span(Span(text=name, type="PERSON", source="llm"), f"수신: {name}")
+    assert span is not None and outcome == "ok"
+
+
+def test_noun_shape_is_structural() -> None:
+    assert noun_shaped("고용보험")  # four syllables without a compound surname
+    assert not noun_shaped("남궁민수")
+    assert noun_shaped("자격증") and noun_shaped("노무사")  # a syllable that ends nouns, not names
+    assert not noun_shaped("김진실") and not noun_shaped("박순금")  # 실 and 금 end real names
+    assert noun_shaped("위로금")  # listed: passes every structural check
+
+
+def test_korean_search_query_with_legal_terms_is_not_blocked(client, harness) -> None:
+    """The model proposes 실업급여 and 고용보험 as people; the query must still go out."""
+    harness.entities = {"실업급여": ("PERSON", "mask", ""), "고용보험": ("PERSON", "mask", "")}
+    harness.rewrite = lambda q, c: q
+    query = "실업급여 수급 자격 고용보험법"
+    r = client.post("/v1/search", json={"query": query, "max_results": 2})
+    assert r.status_code == 200, r.text
+    assert r.json()["outbound_query"] == query
+    assert harness.tavily_requests[-1]["query"] == query
+
+
+def test_korean_hr_document_keeps_its_terms_and_masks_the_name(client, harness) -> None:
+    harness.entities = {
+        "박성훈": ("PERSON", "mask", ""),
+        "퇴직금": ("PERSON", "mask", ""),
+        "희망퇴직": ("PERSON", "mask", ""),
+        "고용보험": ("PERSON", "mask", ""),
+    }
+    text = (
+        "박성훈 팀장은 희망퇴직 대상자다. 법정 퇴직금 외 위로금을 받고 고용보험 실업급여를 "
+        "신청한다."
+    )
+    r = client.post("/v1/chat/completions", json={"messages": [{"role": "user", "content": text}]})
+    assert r.status_code == 200, r.text
+    sent = harness.upstream_requests[-1]["messages"][-1]["content"]
+    assert sent.startswith("<PERSON_1> 팀장은 희망퇴직 대상자다.")
+    assert "퇴직금 외 위로금을 받고 고용보험 실업급여를" in sent
+    assert "PERSON_2" not in json.dumps(harness.upstream_requests[-1], ensure_ascii=False)

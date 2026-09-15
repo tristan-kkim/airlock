@@ -569,6 +569,72 @@ def public_figure(name: str) -> bool:
     return t in _PUBLIC_FIGURES or _split_particle(t) in _PUBLIC_FIGURES
 
 
+# ---- name shape ---------------------------------------------------------------------------------
+#
+# The demo recording `agent-resignation-ko` sent a search as "<PERSON_8> 수급 자격 <PERSON_7>법":
+# the model had proposed 실업급여 and 고용보험 as people, and the only shape check on a model
+# PERSON span was "fewer than four digits". A Korean full name is a surname plus a one- or
+# two-syllable given name; four syllables need a compound surname (남궁민수). Sino-Korean
+# compounds of the same length (고용보험, 연차수당, 근로기준) fail that test, and most of the
+# rest end in a syllable that ends nouns but never given names (자격증, 관리비, 노무사). What
+# survives both (위로금, 배우자, 고용주) is listed. Bare given names (예진, 다은) have no surname
+# and are accepted at two syllables.
+
+# Syllables that end Sino-Korean common nouns and, in practice, never end a given name. Endings
+# shared with names are deliberately absent: 원 (지원), 서 (민서), 진 (유진), 자 (순자), 금 (순금),
+# 실 (진실), 세, 권, 생, 인, 문, 주, 비.
+_NOUN_TAIL = frozenset("법증률액료급처청팀과층측적의님읍면물품량력사직")
+# Last resort for words that pass the structural checks: legal, HR, finance and everyday nouns.
+_KO_COMMON_NOUNS = frozenset(
+    _words(
+        """
+        위로금 위약금 지원금 장려금 성과금 배우자 고용주 노동자 장애인 임대인 임차인 조합원
+        신청인 신청서 신입생 안내문 서명란 이력서 진단서 소견서 마감일 제출일 지급일 제안서
+        고지서 고용법 공휴일 하반기 상반기 나머지
+        임금 급여 고용 연금 연차 연봉 서명 서류 기한 기간 안건 조건 조항 주소 지역 지급 문서
+        문의 신고 신청 권리 권한 노조 노무 원금 원고 채권 채무 공제 공고 인사 인원 제출 정산
+        """
+    )
+)
+_COMPOUND_TUPLE = tuple(_COMPOUND_SURNAMES.split("|"))
+
+
+def noun_shaped(name: str) -> bool:
+    """A 2-4 syllable Hangul word shaped like a common noun rather than a person's name."""
+    if len(name) == 4 and not name.startswith(_COMPOUND_TUPLE):
+        return True  # 고용보험, 연차수당, 권고사직: a four-syllable name needs a compound surname
+    return name[-1] in _NOUN_TAIL or name in _KO_COMMON_NOUNS
+
+
+def _plausible_token(token: str) -> bool:
+    if not re.fullmatch(r"[가-힣]{2,4}", token):
+        return False
+    if token in _NAME_STOPWORDS or token in _PUBLIC_FIGURES or token in _TITLE_WORDS:
+        return False
+    if noun_shaped(token):
+        return False
+    if len(token) == 2:
+        return True  # a bare given name (예진, 다은) has no surname
+    return token.startswith(_COMPOUND_TUPLE) or token[0] in _SURNAMES
+
+
+def plausible_name(text: str) -> bool:
+    """Hangul text that can be one or more Korean names ("박성훈", "박 성훈", "김철수 이영희").
+
+    Each name is 2-4 syllables; a full name starts with a surname (a compound one at four
+    syllables); a bare two-syllable given name may not; none is a title, a stopword, a public
+    figure or a noun-shaped word. Titles and particles are expected to be trimmed already.
+    """
+    t = text.strip()
+    if not t or not _HANGUL.search(t) or re.search(r"[A-Za-z0-9]", t):
+        return False
+    compact = re.sub(r"\s+", "", t)
+    if 2 <= len(compact) <= 4:
+        return _plausible_token(compact)
+    tokens = t.split()
+    return len(tokens) > 1 and all(_plausible_token(tok) for tok in tokens)
+
+
 def _person(text: str) -> list[Span]:
     spans = []
     for m in _PERSON_RE.finditer(text):

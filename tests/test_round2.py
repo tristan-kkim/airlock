@@ -427,9 +427,9 @@ def g(text: str, replacement: str, type_: str = "QUASI_IDENTIFIER", context: str
     [
         ("마흔다섯", "30대", "올해 마흔다섯이야", "40대"),
         ("45세", "in their 30s", "나이는 45세", "40대"),
-        ("38", "30대", "38세 여성", None),  # already correct: unchanged
-        ("turned 52", "in their 40s", "I turned 52 in March", "in their 50s"),
-        ("1999-05-21", "in their 30s", "Date of birth: 1999-05-21", "born in the 1990s"),
+        ("38", "30대", "38세 여성", "30대"),  # takes in its unit: "30대 여성", not "30대세 여성"
+        ("turned 52", "in their 40s", "I turned 52 in March", "am in my 50s"),
+        ("1999-05-21", "in their 30s", "Date of birth: 1999-05-21", "the 1990s"),
     ],
 )
 def test_age_generalizations_contain_the_value(original, replacement, context, want) -> None:

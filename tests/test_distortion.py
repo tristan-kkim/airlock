@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from airlock import generalize, placeholders
 from airlock.detect.patterns import detect_patterns
 from airlock.detect.shape import trim
@@ -314,3 +316,69 @@ def test_labeled_birth_date_is_masked_without_the_local_model(client, harness) -
     assert generalize.birth_dates("결제일 2026-03-02, born on March 3, 1987")[0].text == (
         "March 3, 1987"
     )
+
+
+# ---- S12: a generalization must read in its slot ------------------------------------------------
+#
+# `chat-medical-en` was recorded with "I'm age": the model proposed the bare "34" with a free-form
+# replacement, and an age was only recognized with its unit inside the span.
+
+
+@pytest.mark.parametrize(
+    ("text", "span", "replacement", "want", "gone"),
+    [
+        (
+            "Hi, I'm Jane. I'm 34 and was just diagnosed with type 1 diabetes.",
+            "34",
+            "age",
+            "I'm in my 30s and",
+            "34",
+        ),
+        ("She's 34 and lives with her mother.", "34", "30s", "She's in her 30s and", "34"),
+        ("My son is 34 years old.", "34 years old", "in their 30s", "My son is in his 30s.", "34"),
+        ("She is a 34-year-old nurse.", "34-year-old", "30s", "a 30-something nurse", "34"),
+        ("저는 34살입니다. 실업급여가 궁금해요.", "34살", "30대", "저는 30대입니다.", "34"),
+        ("저는 34살입니다. 실업급여가 궁금해요.", "34", "나이", "저는 30대입니다.", "34"),
+        ("환자는 만 34세 여성입니다.", "34세", "40대", "환자는 30대 여성입니다.", "34"),
+        (
+            "I was born in 1992 and moved to Seoul.",
+            "1992",
+            "early 1990s",
+            "born in the 1990s",
+            "1992",
+        ),
+        ("저는 1992년생이고 성남시에 살아요.", "1992년생", "90년대", "저는 1990년대생이고", "1992"),
+    ],
+)
+def test_age_and_birth_generalizations_fit_their_slot(
+    client, harness, text, span, replacement, want, gone
+) -> None:
+    harness.entities = {span: ("QUASI_IDENTIFIER", "generalize", replacement)}
+    r = chat(client, text)
+    assert r.status_code == 200, r.text
+    outbound = sent(harness)[-1]["content"]
+    assert want in outbound, outbound
+    assert gone not in outbound
+
+
+@pytest.mark.parametrize(
+    ("text", "span", "replacement", "want"),
+    [
+        (
+            "I live in Duluth and work nights.",
+            "Duluth",
+            "a big city",
+            "I live in a city in Minnesota and",
+        ),
+        ("저는 성남시에 살아요.", "성남시", "서울", "저는 경기도의 한 도시에 살아요."),
+    ],
+)
+def test_small_place_generalizations_fit_their_slot(
+    client, harness, text, span, replacement, want
+) -> None:
+    harness.entities = {span: ("LOCATION", "generalize", replacement)}
+    r = chat(client, text)
+    assert r.status_code == 200, r.text
+    outbound = sent(harness)[-1]["content"]
+    assert want in outbound, outbound
+    assert span not in outbound
