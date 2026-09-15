@@ -1,0 +1,67 @@
+{
+  "base_url": "http://127.0.0.1:8800",
+  "target_label": "airlock d97a815 (main), AIRLOCK_GLINER=on, placeholder, dev split, stub upstream (scanner metrics only)",
+  "passes": 2,
+  "cases_glob": "eval/results/s6-split/dev.jsonl",
+  "cases": 72,
+  "dataset_sha256": "96855eb04745e708a67efc966d6eb2d9d3226e8a4a9ff77f4a41691390c9c7ad",
+  "protection_level": "balanced",
+  "server_health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "protection_level": "balanced",
+    "local_model": "nemotron-3-nano-4b",
+    "local_temperature": 0.6,
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "upstream_configured": true,
+    "search_configured": true
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "subset": null,
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "reset_scope": "every pass",
+  "detector_temperature": 0.6,
+  "started_at": "2026-09-15T02:06:24.495816+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8800",
+    "--passes",
+    "2",
+    "--reset-vault",
+    "--timeout",
+    "600",
+    "--protection-level",
+    "balanced",
+    "--cases",
+    "eval/results/s6-split/dev.jsonl",
+    "--out",
+    "eval/results/s12-quality/stub-main",
+    "--label",
+    "airlock d97a815 (main), AIRLOCK_GLINER=on, placeholder, dev split, stub upstream (scanner metrics only)",
+    "--quiet"
+  ],
+  "resets": [
+    {
+      "pass": 1,
+      "reset": true,
+      "terms_removed": 14,
+      "mappings_removed": 1,
+      "detection_cache_cleared": 1
+    },
+    {
+      "pass": 2,
+      "reset": true,
+      "terms_removed": 31,
+      "mappings_removed": 217,
+      "detection_cache_cleared": 86
+    }
+  ],
+  "finished_at": "2026-09-15T02:15:18.371615+00:00"
+}

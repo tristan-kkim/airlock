@@ -1,0 +1,97 @@
+{
+  "base_url": "http://127.0.0.1:8800",
+  "target_label": "airlock d97a815 (main), stub upstream, the 4 dev cases that differed from main (local scan only)",
+  "passes": 4,
+  "cases_glob": "eval/cases/*.jsonl",
+  "cases": 4,
+  "dataset_sha256": "cd40ce707652d30ffb2007c5ccaac62c61709d42382c4c623351b5114c850609",
+  "protection_level": "balanced",
+  "server_health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "protection_level": "balanced",
+    "local_model": "nemotron-3-nano-4b",
+    "local_temperature": 0.6,
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "upstream_configured": true,
+    "search_configured": true
+  },
+  "model": "airlock",
+  "concurrency": 1,
+  "shuffle": true,
+  "conversation_scope": "pass",
+  "seed": 0,
+  "subset": {
+    "spec": "ids:eval/results/s12-quality/diff-ids.txt",
+    "seed": null,
+    "cases": 4,
+    "of": 243,
+    "strata": {
+      "adversarial/ko": 1,
+      "finance/ko": 1,
+      "quasi_identifier/en": 2
+    },
+    "case_ids": [
+      "adv-ko-08",
+      "fin-ko-10",
+      "qid-en-05",
+      "qid-en-06"
+    ]
+  },
+  "register_canaries": false,
+  "auto_approve_review": false,
+  "reset_vault": true,
+  "reset_scope": "every pass",
+  "detector_temperature": 0.6,
+  "started_at": "2026-09-15T02:30:33.810400+00:00",
+  "harness_version": "1.0.0",
+  "argv": [
+    "--base-url",
+    "http://127.0.0.1:8800",
+    "--passes",
+    "4",
+    "--reset-vault",
+    "--timeout",
+    "600",
+    "--protection-level",
+    "balanced",
+    "--out",
+    "eval/results/s12-quality/diff-main",
+    "--label",
+    "airlock d97a815 (main), stub upstream, the 4 dev cases that differed from main (local scan only)",
+    "--subset",
+    "ids:eval/results/s12-quality/diff-ids.txt",
+    "--quiet"
+  ],
+  "resets": [
+    {
+      "pass": 1,
+      "reset": true,
+      "terms_removed": 31,
+      "mappings_removed": 211,
+      "detection_cache_cleared": 0
+    },
+    {
+      "pass": 2,
+      "reset": true,
+      "terms_removed": 0,
+      "mappings_removed": 10,
+      "detection_cache_cleared": 4
+    },
+    {
+      "pass": 3,
+      "reset": true,
+      "terms_removed": 0,
+      "mappings_removed": 8,
+      "detection_cache_cleared": 3
+    },
+    {
+      "pass": 4,
+      "reset": true,
+      "terms_removed": 0,
+      "mappings_removed": 10,
+      "detection_cache_cleared": 4
+    }
+  ],
+  "finished_at": "2026-09-15T02:31:34.958864+00:00"
+}
