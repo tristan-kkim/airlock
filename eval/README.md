@@ -578,7 +578,7 @@ numbers in `COMPARISON.md` come from the final ones.
 ## Identity vs situation (`protected.py`, `reframe.py`)
 
 The agent-mode evaluation showed the problem with counting every private string alike: Airlock
-cut private-fact recovery from 87.2% to 41.3%, yet situation inference stayed at 89.6% in both
+cut private-fact recovery from 87.2% to 41.3% (the `d2ff994` run), yet situation inference stayed at 89.6% in both
 modes. That is expected. A cloud model has to understand the problem to help with it. What Airlock
 can and should prevent is the cloud tying that problem to a person.
 
