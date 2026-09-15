@@ -5,7 +5,7 @@
   "lang": "en",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T14:54:51+00:00",
+  "recorded_at": "2026-09-15T02:18:35+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -26,10 +26,10 @@
     {
       "destination": "upstream",
       "label": "user",
-      "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm age and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for flexible hours for the next two months."
+      "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm in my 30s and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for adjustable schedule for the next two months."
     }
   ],
-  "answer": "Subject: Request for Flexible Hours – Medical Accommodation  \n\nDear Tom Reyes,  \n\nI’m writing to let you know that I was recently diagnosed with type 1 diabetes at Hanbit Clinic. As I adjust to the new treatment plan over the next two months, I would appreciate a flexible schedule (e.g., adjusted start/end times or occasional remote work) to attend medical appointments and manage my health.  \n\nI remain fully committed to my responsibilities and will ensure all deliverables stay on track. Please let me know if we should discuss any specific arrangements.  \n\nThank you for your understanding.  \n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
+  "answer": "Subject: Request for Adjusted Schedule – Medical Accommodation\n\nDear Tom Reyes,\n\nI am writing to inform you that I have recently been diagnosed with type 1 diabetes at Hanbit Clinic. As I begin treatment and establish a management routine, I will need a more flexible work schedule over the next two months to attend medical appointments, monitor blood‑glucose levels, and adjust to new medication timing.\n\nI would like to propose the following temporary adjustments, effective immediately and lasting through the next eight weeks:\n\n* Core hours: 10:00 am – 3:00 pm (available for meetings and collaboration)\n* Flexible start/end times outside core hours to accommodate appointments\n* Option to work remotely on days when clinic visits run longer than expected\n\nI will keep you updated on any changes and ensure that all deliverables remain on track. Please let me know a convenient time to discuss this further.\n\nThank you for your understanding and support.\n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -67,23 +67,28 @@
       "source": "llm"
     },
     {
+      "type": "QUASI_IDENTIFIER",
+      "action": "generalize",
+      "source": "llm"
+    },
+    {
       "type": "HEALTH",
       "action": "keep",
       "source": "rule"
     },
     {
-      "type": "QUASI_IDENTIFIER",
+      "type": "HEALTH",
       "action": "keep",
       "source": "llm"
     }
   ],
   "timings_ms": {
-    "detect": 2100.36,
-    "substitute": 0.74,
-    "gate": 4.19,
-    "upstream": 1690.35,
-    "rehydrate": 0.66,
-    "total": 3796.77
+    "detect": 2844.74,
+    "substitute": 0.52,
+    "gate": 2.52,
+    "upstream": 1942.21,
+    "rehydrate": 0.11,
+    "total": 4790.53
   },
   "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "request_id": null,
@@ -92,5 +97,5 @@
     "private_values": 12,
     "found": 0
   },
-  "recorded_seconds": 3.8
+  "recorded_seconds": 4.8
 }
