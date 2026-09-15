@@ -50,10 +50,10 @@ Final measurement ([`eval/results/FINAL.md`](eval/results/FINAL.md), full tables
 - **Airlock links less than GLiNER-PII alone (7.5% vs 9.2%) at a fraction of its utility cost.** GLiNER-PII masks 59.3% of benign prompts and scores 2.69 for usefulness; Airlock masked no benign prompt in this run.
 - **Placeholders stay the default.** The surrogate row is from an older detector and was not rerun; on that detector surrogates linked 1.3 points less than placeholders and distorted 4.2 points more.
 - **Korean costs more on utility, not on leakage.** Utility ratio 0.88 in Korean vs 1.03 in English, over-redaction 7.5% vs 3.1%, distortion 17.6% vs 12.1%. Identity leak is 2.6% in Korean vs 3.6% in English, linkable 6.7% vs 8.3%. No benign case was masked or blocked in either language.
-- **Since the previous independent run (`201341b`):** linkable 13.9% → 7.5%, identity leak 8.6% → 3.1%, benign masked 11.1% → 0%, over-redaction 7.1% → 5.3%; usefulness, utility ratio, situation inference and distortion unchanged within noise; local overhead up about 0.2 s at p50. The quasi-identifier coarsening and the detection on normalized Korean text (S10) are what moved; `eval/results/FINAL.md` has the case-level comparison.
+- **Since the previous independent run (`201341b`):** linkable 13.9% → 7.5%, identity leak 8.6% → 3.1%, benign masked 11.1% → 0%, over-redaction 7.1% → 5.3%; usefulness, utility ratio, situation inference and distortion unchanged within noise; local overhead up about 0.2 s at p50. The quasi-identifier coarsening and the detection on normalized Korean text are what moved; `eval/results/FINAL.md` has the case-level comparison.
 - **Latency:** local overhead p50 4.2 s / p95 9.4 s per request (pass 1 carries the warm-up). Local detection alone is p50 3.5 s.
 
-These are lower bounds from one attacker on synthetic data, and the judge's noise is about ±0.05 in utility ratio and ±3 points in distortion. Some of the 243 cases were used to tune S10 and S12, so this is not a held-out estimate. The subset and dev-split tables further down are earlier one-pass measurements kept for their diagnoses.
+These are lower bounds from one attacker on synthetic data, and the judge's noise is about ±0.05 in utility ratio and ±3 points in distortion. Some of the 243 cases were used to tune the quasi-identifier coarsening, the detection on normalized text and the Korean name and age checks, so this is not a held-out estimate. The subset and dev-split tables further down are earlier one-pass measurements kept for their diagnoses.
 
 ## Architecture
 
@@ -156,28 +156,28 @@ If the package or weights are missing while `AIRLOCK_GLINER=on`, `airlock serve`
 
 Over all 243 cases, an LLM attacker reading only the outbound payloads recovers 1.0% of planted values with the ensemble, against 9.9% without it. The cost is real: 4 of 19 benign test prompts get a mask, and 2 benign searches are blocked because the local rewrite kept an organization GLiNER flagged. GLiNER adds p50 457 ms / p95 635 ms of CPU inference, run in parallel with Nano. The adjudication call is needed in 28% of chat requests and then takes p50 1.7 s / p95 2.2 s. Local latency across runs was contaminated by other models sharing the laptop.
 
-### Detector round two (S6): measured
+### Org-unit rules, surrogates and entailed generalization: measured
 
 What changed is described in *Architecture* (step 1.6, step 2) and *Surrogates*. Rules and thresholds were tuned on the 72-case dev split only. The one-pass numbers on the 171-case test split and its 90-case attack subset are in [`eval/results/s6-split/REPORT.md`](eval/results/s6-split/REPORT.md). The 3-pass full-dataset measurement in [`eval/results/FINAL.md`](eval/results/FINAL.md) supersedes them, including the placeholder vs surrogate comparison.
 
-What that round found:
+What this measurement found:
 
-- **Linkable disclosure and over-redaction roughly halved against B1**, the ensemble before the round. Linking the employer, unit and role removes the combination that linked most, and amounts, lab values and common diagnoses now stay in the prompt. More situations are therefore visible to the cloud, as intended: the cloud may learn the problem, not who has it.
+- **Linkable disclosure and over-redaction roughly halved against the previous GLiNER ensemble configuration**, the detector before these changes. Linking the employer, unit and role removes the combination that linked most, and amounts, lab values and common diagnoses now stay in the prompt. More situations are therefore visible to the cloud, as intended: the cloud may learn the problem, not who has it.
 - **Distortion rose.** The distorted answers included invented dates and wrong arithmetic in both configs, and a masked role read back as an ID number. In surrogate mode, answers were also built on the surrogate itself:
   - a card "ending in" the surrogate's digits
   - a surrogate name transliterated into Korean in a translation task
   - a pronoun that did not match the surrogate's gender
   - a clinic written without its suffix
 
-  Those three surrogate failure kinds were fixed afterwards: card surrogates keep the last four digits, English first names are gender-neutral, and an organization's stem alone is rehydrated. The distortion diagnosis and fixes are in *Answer distortion (S9)*.
+  Those three surrogate failure kinds were fixed afterwards: card surrogates keep the last four digits, English first names are gender-neutral, and an organization's stem alone is rehydrated. The distortion diagnosis and fixes are in *Answer distortion*.
 - **Benign masking is unchanged**: all four benign masks on the test split come from GLiNER-only spans the adjudicator accepted (`KTX` and `경주 불국사` as organizations in two search queries, which the gate then blocked, `장영실이` as a person, the number 479001600 in a factorial question as an account number).
 
-### Answer distortion (S9): diagnosed and reduced on dev
+### Answer distortion: diagnosed and reduced on dev
 
-[`eval/results/s9-distortion/DIAGNOSIS.md`](eval/results/s9-distortion/DIAGNOSIS.md) reads every S6 answer that was distorted on the test subset against what was sent.
+[`eval/results/s9-distortion/DIAGNOSIS.md`](eval/results/s9-distortion/DIAGNOSIS.md) reads every answer of the detector measured above that was distorted on the test subset against what was sent.
 
-- **Noise and embellishment, 10 of 14.** Of the 14 answers distorted under S6 but not B1, 6 had a payload identical to B1's. In 4 more, S6 had kept a diagnosis or date that B1 generalized, and Ultra embellished around it.
-- **Caused by masking.** Across all 21 S6 distortions, the masking-related ones were mostly placeholder misreads, usually caused by a wrong token type:
+- **Noise and embellishment, 10 of 14.** Of the 14 answers distorted under this detector but not under the previous GLiNER ensemble, 6 had a payload identical to the previous ensemble's. In 4 more, this detector had kept a diagnosis or date that the previous ensemble generalized, and Ultra embellished around it.
+- **Caused by masking.** Across all 21 distorted answers of this detector, the masking-related ones were mostly placeholder misreads, usually caused by a wrong token type:
   - a user's number called "a placeholder"
   - base64 of `<SECRET_1>` in a "fixed" config
   - two companies declared without a type, sent as `<PERSON_n>`, and written up as "두 분"
@@ -198,9 +198,9 @@ On the 72 dev cases, one pass each with Ultra as upstream, attacker and judge:
 
 The utility ratio is not shown: the same cached reference answers scored 4.45 in one judge run and 4.12 in the other, because the judge scores answer pairs. Identity-leak differences trace case by case to the local model's sampling, not to changed code. The full dataset with these fixes, 3 passes per config, is measured in [`eval/results/FINAL.md`](eval/results/FINAL.md).
 
-Agent mode, 4 scenarios (layoff and HR warning, Korean and English), airlock mode, 1 pass each ([`eval/results/s6-agent/`](eval/results/s6-agent/)). Identity facts found by the deterministic scanner in anything that left the machine: **0 of 19** with placeholders and 0 of 19 with surrogates. Before this round, team and employer names (`품질보증팀`, `영업2팀`, `Payments Platform`) survived all three passes of every run. The first agent attempt blocked every run at its third turn: GLiNER read the tool-argument key `doc_id` as an HTTP cookie. Object keys of tool-call arguments are now never rewritten and code identifiers are not secrets; a later surrogate attempt blocked once more (a title match crossed a line break and a surrogate organization contained that protected string), which was fixed before the runs counted here.
+Agent mode, 4 scenarios (layoff and HR warning, Korean and English), airlock mode, 1 pass each ([`eval/results/s6-agent/`](eval/results/s6-agent/)). Identity facts found by the deterministic scanner in anything that left the machine: **0 of 19** with placeholders and 0 of 19 with surrogates. Before these detector changes, team and employer names (`품질보증팀`, `영업2팀`, `Payments Platform`) survived all three passes of every run. The first agent attempt blocked every run at its third turn: GLiNER read the tool-argument key `doc_id` as an HTTP cookie. Object keys of tool-call arguments are now never rewritten and code identifiers are not secrets; a later surrogate attempt blocked once more (a title match crossed a line break and a surrogate organization contained that protected string), which was fixed before the runs counted here.
 
-Latency: Nemotron-3-Nano-4B Q4_K_M on an M3 Pro with GLiNER on CPU; another idle llama-server was loaded on the same machine during the runs. Detect time per chat request p50 3.4 s / p95 8.4 s (B1 on the same cases: 3.9 s / 8.2 s). The extra local call (health entailment) is only made for health generalizations outside the category table.
+Latency: Nemotron-3-Nano-4B Q4_K_M on an M3 Pro with GLiNER on CPU; another idle llama-server was loaded on the same machine during the runs. Detect time per chat request p50 3.4 s / p95 8.4 s (the previous GLiNER ensemble on the same cases: 3.9 s / 8.2 s). The extra local call (health entailment) is only made for health generalizations outside the category table.
 
 ## Agent mode: egress firewall for tool calls and web search
 
@@ -304,7 +304,7 @@ Documents are listed to the model by neutral ids (`doc-1`), because file names o
 
 Masking is recomputed for the whole history on every turn, through the same detection entry point as chat (GLiNER ensemble and refinement included; the search guard uses it too). When one turn adds several tool results, a value can be detected in one of them and missed in another: the pipeline propagates every detected value to every slot of the turn, at every occurrence, before the gate decides, and object keys of tool-call arguments (`{"doc_id": ...}`) are never rewritten.
 
-Two failure modes of the first measured runs are now handled inside the turn instead of ending the run (S13; both were the 3 blocked English runs in the table below):
+Two failure modes of the first measured runs are now handled inside the turn instead of ending the run (both were the 3 blocked English runs in the table below):
 
 - **Inbound web content never blocks a run.** A search result is public text: a known value in it is masked in the history like any other slot (the vault mapping already exists). If a result still holds a known value after masking (an encoded URL the gate decodes, say), that single result is dropped from the history, the agent is told how many results were withheld, and the turn is rebuilt (`results_withheld`). A document, the question or the model's own text is never dropped: such a turn stays blocked. Two blocked `pregnancy-en` runs came from the gate and the masker disagreeing on public text: the English health rule matched "pregnant" on a search page and generalized it to the category "pregnancy", while the word "pregnancy" on the same page was masked, so the outbound text held a vault original by construction. A health term that already names its category is now kept at balanced, a generalization is validated against every original of the request, and a rule span is substituted at every occurrence of its slot, not only the sentence that matched.
 - **A local detector malfunction degrades one turn, it does not block.** On a malformed answer (a repetition loop, invalid JSON, a timeout; `local_detector_malformed:*`), the turn is detected again from a fresh seed at a higher temperature (`detector_retried`). If that fails too, the turn is detected without the local model: deterministic spans (patterns, declared terms, everything vaulted earlier in the run), the rules and every GLiNER span, all masked, nothing kept or generalized (`detector_degraded`, also on the hop's `meta.detector`). The gate runs on the result as on any other turn. A chat request keeps failing closed: this path exists only in the agent loop, for the affected turn. The local model client itself sizes its output cap to the input and resamples a looping answer once with a fresh seed before reporting it.
@@ -607,7 +607,7 @@ Status, version, protection level, model names, the local detector temperature, 
 
 **What it does not protect against.** Please read this before relying on it.
 
-- **Detector misses.** If the local model, the regexes and the Korean rules all fail to recognise something (an unusual name, an internal project described in plain words), and you did not declare it, it is sent. The gate only enforces what is known. Declare your own name, employer, and key project names with `/vault/terms`, and use review mode for sensitive work. In our local-model spike, Nemotron-3-Nano-4B alone found 70% of Korean semantic spans (11% of Korean quasi-identifiers), against 93% in English; the Korean rules exist to narrow that gap and are measured on a small probe set that was also used to tune the prompt, so treat any number as optimistic.
+- **Detector misses.** If the local model, the regexes and the Korean rules all fail to recognise something (an unusual name, an internal project described in plain words), and you did not declare it, it is sent. The gate only enforces what is known. Declare your own name, employer, and key project names with `/vault/terms`, and use review mode for sensitive work. In our local-model spike, Nemotron-3-Nano-4B alone found 70% of Korean semantic spans (11% of Korean quasi-identifiers), against 93% in English; the Korean rules exist to narrow that difference and are measured on a small probe set that was also used to tune the prompt, so treat any number as optimistic.
 - **Rule false positives.** The Korean rules prefer to over-mask. A private-sounding company name, a name before a title, or a health term in a personal sentence may be masked even when it is harmless. Review mode lets you undo this.
 - **Paraphrase and inference.** Airlock removes strings, not meaning. "My wife, the only female neurosurgeon at the hospital in our small town" contains no name and may still identify someone. Generalization of quasi-identifiers reduces this; it does not eliminate it.
 - **Combining requests.** The provider sees many sanitized requests from the same account and may link them.
