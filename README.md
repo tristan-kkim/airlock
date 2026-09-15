@@ -278,7 +278,7 @@ AIRLOCK_SEARCH_JUDGE=safety uv run airlock serve
 uv run airlock agent "I got a layoff notice. Should I sign the separation agreement?" --docs ./private_docs
 ```
 
-The CLI prints one line per hop: what went to Ultra, what went to Tavily (local query next to the query actually sent), which tools ran locally, and the rehydrated answer. In the demo UI, the **Agent** tab streams the same trace with two presets, one in Korean and one in English.
+The CLI prints one line per hop: what went to Ultra, what went to Tavily (local query next to the query actually sent), which tools ran locally, and the rehydrated answer. In the demo UI, the **Agent** tab streams the same trace with a Korean preset (a resignation-notice scenario with fictional documents).
 
 `POST /v1/agent/run`
 
