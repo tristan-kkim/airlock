@@ -29,6 +29,72 @@ def sent(harness) -> list[dict]:
     return harness.upstream_requests[-1]["messages"]
 
 
+# ---- S13: the gate and the masker agree ----------------------------------------------------------
+
+
+def test_health_category_word_is_kept_and_its_sibling_generalizes_to_it(client, harness) -> None:
+    """`pregnancy-en`: "pregnant" -> "pregnancy" while "pregnancy" itself was masked, so the
+    outbound text held a vault original and the gate blocked. The category word is kept."""
+    harness.entities = {}
+    text = (
+        "My sister is pregnant and has been taking vitamins; she is the only pregnancy in our "
+        "family this year."
+    )
+    r = chat(client, text)
+    assert r.status_code == 200, r.text
+    out = sent(harness)[-1]["content"]
+    assert "pregnant" not in out and "pregnancy" in out
+    record = client.get(f"/audit/{r.headers['x-airlock-request-id']}").json()
+    actions = {(d["type"], d["action"]) for d in record["detections"]}
+    assert ("HEALTH", "keep") in actions and ("HEALTH", "generalize") in actions
+
+
+def test_every_occurrence_of_a_positioned_rule_span_is_substituted(client, harness) -> None:
+    """The rule matched one sentence; the gate matches the word anywhere in the slot."""
+    harness.entities = {}
+    text = (
+        "My coworker Priya was diagnosed with lupus last year and is the only one on the team "
+        "with it. Lupus support groups meet on Mondays."
+    )
+    r = chat(client, text)
+    assert r.status_code == 200, r.text
+    out = sent(harness)[-1]["content"]
+    assert "lupus" not in out.lower()
+    assert out.count("a health condition") == 2
+
+
+def test_generalization_never_contains_another_original_of_the_request(client, harness) -> None:
+    """A replacement is validated against every original of the request, not only its slot's."""
+
+    def detect(user: str) -> str:
+        if "Head of Payment Platform" in user:
+            spans = [
+                {
+                    "text": "Head of Payment Platform",
+                    "type": "QUASI_IDENTIFIER",
+                    "action": "generalize",
+                    "replacement": "a payments lead",
+                }
+            ]
+        elif "Payments" in user:
+            spans = [{"text": "Payments", "type": "ORG", "action": "mask", "replacement": ""}]
+        else:
+            spans = []
+        return json.dumps({"spans": spans})
+
+    harness.local_content = detect
+    messages = [
+        {"role": "user", "content": "I am the Head of Payment Platform. Draft my resignation."},
+        {"role": "assistant", "content": "Who is it addressed to?"},
+        {"role": "user", "content": "Payments, the holding company."},
+    ]
+    r = client.post("/v1/chat/completions", json={"messages": messages})
+    assert r.status_code == 200, r.text
+    out = json.dumps(sent(harness), ensure_ascii=False)
+    assert "payments" not in out.lower()
+    assert "<QUASI_IDENTIFIER_1>" in out and "<ORG_1>" in out
+
+
 # ---- placeholder type of declared terms ----------------------------------------------------------
 
 

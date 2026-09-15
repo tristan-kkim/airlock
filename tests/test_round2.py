@@ -47,7 +47,7 @@ class NoSpans:
 
     model = None
 
-    async def detect(self, text, original=None):
+    async def detect(self, text, original=None, *, resample=False):
         return LLMResult()
 
 

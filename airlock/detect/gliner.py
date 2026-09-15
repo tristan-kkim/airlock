@@ -617,6 +617,26 @@ class Ensemble:
         entities = await asyncio.to_thread(self.gliner.predict, list(texts))
         return entities, (time.perf_counter() - started) * 1000
 
+    def all_proposals(
+        self, texts: Sequence[str], proposals: tuple[list[list[Entity]], float]
+    ) -> EnsembleResult:
+        """Every GLiNER span above threshold, as a mask, with no policy and no adjudication.
+
+        The degraded detection mode of an agent turn (`airlock.pipeline`): the local model is
+        not available to adjudicate, so GLiNER's proposals are taken as they are.
+        """
+        entities, gliner_ms = proposals
+        accepted = [
+            [cand.span(text) for cand in to_candidates(text, i, found)]
+            for i, (text, found) in enumerate(zip(texts, entities, strict=True))
+        ]
+        counts: dict[str, float] = {
+            "gliner_texts": len(texts),
+            "gliner_spans": sum(len(a) for a in accepted),
+            "gliner_ms": round(gliner_ms),
+        }
+        return EnsembleResult(accepted, counts)
+
     async def merge(
         self,
         texts: Sequence[str],

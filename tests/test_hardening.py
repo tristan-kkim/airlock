@@ -205,6 +205,22 @@ def test_one_malformed_answer_is_retried_once(client, harness) -> None:
     r = chat(client, "hello there")
     assert r.status_code == 200, r.text
     assert len(harness.local_requests) == 2
+    # The retry is a different sample: a fresh seed and a little more temperature.
+    first, second = harness.local_requests
+    assert "seed" not in first and first["temperature"] == 0.6
+    assert isinstance(second["seed"], int) and second["temperature"] == 0.8
+
+
+def test_chat_never_resamples_or_degrades_after_two_malformed_answers(client, harness) -> None:
+    """The agent loop's retry-then-degrade path is not the chat path: chat fails closed."""
+    loop = '{"spans":[' + '{"text":"x","type":"Q"},' * 8
+    answers = iter([loop, loop, loop, loop, '{"spans": []}'])
+    harness.local_content = lambda u: next(answers)
+    r = chat(client, "hello there")
+    assert r.status_code == 422
+    assert r.json()["error"]["reasons"] == ["local_detector_malformed:repetition"]
+    assert len(harness.local_requests) == 2
+    assert harness.upstream_requests == []
 
 
 def test_repetition_detector_ignores_normal_output() -> None:
