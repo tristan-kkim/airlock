@@ -27,6 +27,18 @@ Flow per text slot:
    (`AIRLOCK_SUBSTITUTION=surrogate`, `airlock.surrogate`) or validated generalizations.
 
 `analyze_chat` runs steps 1-5 and `build_chat` runs step 6, so review mode can stop in between.
+
+The gate and the masker must agree: whatever the gate would flag in the outbound payload must be
+something step 6 substitutes. Three rules keep that true. A generalization is validated against
+every original of the request, not only its own slot's. A health term that already names its
+category ("pregnancy", "cancer") is kept at balanced instead of being masked, because the same
+category is what a longer health phrase generalizes to. And a span found at one position is
+substituted at every occurrence in its slot, because the gate matches every occurrence.
+
+Detection modes (`detect_many(mode=...)`): `normal`; `resample`, the same call with a fresh seed
+and a higher temperature after a malformed answer; `degraded`, no local model at all, deterministic
+spans plus every rule and GLiNER span as a mask. Only the agent loop uses the last two, for one
+turn, after the local detector malfunctioned twice; a chat request fails closed as before.
 """
 
 from __future__ import annotations
@@ -39,7 +51,7 @@ import re
 from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field, replace
-from typing import Any
+from typing import Any, Literal
 
 from airlock import generalize, placeholders, surrogate
 from airlock.config import ProtectionLevel, Settings, Substitution
@@ -88,6 +100,7 @@ FORWARDED_KEYS = (
 
 ENTAIL_PROMPT = load_prompt("entail.md")
 DETERMINISTIC_SOURCES = frozenset({"regex", "entropy", "vault", "user"})
+DetectMode = Literal["normal", "resample", "degraded"]
 
 PLACEHOLDER_NOTE = (
     "Tokens like <PERSON_1> are placeholders for private values; copy them exactly. "
@@ -452,7 +465,9 @@ class Sanitizer:
         stats.vault_spans = len(vault_spans)
         return spans + vault_spans, stats
 
-    async def _detect_one(self, text: str, session: VaultSession) -> Detected:
+    async def _detect_one(
+        self, text: str, session: VaultSession, mode: DetectMode = "normal"
+    ) -> Detected:
         """Candidate spans for one text. Raises LocalModelError if the local model fails."""
         det, stats = self.deterministic(text, session)
         stats.texts = 1
@@ -463,8 +478,10 @@ class Sanitizer:
         masked, stats.masked_before_llm = mask_for_detector(text, det)
         spans = det + rules
         # Skip the model when nothing but placeholders, digits and punctuation is left.
-        if any(ch.isalpha() for ch in placeholders.LENIENT_RE.sub("", masked)):
-            llm = await self.detector.detect(masked, original=text)
+        if mode != "degraded" and any(
+            ch.isalpha() for ch in placeholders.LENIENT_RE.sub("", masked)
+        ):
+            llm = await self.detector.detect(masked, original=text, resample=mode == "resample")
             stats.llm_calls = llm.calls
             stats.llm_proposed = llm.proposed
             stats.llm_kept = len(llm.spans)
@@ -473,7 +490,9 @@ class Sanitizer:
             spans += llm.spans
         return Detected(spans, stats)
 
-    async def detect_many(self, texts: list[str], session: VaultSession) -> list[Detected]:
+    async def detect_many(
+        self, texts: list[str], session: VaultSession, *, mode: DetectMode = "normal"
+    ) -> list[Detected]:
         """The single detection entry point: all texts of one request, turn or search.
 
         Per text: deterministic spans, rules and the local model; GLiNER runs in parallel over
@@ -481,22 +500,30 @@ class Sanitizer:
         refinement (module docstring, step 5). Request-level counters are added to the first
         text's stats, so summing the stats counts them once. Raises LocalModelError when a
         local model call fails.
+
+        `mode` is `normal`, `resample` (the local model is sampled again from a fresh seed after
+        a malformed answer) or `degraded` (no local model: deterministic spans, rules and every
+        GLiNER span, all masked; see the module docstring).
         """
         if not texts:
             return []
-        base = asyncio.gather(*(self._detect_one(t, session) for t in texts))
+        base = asyncio.gather(*(self._detect_one(t, session, mode) for t in texts))
         if self.ensemble is None:
             detected = list(await base)
         else:
             detected_t, proposals = await asyncio.gather(base, self.ensemble.propose(texts))
             detected = list(detected_t)
-            merged = await self.ensemble.merge(texts, [d.spans for d in detected], proposals)
+            if mode == "degraded":
+                # No adjudication call: every GLiNER span is taken, as a mask.
+                merged = self.ensemble.all_proposals(texts, proposals)
+            else:
+                merged = await self.ensemble.merge(texts, [d.spans for d in detected], proposals)
             for d, extra in zip(detected, merged.accepted, strict=True):
                 d.spans = d.spans + extra
             first = detected[0].stats
             for key, value in merged.counts.items():
                 setattr(first, key, getattr(first, key) + int(value))
-        await self._refine(texts, detected, session)
+        await self._refine(texts, detected, session, degraded=mode == "degraded")
         return detected
 
     # ---- refinement -----------------------------------------------------------------------
@@ -518,9 +545,29 @@ class Sanitizer:
             text, span.start, span.end, span.text
         )
 
+    def _is_health_category(self, span: Span, text: str) -> bool:
+        """The span already names its own health category ("pregnancy", "cancer", "diabetes").
+
+        A longer phrase ("16 weeks pregnant", "stage 2 breast cancer") is generalized to exactly
+        this word, so at balanced and minimal the word itself is kept. Masking it while the
+        generalization of its sibling puts the same word back would give the gate a vault
+        original to find in the outbound text (S13, `pregnancy-en`).
+        """
+        if span.type != "HEALTH" or self.settings.protection_level is ProtectionLevel.STRICT:
+            return False
+        category = generalize.health_category(span.text, generalize.text_lang(text))
+        return category is not None and _same_term(category, span.text)
+
     async def _refine(
-        self, texts: list[str], detected: list[Detected], session: VaultSession
+        self,
+        texts: list[str],
+        detected: list[Detected],
+        session: VaultSession,
+        *,
+        degraded: bool = False,
     ) -> None:
+        """Step 5 of the module docstring. `degraded` (no local model this turn) keeps nothing,
+        generalizes nothing and asks no entailment: every non-deterministic span is a mask."""
         first = detected[0].stats
         for text, d in zip(texts, detected, strict=True):
             kept: list[Span] = []
@@ -572,7 +619,12 @@ class Sanitizer:
                     if outcome == "retyped":
                         d.stats.llm_retyped += 1
                     span = checked
-                if span.action != "keep" and self._keeps_situation(span, text):
+                if degraded:
+                    if span.action != "keep":
+                        span = replace(span, action="mask", replacement=None)
+                elif span.action != "keep" and (
+                    self._keeps_situation(span, text) or self._is_health_category(span, text)
+                ):
                     span = replace(span, action="keep", replacement=None)
                     d.stats.kept_situation += 1
                 elif span.type == "HEALTH" and span.action == "generalize":
@@ -604,7 +656,17 @@ class Sanitizer:
                 d.spans = d.spans + coarse
                 first.quasi_coarsened += len(coarse)
 
-        await self._entail(texts, detected, first)
+        if degraded:
+            for d in detected:
+                d.spans = [
+                    replace(s, action="mask", replacement=None)
+                    if s.source not in DETERMINISTIC_SOURCES and s.action != "keep"
+                    else s
+                    for s in d.spans
+                ]
+        else:
+            await self._entail(texts, detected, first)
+        self._cover_occurrences(texts, detected, first)
         if len(texts) > 1:
             self._propagate(texts, detected, first)
 
@@ -639,7 +701,11 @@ class Sanitizer:
             if verdict:
                 continue
             category = generalize.health_category(span.text, lang)
-            if category and category != span.replacement:
+            if category and _same_term(category, span.text):
+                # The span is its own category: nothing to generalize to (see _is_health_category).
+                detected[ti].spans[si] = replace(span, action="keep", replacement=None)
+                stats.kept_situation += 1
+            elif category and category != span.replacement:
                 detected[ti].spans[si] = replace(span, replacement=category, rule="entailed")
                 stats.generalization_fixed += 1
             elif self.settings.protection_level is ProtectionLevel.STRICT:
@@ -688,6 +754,30 @@ class Sanitizer:
                     answers[pair] = False
         return [answers.get(p, self._entail_cache.get(p, False)) for p in pairs]
 
+    def _cover_occurrences(
+        self, texts: list[str], detected: list[Detected], stats: DetectStats
+    ) -> None:
+        """A span found at one position is substituted at every occurrence in its slot.
+
+        Rule and regex spans carry the position that matched (the sentence with a person cue,
+        say). The gate matches the value anywhere in the slot, so the other occurrences get an
+        unpositioned copy, which `locate` expands to every occurrence.
+        """
+        for text, d in zip(texts, detected, strict=True):
+            free = {normalize(s.text) for s in d.spans if s.action != "keep" and s.start is None}
+            covered: dict[str, set[tuple[int, int]]] = {}
+            for s in d.spans:
+                if s.action != "keep" and s.start is not None and s.end is not None:
+                    covered.setdefault(normalize(s.text), set()).add((s.start, s.end))
+            for s in d.spans:
+                norm = normalize(s.text)
+                if s.action == "keep" or s.start is None or norm in free:
+                    continue
+                if any(o not in covered[norm] for o in find_term(text, s.text)):
+                    d.spans.append(_copy_span(s))
+                    free.add(norm)
+                    stats.propagated += 1
+
     def _propagate(self, texts: list[str], detected: list[Detected], stats: DetectStats) -> None:
         """A value detected in any slot is masked in every slot of the request before the gate."""
         active: dict[str, Span] = {}
@@ -702,16 +792,7 @@ class Sanitizer:
             for norm, span in active.items():
                 if norm in have or not find_term(text, span.text):
                     continue
-                d.spans.append(
-                    Span(
-                        text=span.text,
-                        type=span.type,
-                        action=span.action,
-                        replacement=span.replacement,
-                        source=span.source,
-                        rule=span.rule if (span.rule or "").startswith("link:") else "propagated",
-                    )
-                )
+                d.spans.append(_copy_span(span))
                 stats.propagated += 1
 
     def _policy(self, span: Span) -> Span:
@@ -740,6 +821,7 @@ class Sanitizer:
         `context` holds every text of the request, which a surrogate must not collide with.
         """
         rejected = set(rejected)
+        context_originals = list(context_originals)
         spans = [self._policy(s) for s in spans]
         if rejected:
             spans = [s for s in spans if normalize(s.text) not in rejected]
@@ -779,7 +861,13 @@ class Sanitizer:
             if existing is not None:
                 mapping = existing
             elif span.action == "generalize" and generalization_ok(
-                original, span.replacement, originals, json_safe=json_safe, check_tokens=not trusted
+                original,
+                span.replacement,
+                # Every original of the request: the gate looks for all of them in every slot,
+                # so a replacement that contains one would be flagged wherever it lands.
+                [*originals, *context_originals],
+                json_safe=json_safe,
+                check_tokens=not trusted,
             ):
                 mapping = session.generalize(key, span.type, span.replacement or "")
             else:
@@ -883,12 +971,14 @@ class Sanitizer:
         return result
 
     # ---- chat payloads ------------------------------------------------------
-    async def analyze_chat(self, body: dict[str, Any], session: VaultSession) -> ChatAnalysis:
+    async def analyze_chat(
+        self, body: dict[str, Any], session: VaultSession, *, mode: DetectMode = "normal"
+    ) -> ChatAnalysis:
         """Detect spans in every text slot. Creates no vault mappings."""
         messages = _messages_for(body, session)
         slots, extra_reasons = _chat_slots(messages)
         unique_texts = list(dict.fromkeys(container[key] for container, key, _ in slots))
-        detected = await self.detect_many(unique_texts, session)
+        detected = await self.detect_many(unique_texts, session, mode=mode)
         stats = DetectStats()
         for d in detected:
             stats.add(d.stats)
@@ -1010,6 +1100,28 @@ class Sanitizer:
         if analysis.stats.semantic_cues:
             reasons.append("semantic_cues")
         return reasons
+
+
+_ARTICLE = re.compile(r"^(?:a|an|the)\s+", re.IGNORECASE)
+
+
+def _same_term(a: str, b: str) -> bool:
+    """The same term up to case, spacing and a leading English article."""
+    return normalize(_ARTICLE.sub("", a.strip())) == normalize(_ARTICLE.sub("", b.strip()))
+
+
+def _copy_span(span: Span) -> Span:
+    """An unpositioned copy for another occurrence or slot. Airlock-computed generalizations
+    (`link:`, `entailed`) stay trusted; anything else is marked as propagated."""
+    trusted = (span.rule or "").startswith(("link:", "entailed"))
+    return Span(
+        text=span.text,
+        type=span.type,
+        action=span.action,
+        replacement=span.replacement,
+        source=span.source,
+        rule=span.rule if trusted else "propagated",
+    )
 
 
 _IDENTIFIER = re.compile(r"[a-z]+(?:_[a-z]+)+")

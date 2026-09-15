@@ -11,6 +11,7 @@ import asyncio
 import hashlib
 import json
 import re
+import secrets
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from importlib import resources
@@ -116,6 +117,22 @@ def detector_max_tokens(chars: int) -> int:
     return max(160, min(1536, 160 + 2 * chars))
 
 
+# A repetition loop is a sampling accident: the resample after one takes a fresh seed and a
+# little more temperature (the local-model spike found loops at low temperature), never less.
+RESAMPLE_TEMPERATURE_STEP = 0.2
+MAX_TEMPERATURE = 1.0
+
+
+def resample_body(body: dict[str, Any], step: int) -> dict[str, Any]:
+    """`body` sampled differently: a fresh seed and `step` temperature bumps."""
+    out = dict(body)
+    out["seed"] = secrets.randbelow(2**31)
+    out["temperature"] = min(
+        MAX_TEMPERATURE, float(body["temperature"]) + RESAMPLE_TEMPERATURE_STEP * step
+    )
+    return out
+
+
 class LocalModel:
     """Minimal OpenAI-compatible client for the on-device model."""
 
@@ -133,8 +150,11 @@ class LocalModel:
         max_tokens: int = 512,
         retries: int = 1,
         temperature: float | None = None,
+        resample: bool = False,
     ) -> Any:
-        body: dict[str, Any] = {
+        """One JSON answer. `resample` starts from a fresh seed and a higher temperature (for a
+        caller that already saw this call loop or produce garbage)."""
+        base: dict[str, Any] = {
             "model": self.settings.local_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "temperature": (
@@ -149,13 +169,15 @@ class LocalModel:
             },
         }
         if self.settings.local_disable_thinking:
-            body["chat_template_kwargs"] = {"enable_thinking": False}
+            base["chat_template_kwargs"] = {"enable_thinking": False}
         headers = {}
         if self.settings.local_api_key:
             headers["Authorization"] = f"Bearer {self.settings.local_api_key}"
 
         last_error: LocalModelError | None = None
-        for _ in range(retries + 1):
+        for attempt in range(retries + 1):
+            step = attempt + int(resample)
+            body = resample_body(base, step) if step else base
             try:
                 resp = await self.client.post(
                     f"{self.settings.local_base_url}/chat/completions",
@@ -269,13 +291,19 @@ class LLMDetector:
     def system_prompt(self) -> str:
         return self._prompt_template.replace("{{PROTECTION_LEVEL}}", _LEVEL_GUIDANCE[self.level])
 
-    async def detect(self, text: str, original: str | None = None) -> LLMResult:
-        """Spans in `text` (already partially masked). They are verified against `original`."""
+    async def detect(
+        self, text: str, original: str | None = None, *, resample: bool = False
+    ) -> LLMResult:
+        """Spans in `text` (already partially masked). They are verified against `original`.
+
+        `resample` is for a caller whose previous call on this text was malformed: the model is
+        sampled again from a fresh seed at a higher temperature, and the cache is bypassed.
+        """
         original = text if original is None else original
         if not text.strip():
             return LLMResult()
         key = hashlib.sha256(f"{self.level}\x00{text}\x00{original}".encode()).hexdigest()
-        if key in self._cache:
+        if key in self._cache and not resample:
             self._cache.move_to_end(key)
             return self._cache[key]
 
@@ -288,6 +316,7 @@ class LLMDetector:
                     DETECTOR_SCHEMA,
                     "airlock_spans",
                     max_tokens=detector_max_tokens(len(chunk)),
+                    resample=resample,
                 )
                 result.calls += 1
                 merge_into(result, parse_spans(data, original))

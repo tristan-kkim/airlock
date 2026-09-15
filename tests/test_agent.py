@@ -595,6 +595,202 @@ def test_search_result_holding_an_undecodable_private_value_is_withheld(
     assert all("Okafor" not in raw.decode() for raw in agent.h.upstream_raw)
 
 
+def test_only_the_refused_search_result_is_dropped(make_agent_client, agent) -> None:
+    """Two results, one with an encoded private value: the other one still reaches the model."""
+    agent.h.tavily_results = [
+        {"title": "Severance basics", "url": "https://a.example", "content": "alpha", "score": 0.9},
+        {
+            "title": "Profile",
+            "url": "https://people.example/Daniel%20Okafor",
+            "content": "a public page",
+            "score": 0.5,
+        },
+    ]
+    seen = []
+
+    def finish(payload):
+        seen.append(payload)
+        return tool_reply(call("finish", {"answer": "ok"}))
+
+    agent.h.upstream_reply = script(*STANDARD[:3], finish)
+    client = make_agent_client()
+    events = run_events(client)
+    final = final_of(events)
+    assert final["status"] == "finished" and final["results_withheld"] == 1
+    items = json.loads(seen[0]["messages"][-1]["content"])
+    assert [i.get("title") for i in items[:-1]] == ["Severance basics"]
+    assert items[-1]["withheld"] == 1
+    assert "withheld by the user's privacy firewall" in items[-1]["note"]
+    assert all("Okafor" not in raw.decode() for raw in agent.h.upstream_raw)
+    assert all(h["decision"] != "block" for h in audit_of(events)["hops"])
+
+
+def test_search_result_with_a_vaulted_health_phrase_is_masked_and_the_run_continues(
+    make_agent_client, agent
+) -> None:
+    """A public page repeats a health detail vaulted from the note: masked like any slot."""
+    condition = "Fabry disease"
+    agent.h.entities[condition] = ("HEALTH", "mask", "")
+    note = f"HR knows {NAME} is the only employee on the team with {condition}."
+    agent.h.tavily_results = [
+        {
+            "title": "Overview",
+            "url": "https://health.example/overview",
+            "content": f"{condition} is a rare genetic disorder. Treatment is lifelong.",
+            "score": 0.9,
+        }
+    ]
+    seen = []
+
+    def finish(payload):
+        seen.append(payload)
+        return tool_reply(call("finish", {"answer": "Talk to a lawyer about <HEALTH_1>."}))
+
+    agent.h.upstream_reply = script(*STANDARD[:3], finish)
+    client = make_agent_client()
+    events = run_events(client, docs=[("note.md", note)])
+    final = final_of(events)
+    assert final["status"] == "finished" and final["results_withheld"] == 0
+    assert final["answer"] == f"Talk to a lawyer about {condition}."
+    result_msg = seen[0]["messages"][-1]["content"]
+    assert "<HEALTH_1> is a rare genetic disorder" in result_msg
+    assert all("Fabry" not in raw.decode() for raw in agent.h.upstream_raw)
+
+
+def test_health_category_word_on_a_public_page_never_blocks_the_turn(
+    make_agent_client, agent
+) -> None:
+    """The S13 `pregnancy-en` block: the English health rule fires on public search text.
+
+    "pregnant" generalizes to its category "pregnancy", and the word "pregnancy" on the same
+    page is that category already: it is kept, not masked, so the outbound text holds no vault
+    original. Every occurrence is substituted, not only the sentence the rule matched.
+    """
+    agent.h.entities = {}
+    question = "I just accepted a job offer but I'm pregnant. Do I have to disclose it?"
+    agent.h.tavily_results = [
+        {
+            "title": "Should I disclose?",
+            "url": "https://forum.example/pregnant/should-i-disclose-my-pregnancy",
+            "content": "I'm 16 weeks pregnant and have been taking prenatal vitamins. The only "
+            "thing I worry about is disclosure. Workers who are pregnant have rights.",
+            "score": 0.9,
+        },
+        {
+            "title": "Know your rights",
+            "url": "https://law.example/pregnancy-rights",
+            "content": "The Pregnancy Discrimination Act protects pregnant workers, and my "
+            "employer is prohibited from taking action over a pregnancy.",
+            "score": 0.8,
+        },
+    ]
+    seen = []
+
+    def finish(payload):
+        seen.append(payload)
+        return tool_reply(call("finish", {"answer": "No duty to disclose; see the PDA and PWFA."}))
+
+    agent.h.upstream_reply = script(
+        tool_reply(call("web_search", {"query": "pregnancy disclosure job offer"})), finish
+    )
+    client = make_agent_client()
+    events = run_events(client, question=question, docs=[("note.md", "OB visit: 14 weeks.")])
+    final = final_of(events)
+    assert final["status"] == "finished" and final["answer"]
+    assert final["results_withheld"] == 0
+    assert all(h["decision"] != "block" for h in audit_of(events)["hops"])
+    last = json.dumps(seen[0]["messages"], ensure_ascii=False)
+    assert "pregnant" not in last.lower() and "pregnancy" in last
+
+
+def _flaky_detector(agent, failures: int, marker: str):
+    """A fake local detector whose first `failures` answers on the text holding `marker` loop."""
+    count = {"n": 0}
+
+    def detect(user: str) -> str:
+        if marker in user and count["n"] < failures:
+            count["n"] += 1
+            return '{"spans":[' + '{"text":"x","type":"Q"},' * 8
+        spans = [
+            {"text": t, "type": typ, "action": act, "replacement": rep}
+            for t, (typ, act, rep) in agent.h.entities.items()
+            if t in user
+        ]
+        return json.dumps({"spans": spans})
+
+    agent.h.local_content = detect
+    return count
+
+
+def _doc_detector_requests(agent) -> list[dict[str, Any]]:
+    return [
+        r
+        for r in agent.h.local_requests
+        if "privacy gate of Airlock" in r["messages"][0]["content"]
+        and "six weeks of pay" in r["messages"][1]["content"]
+    ]
+
+
+def test_detector_malformed_once_is_resampled_and_the_turn_continues(
+    make_agent_client, agent
+) -> None:
+    """Two loops in a row (the client's own retry included), then a clean answer."""
+    _flaky_detector(agent, 2, "six weeks of pay")
+    agent.h.upstream_reply = script(*STANDARD)
+    client = make_agent_client()
+    events = run_events(client)
+    final = final_of(events)
+    assert final["status"] == "finished" and final["answer"]
+    assert final["detector_retried"] == 1 and final["detector_degraded"] == 0
+    hops = audit_of(events)["hops"]
+    doc_turn = hops[2]
+    assert doc_turn["decision"] == "allow" and doc_turn["meta"]["detector"] == "retried"
+    assert all("detector" not in h["meta"] for h in hops if h is not doc_turn)
+    assert all(NAME not in raw.decode() for raw in agent.h.upstream_raw)
+    # The resample is a different sample: a fresh seed and a higher temperature. (Later turns
+    # detect the document again with more of it masked, at the normal temperature.)
+    requests = _doc_detector_requests(agent)[:3]
+    assert [r["temperature"] for r in requests] == [0.6, 0.8, 0.8]
+    assert "seed" not in requests[0] and all("seed" in r for r in requests[1:])
+
+
+def test_detector_malformed_twice_degrades_the_turn_and_known_values_still_never_leave(
+    make_agent_client, agent
+) -> None:
+    """Four loops: no local model for this turn. Vault, regex and rule spans still mask."""
+    loops = _flaky_detector(agent, 4, "six weeks of pay")
+    agent.h.upstream_reply = script(*STANDARD)
+    client = make_agent_client()
+    # The name is vaulted from the question at turn 1, before the detector starts failing.
+    events = run_events(client, question=f"I got a layoff notice from {NAME}. Should I sign?")
+    final = final_of(events)
+    assert final["status"] == "finished" and final["answer"]
+    assert final["detector_retried"] == 1 and final["detector_degraded"] == 1
+    hops = audit_of(events)["hops"]
+    assert hops[2]["decision"] == "allow" and hops[2]["meta"]["detector"] == "degraded"
+    doc_msg = hops[2]["payload"]["messages"][-1]["content"]
+    assert "Dear <PERSON_1>," in doc_msg and "<CONTACT_1>" in doc_msg
+    wire = b"".join(agent.h.upstream_raw).decode()
+    assert NAME not in wire and PHONE not in wire
+    # One resample after the client's own retry, then nothing more is asked this turn.
+    assert loops["n"] == 4
+    assert [r["temperature"] for r in _doc_detector_requests(agent)[:4]] == [0.6, 0.8, 0.8, 1.0]
+    audit = audit_of(events)
+    assert audit["meta"]["detector_degraded"] == 1 and audit["gate"]["decision"] == "allow"
+
+
+def test_degraded_turn_is_still_gated(make_agent_client, agent) -> None:
+    _flaky_detector(agent, 4, "CANARY-91ab")
+    agent.h.upstream_reply = script(*STANDARD)
+    client = make_agent_client(canaries=("CANARY-91ab",))
+    events = run_events(client, docs=[("a.md", "internal note CANARY-91ab")])
+    assert final_of(events)["status"] == "blocked"
+    hop = audit_of(events)["hops"][-1]
+    assert hop["decision"] == "block" and hop["meta"]["detector"] == "degraded"
+    assert hop["reasons"][0].startswith("canary:")
+    assert all(b"CANARY-91ab" not in raw for raw in agent.h.upstream_raw)
+
+
 def test_document_holding_an_undecodable_private_value_still_blocks(
     make_agent_client, agent
 ) -> None:

@@ -261,6 +261,30 @@ def test_one_adjudication_call_per_request_and_no_raw_pattern_values(
     assert len(fake_gliner.calls) == len(gliner.label_groups())  # all texts in one batch
 
 
+def test_degraded_mode_takes_every_gliner_span_as_a_mask_without_adjudication(
+    gliner_client, harness, fake_gliner
+):
+    """The agent's degraded turn (local detector down twice): no adjudication call is made."""
+    fake_gliner.entities = {
+        "Quillmere Vane": ("company_name", 0.97),
+        "Alan Turing": ("first_name", 0.99),
+    }
+    harness.local_garbage = True  # the local model answers prose: the normal path fails closed
+    sanitizer = gliner_client.app.state.services.sanitizer
+    session = sanitizer.vault.session("degraded-test")
+    text = "My manager at Quillmere Vane keeps quoting Alan Turing in reviews."
+
+    async def go():
+        return await sanitizer.detect_many([text], session, mode="degraded")
+
+    [detected] = gliner_client.portal.call(go)
+    spans = {(s.text, s.type, s.action, s.source) for s in detected.spans}
+    assert ("Quillmere Vane", "ORG", "mask", "gliner") in spans
+    assert ("Alan Turing", "PERSON", "mask", "gliner") in spans
+    assert adjudication_requests(harness) == [] and detected.stats.llm_calls == 0
+    assert detected.stats.gliner_spans == 2 and detected.stats.adjudication_calls == 0
+
+
 def test_adjudication_is_skipped_without_gliner_only_candidates(
     gliner_client, harness, fake_gliner
 ):

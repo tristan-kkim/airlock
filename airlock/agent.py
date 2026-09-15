@@ -20,6 +20,14 @@ The local history holds the originals. Each turn, the whole history is sanitized
 run's vault session, so a value keeps the same placeholder for the whole run and the model's tool
 calls (which use placeholders) are restored locally before a tool runs.
 
+Two things never end a run on their own. Inbound web content: a search result that still holds a
+known value after masking (an encoded URL, say) is dropped from the history, the agent is told,
+and the turn is rebuilt; only a document, the question or the model's own text can leave a turn
+blocked. And a local detector malfunction (a repetition loop, invalid JSON, a timeout): the turn
+is detected again from a fresh seed, then, if that also fails, without the local model at all
+(deterministic spans, every rule and GLiNER span masked), marked `detector_degraded` in the audit.
+The gate runs on the result either way. A chat request keeps failing closed on both.
+
 `guard=False` exists only to measure what an unprotected agent leaks (eval/agent). It sends raw
 documents and raw queries, still records every hop, and refuses to run unless
 `AIRLOCK_ALLOW_UNGUARDED=1`. The HTTP endpoint and the CLI never expose it.
@@ -41,10 +49,18 @@ from airlock import gate
 from airlock.agent_settings import AgentSettings
 from airlock.audit import AuditLog, AuditRecord
 from airlock.config import Settings
-from airlock.detect.llm import LocalModelError, block_reason, load_prompt
+from airlock.detect.llm import LocalModelError, LocalModelMalformed, block_reason, load_prompt
 from airlock.egress import EgressEvent, EgressPolicy
 from airlock.hashing import Hasher
-from airlock.pipeline import Detection, PayloadError, Sanitizer, dedupe_detections
+from airlock.pipeline import (
+    ChatAnalysis,
+    ChatSanitized,
+    Detection,
+    DetectMode,
+    PayloadError,
+    Sanitizer,
+    dedupe_detections,
+)
 from airlock.rehydrate import rehydrate_arguments, rehydrate_text
 from airlock.search_guard import SearchGuard
 from airlock.upstream import Upstream, UpstreamError
@@ -117,6 +133,29 @@ RESULTS_WITHHELD_NOTE = (
 )
 DOC_CHARS = 12000
 RESULT_CHARS = 500
+# A turn is rebuilt at most this many times while dropping search results the gate refuses.
+DROP_ROUNDS = 3
+DETECTOR_STATES = ("ok", "retried", "degraded")
+
+
+def results_withheld_note(n: int) -> dict[str, Any]:
+    """The list item that replaces dropped results inside a web_search tool result."""
+    return {
+        "withheld": n,
+        "note": f"{n} result{'s were' if n != 1 else ' was'} withheld by the user's privacy "
+        "firewall because it contained a private value. Continue without it.",
+    }
+
+
+@dataclass
+class TurnSanitized:
+    """What `_sanitize_turn` hands to the gate, plus how the detector fared."""
+
+    payload: dict[str, Any]
+    protected: list[Any]
+    extra_reasons: list[str]
+    detections: list[Detection]
+    detector: str = "ok"  # ok | retried | degraded
 
 
 class UnguardedNotAllowed(RuntimeError):
@@ -262,6 +301,8 @@ class AgentRunner:
             "search_blocked": 0,
             "results_withheld": 0,
             "finish_repaired": 0,
+            "detector_retried": 0,
+            "detector_degraded": 0,
         }
         web_results: set[str] = set()  # tool_call_ids whose content is inbound web content
         record.meta.update(
@@ -307,11 +348,10 @@ class AgentRunner:
                 started = time.perf_counter()
 
                 # -- sanitize + gate the planning turn ---------------------------------------
+                detector = "ok"
                 if guard:
                     try:
-                        payload, protected, extra, found = await self._sanitize_turn(
-                            body, session, web_results, counts
-                        )
+                        turn = await self._sanitize_turn(body, session, web_results, counts)
                     except LocalModelError as exc:
                         reasons = [block_reason(exc)]
                         event = EgressEvent("upstream", kind, None, step)
@@ -321,15 +361,20 @@ class AgentRunner:
                             record, step, kind, "block", reasons, [], messages, prev_local
                         )
                         break
-                    detections += found
+                    payload, protected, extra = turn.payload, turn.protected, turn.extra_reasons
+                    detector = turn.detector
+                    detections += turn.detections
                 else:
                     payload = {"model": self.settings.upstream_model, **copy.deepcopy(body)}
                     protected, extra = [], []
+                hop_meta: dict[str, Any] = {} if detector == "ok" else {"detector": detector}
 
                 event = EgressEvent("upstream", kind, payload, step)
                 decision = policy.check(event, protected, extra)
                 if not decision.allowed:
-                    policy.record_hop(event, "block", reasons=decision.reasons, started=started)
+                    policy.record_hop(
+                        event, "block", reasons=decision.reasons, meta=hop_meta, started=started
+                    )
                     status = "blocked"
                     yield self._hop_event(
                         record, step, kind, "block", decision.reasons, [], messages, prev_local
@@ -342,7 +387,11 @@ class AgentRunner:
                     )
                 except UpstreamError as exc:
                     policy.record_hop(
-                        event, "allow", sent=payload, meta={"error": str(exc)}, started=started
+                        event,
+                        "allow",
+                        sent=payload,
+                        meta={**hop_meta, "error": str(exc)},
+                        started=started,
                     )
                     status = "error"
                     yield {"type": "error", "step": step, "message": f"upstream error: {exc}"}
@@ -351,7 +400,7 @@ class AgentRunner:
                     event,
                     "allow",
                     sent=payload,
-                    meta={"model_used": result.model_used, "fallback": result.fallback},
+                    meta={**hop_meta, "model_used": result.model_used, "fallback": result.fallback},
                     started=started,
                 )
                 outbound_msgs = payload.get("messages") or []
@@ -367,6 +416,7 @@ class AgentRunner:
                     "local": messages[prev_local:],
                     "model_used": result.model_used,
                     "ms": round(hop.ms, 1),
+                    **hop_meta,
                 }
                 prev_outbound, prev_local = len(outbound_msgs), len(messages)
 
@@ -543,67 +593,137 @@ class AgentRunner:
             "audit": audit_data,
         }
 
+    async def _analyze(
+        self,
+        body: dict[str, Any],
+        session: VaultSession,
+        counts: dict[str, int],
+        mode: DetectMode = "normal",
+    ) -> tuple[ChatAnalysis, str]:
+        """Detection for the turn, surviving a local detector malfunction.
+
+        A malformed answer (repetition loop, invalid JSON, timeout) is retried once from a fresh
+        seed at a higher temperature. If that fails too, the turn is detected without the local
+        model: deterministic spans, rules and every GLiNER span, all masked, and the hop is
+        marked `detector_degraded`. An unreachable local server still raises (the run blocks).
+        """
+        if mode == "degraded":
+            return await self.sanitizer.analyze_chat(body, session, mode="degraded"), "degraded"
+        try:
+            return await self.sanitizer.analyze_chat(body, session, mode=mode), "ok"
+        except LocalModelMalformed:
+            counts["detector_retried"] += 1
+        try:
+            analysis = await self.sanitizer.analyze_chat(body, session, mode="resample")
+        except LocalModelMalformed:
+            counts["detector_degraded"] += 1
+            return await self.sanitizer.analyze_chat(body, session, mode="degraded"), "degraded"
+        return analysis, "retried"
+
     async def _sanitize_turn(
         self,
         body: dict[str, Any],
         session: VaultSession,
         web_results: set[str] | None = None,
         counts: dict[str, int] | None = None,
-    ) -> tuple[dict[str, Any], list[Any], list[str], list[Detection]]:
+    ) -> TurnSanitized:
         """Sanitize the whole history in one detection call.
 
         Cross-slot consistency is handled by the pipeline: a value detected in any document,
         search result or message of the turn (or masked earlier in the run) is masked in every
-        slot before the gate.
+        slot before the gate, at every occurrence.
 
         One case remains: a known value that only the gate can see, because it is encoded (for
-        example a percent-encoded URL in a web search result). If every message that still holds
-        a known value is a web search result (public inbound content), those results are
-        withheld from the history and the turn is rebuilt. Documents, the question and the
-        model's own messages are never dropped: such a turn stays blocked. The gate still
-        decides on the final payload.
+        example a percent-encoded URL in a web search result). Inbound web content never blocks
+        a run: each search result the gate still refuses after masking is dropped from the
+        history, the agent is told how many, and the turn is rebuilt. Documents, the question
+        and the model's own messages are never dropped: such a turn stays blocked. The gate
+        still decides on the final payload.
         """
-        analysis = await self.sanitizer.analyze_chat(body, session)
+        counts = counts if counts is not None else {"results_withheld": 0}
+        web_results = web_results or set()
+        analysis, detector = await self._analyze(body, session, counts)
         sanitized = self.sanitizer.build_chat(body, analysis, session)
-        if self._only_known_values_block(sanitized) and web_results:
-            offenders = [
-                i
-                for i, msg in enumerate(sanitized.payload.get("messages") or [])
-                if not gate.check(msg, sanitized.protected, hasher=self.hasher).allowed
-            ]
-            # The placeholder note may shift outbound indices by one against the local history.
-            shift = len(sanitized.payload.get("messages") or []) - len(body["messages"])
-            local = body["messages"]
-            offenders = [i - shift for i in offenders]
-            if offenders and all(
-                0 <= i < len(local)
-                and local[i].get("role") == "tool"
-                and local[i].get("tool_call_id") in web_results
-                for i in offenders
-            ):
-                for i in offenders:
-                    local[i]["content"] = RESULTS_WITHHELD_NOTE
-                    if counts is not None:
-                        counts["results_withheld"] += 1
-                analysis = await self.sanitizer.analyze_chat(body, session)
-                sanitized = self.sanitizer.build_chat(body, analysis, session)
-        return (
+        for _ in range(DROP_ROUNDS):
+            if not web_results or sanitized.extra_reasons or self._gate(sanitized).allowed:
+                break
+            if not self._drop_refused_results(body, sanitized, web_results, counts):
+                break
+            # The detector already failed this turn: do not ask it again for the rebuild.
+            analysis, again = await self._analyze(
+                body, session, counts, "degraded" if detector == "degraded" else "normal"
+            )
+            detector = max(detector, again, key=DETECTOR_STATES.index)
+            sanitized = self.sanitizer.build_chat(body, analysis, session)
+        return TurnSanitized(
             sanitized.payload,
             sanitized.protected,
             sanitized.extra_reasons,
             sanitized.detections,
+            detector,
         )
 
-    def _only_known_values_block(self, sanitized: Any) -> bool:
-        decision = gate.check(
-            sanitized.payload,
+    def _gate(self, sanitized: ChatSanitized, payload: Any = None) -> gate.GateDecision:
+        return gate.check(
+            sanitized.payload if payload is None else payload,
             sanitized.protected,
             hasher=self.hasher,
-            extra_reasons=sanitized.extra_reasons,
+            extra_reasons=sanitized.extra_reasons if payload is None else (),
         )
-        return not decision.allowed and all(
-            r.startswith("vault_original:") for r in decision.reasons
-        )
+
+    def _drop_refused_results(
+        self,
+        body: dict[str, Any],
+        sanitized: ChatSanitized,
+        web_results: set[str],
+        counts: dict[str, int],
+    ) -> int:
+        """Remove, from the local history, each web search result the gate still refuses.
+
+        Returns how many results were dropped (0: the offending messages are not web results).
+        A result list is split so only the refused items go; a result message that cannot be
+        split is withheld whole.
+        """
+        outbound = sanitized.payload.get("messages") or []
+        local = body["messages"]
+        # The placeholder note may shift outbound indices by one against the local history.
+        shift = len(outbound) - len(local)
+        dropped = 0
+        for j, msg in enumerate(outbound):
+            i = j - shift
+            if not (0 <= i < len(local)):
+                continue
+            mine = local[i]
+            if mine.get("role") != "tool" or mine.get("tool_call_id") not in web_results:
+                continue
+            if self._gate(sanitized, msg).allowed:
+                continue
+            raw_items = _result_items(mine.get("content"))
+            out_items = _result_items(msg.get("content"))
+            n = 0
+            if raw_items is not None and out_items is not None and len(raw_items) == len(out_items):
+                kept = [
+                    raw
+                    for raw, out in zip(raw_items, out_items, strict=True)
+                    if self._gate(sanitized, out).allowed
+                ]
+                n = len(raw_items) - len(kept)
+                if n and kept:
+                    earlier = sum(
+                        int(item.get("withheld") or 0)
+                        for item in raw_items
+                        if isinstance(item, dict) and "withheld" in item
+                    )
+                    mine["content"] = _json(
+                        [k for k in kept if not (isinstance(k, dict) and "withheld" in k)]
+                        + [results_withheld_note(n + earlier)]
+                    )
+            if not n or n == len(raw_items or []):
+                n = max(n, 1)
+                mine["content"] = RESULTS_WITHHELD_NOTE
+            counts["results_withheld"] += n
+            dropped += n
+        return dropped
 
     def _hop_event(
         self,
@@ -746,6 +866,17 @@ class AgentRunner:
             events=events,
             audit=done.get("audit"),
         )
+
+
+def _result_items(content: Any) -> list[Any] | None:
+    """The result list of a web_search tool message, or None when it is not one."""
+    if not isinstance(content, str):
+        return None
+    try:
+        items = json.loads(content)
+    except ValueError:
+        return None
+    return items if isinstance(items, list) else None
 
 
 _ANSWER_START = re.compile(r'"answer"\s*:\s*"')
