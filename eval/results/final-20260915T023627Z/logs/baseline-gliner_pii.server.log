@@ -1,0 +1,5 @@
+~/.cache/uv/environments-v2/gliner-pii-53d6d25677c6c1c0/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+~/.cache/uv/environments-v2/gliner-pii-53d6d25677c6c1c0/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py:189: UserWarning: The `resume_download` argument is deprecated and ignored in `snapshot_download`. Downloads always resume whenever possible.
+  warnings.warn(
+Fetching 13 files:   0%|          | 0/13 [00:00<?, ?it/s]Fetching 13 files: 100%|██████████| 13/13 [23:25<00:00, 108.11s/it]Fetching 13 files: 100%|██████████| 13/13 [23:25<00:00, 108.11s/it]

@@ -1,0 +1,75 @@
+{
+  "attack_version": "1.2.0",
+  "results_dir": "baseline-presidio_ko",
+  "target_label": "baseline:presidio_ko",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attack_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "grader_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 3,
+  "limit": null,
+  "categories": null,
+  "subset": null,
+  "reuse_identical_passes": true,
+  "reuse_from": "eval/results/baseline-presidio_ko",
+  "estimate": {
+    "attacker_calls": 0,
+    "grader_calls": 0,
+    "situation_grader_calls": 0,
+    "prompt_tokens_est": 0,
+    "completion_tokens_max": 0,
+    "rows": 729,
+    "rows_reused_planned": 729
+  },
+  "started_at": "2026-09-15T04:54:30.196357+00:00",
+  "reuse": {
+    "note": "scored once; outputs identical across passes, verified by payload hash",
+    "from": "eval/results/baseline-presidio_ko",
+    "rows": 729,
+    "rows_reused": 729,
+    "rows_scored": 0,
+    "by_pass": [
+      {
+        "pass": 1,
+        "rows": 243,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 243
+      },
+      {
+        "pass": 2,
+        "rows": 243,
+        "reused_within_run": 243,
+        "reused_from_earlier_run": 0
+      },
+      {
+        "pass": 3,
+        "rows": 243,
+        "reused_within_run": 243,
+        "reused_from_earlier_run": 0
+      }
+    ]
+  },
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0
+  },
+  "usage_by_role": {
+    "attack": {
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "prompt_tokens": 0,
+      "completion_tokens": 0
+    },
+    "grader": {
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "prompt_tokens": 0,
+      "completion_tokens": 0
+    }
+  },
+  "cost_usd": 0.0,
+  "finished_at": "2026-09-15T04:54:30.339710+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

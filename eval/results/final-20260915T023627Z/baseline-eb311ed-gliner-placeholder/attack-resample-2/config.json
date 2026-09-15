@@ -1,0 +1,63 @@
+{
+  "attack_version": "1.2.0",
+  "results_dir": "baseline-eb311ed-gliner-placeholder",
+  "target_label": "airlock@eb311ed gliner=1 substitution=placeholder",
+  "base_url": "https://api.tokenfactory.nebius.com/v1",
+  "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attack_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "grader_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "attacker_reasoning": "none",
+  "grader_reasoning": "none",
+  "passes": 1,
+  "limit": null,
+  "categories": null,
+  "subset": null,
+  "reuse_identical_passes": false,
+  "reuse_from": null,
+  "estimate": {
+    "attacker_calls": 236,
+    "grader_calls": 25,
+    "situation_grader_calls": 105,
+    "prompt_tokens_est": 278546,
+    "completion_tokens_max": 380000,
+    "rows": 243,
+    "rows_reused_planned": 0
+  },
+  "started_at": "2026-09-15T05:53:04.519478+00:00",
+  "reuse": {
+    "note": "scored once; outputs identical across passes, verified by payload hash",
+    "from": null,
+    "rows": 243,
+    "rows_reused": 0,
+    "rows_scored": 243,
+    "by_pass": [
+      {
+        "pass": 1,
+        "rows": 243,
+        "reused_within_run": 0,
+        "reused_from_earlier_run": 0
+      }
+    ]
+  },
+  "usage": {
+    "prompt_tokens": 251451,
+    "completion_tokens": 72968
+  },
+  "usage_by_role": {
+    "attack": {
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "prompt_tokens": 183718,
+      "completion_tokens": 60377
+    },
+    "grader": {
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "prompt_tokens": 67733,
+      "completion_tokens": 12591
+    }
+  },
+  "cost_usd": 0.470355,
+  "finished_at": "2026-09-15T05:55:46.322599+00:00",
+  "failures": {
+    "attacker_unparsed": 0
+  }
+}

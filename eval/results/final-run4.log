@@ -1,0 +1,495 @@
+== Final measurement protocol
+   results:   eval/results/final-20260915T023627Z
+   baselines: raw regex presidio_ko gliner_pii
+   airlock:   eb311ed variants: gliner-placeholder
+   passes:    3 harness, 3 attacked and judged
+   cases:     all (seed 0)
+   reuse:     baselines reuse identical passes and committed pass-1 scores
+
+Cloud estimate: 243 cases, Airlock 3 passes x 1 variant(s) (3 scored), baselines raw regex presidio_ko gliner_pii (0 scored pass(es) each); roles: attack Nemotron-3-Ultra-550b-a55b, grader Nemotron-3-Ultra-550b-a55b, utility Nemotron-3-Ultra-550b-a55b, distortion_confirm Nemotron-3-Ultra-550b-a55b
+  airlock upstream answers [Nemotron-3-Ultra-550b-a55b]: 729 calls, ~269,409 prompt + ~583,200 completion tokens (completion <= 2,985,984), ~$2.02, 99 Tavily searches
+  attacker [Nemotron-3-Ultra-550b-a55b]: 729 calls, ~475,368 prompt + ~255,150 completion tokens (completion <= 1,093,500), ~$1.24
+  intent + situation graders [Nemotron-3-Ultra-550b-a55b]: 405 calls, ~321,132 prompt + ~38,475 completion tokens (completion <= 81,000), ~$0.44
+  reference + baseline answers [Nemotron-3-Ultra-550b-a55b]: 0 calls, ~0 prompt + ~0 completion tokens (completion <= 0), ~$0.00, 210 reference answers already cached
+  utility judge [Nemotron-3-Ultra-550b-a55b]: 630 calls, ~1,440,447 prompt + ~151,200 completion tokens (completion <= 315,000), ~$1.89
+  distortion confirmation [Nemotron-3-Ultra-550b-a55b]: 277 calls, ~360,100 prompt + ~13,850 completion tokens (completion <= 83,100), ~$0.40
+  TOTAL: 2,770 calls, ~2,866,456 prompt + ~1,041,875 completion tokens typical = ~3,908,331 tokens, ~$5.99 at list prices (all roles on Ultra: ~$5.99)
+
+Protocol variants (list prices; tokens = prompt + typical completion; Airlock passes assumed to differ, baselines identical across passes):
+  | variant | Airlock upstream (Ultra) | Airlock scoring | baselines scored once | TOTAL, baselines scored once | TOTAL, baselines reused from committed runs | TOTAL without reuse |
+  | (a) 243 cases, Airlock 3 passes x 1 config | 0.9M $2.02 | 3.1M $3.97 | 4.9M $7.47 | 8.8M $13.47 | 3.9M $5.99 | 18.6M $28.42 |
+  | (b) 243 cases, Airlock 3 passes x 2 configs | 1.7M $4.04 | 6.1M $7.95 | 4.9M $7.48 | 12.7M $19.46 | 7.8M $11.98 | 22.5M $34.41 |
+  | (c) stratified 120, Airlock 3 passes x 2 configs | 0.9M $2.01 | 3.0M $3.87 | 2.4M $3.64 | 6.2M $9.52 | 3.8M $5.88 | 11.0M $16.80 |
+
+   Every value in the dataset is synthetic. The raw baseline, the reference answers and the
+   attacker send those synthetic prompts to Token Factory.
+== baseline raw
+   ready after 2s: http://127.0.0.1:8801/healthz
+  pass 1: 25/243
+  pass 1: 50/243
+  pass 1: 75/243
+  pass 1: 100/243
+  pass 1: 125/243
+  pass 1: 150/243
+  pass 1: 175/243
+  pass 1: 200/243
+  pass 1: 225/243
+  pass 1: 243/243
+  pass 2: 25/243
+  pass 2: 50/243
+  pass 2: 75/243
+  pass 2: 100/243
+  pass 2: 125/243
+  pass 2: 150/243
+  pass 2: 175/243
+  pass 2: 200/243
+  pass 2: 225/243
+  pass 2: 243/243
+  pass 3: 25/243
+  pass 3: 50/243
+  pass 3: 75/243
+  pass 3: 100/243
+  pass 3: 125/243
+  pass 3: 150/243
+  pass 3: 175/243
+  pass 3: 200/243
+  pass 3: 225/243
+  pass 3: 243/243
+passes: 3  cases: 243
+  leak_rate                99.5% ± 0.0 (range 99.5 to 99.5)
+  canary_leak_rate         98.6% ± 0.0 (range 98.6 to 98.6)
+  quasi_reid_rate          98.0% ± 0.0 (range 98.0 to 98.0)
+  gate_save_rate           0.0% ± 0.0 (range 0.0 to 0.0)
+  block_rate               0.0% ± 0.0 (range 0.0 to 0.0)
+  over_block_benign        0.0% ± 0.0 (range 0.0 to 0.0)
+  over_redaction_rate      0.0% ± 0.0 (range 0.0 to 0.0)
+  persistent leaks: 215  flaky leaks: 0
+  independence: 100.0% of 243 cases send byte-identical payloads in every pass; detect p50 by pass (ms): 0 / 0 / 0
+results: eval/results/final-20260915T023627Z/baseline-raw
+== baseline regex
+   ready after 2s: http://127.0.0.1:8802/healthz
+  pass 1: 25/243
+  pass 1: 50/243
+  pass 1: 75/243
+  pass 1: 100/243
+  pass 1: 125/243
+  pass 1: 150/243
+  pass 1: 175/243
+  pass 1: 200/243
+  pass 1: 225/243
+  pass 1: 243/243
+  pass 2: 25/243
+  pass 2: 50/243
+  pass 2: 75/243
+  pass 2: 100/243
+  pass 2: 125/243
+  pass 2: 150/243
+  pass 2: 175/243
+  pass 2: 200/243
+  pass 2: 225/243
+  pass 2: 243/243
+  pass 3: 25/243
+  pass 3: 50/243
+  pass 3: 75/243
+  pass 3: 100/243
+  pass 3: 125/243
+  pass 3: 150/243
+  pass 3: 175/243
+  pass 3: 200/243
+  pass 3: 225/243
+  pass 3: 243/243
+passes: 3  cases: 243
+  leak_rate                94.0% ± 0.0 (range 94.0 to 94.0)
+  canary_leak_rate         87.6% ± 0.0 (range 87.6 to 87.6)
+  quasi_reid_rate          98.0% ± 0.0 (range 98.0 to 98.0)
+  gate_save_rate           0.0% ± 0.0 (range 0.0 to 0.0)
+  block_rate               0.0% ± 0.0 (range 0.0 to 0.0)
+  over_block_benign        0.0% ± 0.0 (range 0.0 to 0.0)
+  over_redaction_rate      0.4% ± 0.0 (range 0.4 to 0.4)
+  persistent leaks: 203  flaky leaks: 0
+  independence: 100.0% of 243 cases send byte-identical payloads in every pass; detect p50 by pass (ms): 0 / 0 / 0
+results: eval/results/final-20260915T023627Z/baseline-regex
+== baseline presidio_ko
+   ready after 2s: http://127.0.0.1:8803/healthz
+  pass 1: 25/243
+  pass 1: 50/243
+  pass 1: 75/243
+  pass 1: 100/243
+  pass 1: 125/243
+  pass 1: 150/243
+  pass 1: 175/243
+  pass 1: 200/243
+  pass 1: 225/243
+  pass 1: 243/243
+  pass 2: 25/243
+  pass 2: 50/243
+  pass 2: 75/243
+  pass 2: 100/243
+  pass 2: 125/243
+  pass 2: 150/243
+  pass 2: 175/243
+  pass 2: 200/243
+  pass 2: 225/243
+  pass 2: 243/243
+  pass 3: 25/243
+  pass 3: 50/243
+  pass 3: 75/243
+  pass 3: 100/243
+  pass 3: 125/243
+  pass 3: 150/243
+  pass 3: 175/243
+  pass 3: 200/243
+  pass 3: 225/243
+  pass 3: 243/243
+passes: 3  cases: 243
+  leak_rate                76.9% ± 0.0 (range 76.9 to 76.9)
+  canary_leak_rate         84.1% ± 0.0 (range 84.1 to 84.1)
+  quasi_reid_rate          50.0% ± 0.0 (range 50.0 to 50.0)
+  gate_save_rate           0.0% ± 0.0 (range 0.0 to 0.0)
+  block_rate               0.0% ± 0.0 (range 0.0 to 0.0)
+  over_block_benign        0.0% ± 0.0 (range 0.0 to 0.0)
+  over_redaction_rate      16.7% ± 0.0 (range 16.7 to 16.7)
+  persistent leaks: 166  flaky leaks: 0
+  independence: 100.0% of 243 cases send byte-identical payloads in every pass; detect p50 by pass (ms): 6 / 0 / 0
+results: eval/results/final-20260915T023627Z/baseline-presidio_ko
+== baseline gliner_pii
+   ready after 1398s: http://127.0.0.1:8804/healthz
+  pass 1: 25/243
+  pass 1: 50/243
+  pass 1: 75/243
+  pass 1: 100/243
+  pass 1: 125/243
+  pass 1: 150/243
+  pass 1: 175/243
+  pass 1: 200/243
+  pass 1: 225/243
+  pass 1: 243/243
+  pass 2: 25/243
+  pass 2: 50/243
+  pass 2: 75/243
+  pass 2: 100/243
+  pass 2: 125/243
+  pass 2: 150/243
+  pass 2: 175/243
+  pass 2: 200/243
+  pass 2: 225/243
+  pass 2: 243/243
+  pass 3: 25/243
+  pass 3: 50/243
+  pass 3: 75/243
+  pass 3: 100/243
+  pass 3: 125/243
+  pass 3: 150/243
+  pass 3: 175/243
+  pass 3: 200/243
+  pass 3: 225/243
+  pass 3: 243/243
+passes: 3  cases: 243
+  leak_rate                19.0% ± 0.0 (range 19.0 to 19.0)
+  canary_leak_rate         12.4% ± 0.0 (range 12.4 to 12.4)
+  quasi_reid_rate          10.0% ± 0.0 (range 10.0 to 10.0)
+  gate_save_rate           0.0% ± 0.0 (range 0.0 to 0.0)
+  block_rate               0.0% ± 0.0 (range 0.0 to 0.0)
+  over_block_benign        0.0% ± 0.0 (range 0.0 to 0.0)
+  over_redaction_rate      14.1% ± 0.0 (range 14.1 to 14.1)
+  persistent leaks: 41  flaky leaks: 0
+  independence: 100.0% of 243 cases send byte-identical payloads in every pass; detect p50 by pass (ms): 240 / 0 / 0
+results: eval/results/final-20260915T023627Z/baseline-gliner_pii
+Preparing worktree (detached HEAD eb311ed)
+== airlock eb311ed (gliner-placeholder, AIRLOCK_GLINER=1, AIRLOCK_SUBSTITUTION=placeholder)
+   ready after 2s: http://127.0.0.1:8181/health
+   ready after 2s: http://127.0.0.1:8887/healthz
+  pass 1: 25/243
+  pass 1: 50/243
+  pass 1: 75/243
+  pass 1: 100/243
+  pass 1: 125/243
+  pass 1: 150/243
+  pass 1: 175/243
+  pass 1: 200/243
+  pass 1: 225/243
+  pass 1: 243/243
+  pass 2: 25/243
+  pass 2: 50/243
+  pass 2: 75/243
+  pass 2: 100/243
+  pass 2: 125/243
+  pass 2: 150/243
+  pass 2: 175/243
+  pass 2: 200/243
+  pass 2: 225/243
+  pass 2: 243/243
+  pass 3: 25/243
+  pass 3: 50/243
+  pass 3: 75/243
+  pass 3: 100/243
+  pass 3: 125/243
+  pass 3: 150/243
+  pass 3: 175/243
+  pass 3: 200/243
+  pass 3: 225/243
+  pass 3: 243/243
+passes: 3  cases: 243
+  leak_rate                2.9% ± 0.3 (range 2.8 to 3.2)
+  canary_leak_rate         0.0% ± 0.0 (range 0.0 to 0.0)
+  quasi_reid_rate          11.3% ± 2.3 (range 10.0 to 14.0)
+  gate_save_rate           92.5% ± 6.6 (range 87.5 to 100.0)
+  block_rate               2.6% ± 0.2 (range 2.5 to 2.9)
+  over_block_benign        0.0% ± 0.0 (range 0.0 to 0.0)
+  over_redaction_rate      5.3% ± 0.4 (range 4.8 to 5.6)
+  persistent leaks: 4  flaky leaks: 6
+  independence: 59.5% of 232 cases send byte-identical payloads in every pass; detect p50 by pass (ms): 3632 / 3608 / 3378
+results: eval/results/final-20260915T023627Z/baseline-eb311ed-gliner-placeholder
+== scoring baseline-eb311ed-gliner-placeholder
+attack estimate for baseline-eb311ed-gliner-placeholder: 710 attacker + 70 grader calls, ~832,364 prompt tokens, <= 1,141,400 completion tokens (attacker nvidia/Nemotron-3-Ultra-550b-a55b, graders nvidia/Nemotron-3-Ultra-550b-a55b); 0 of 729 rows reused by payload hash
+  attack pass 1: 25/243
+  attack pass 1: 50/243
+  attack pass 1: 75/243
+  attack pass 1: 100/243
+  attack pass 1: 125/243
+  attack pass 1: 150/243
+  attack pass 1: 175/243
+  attack pass 1: 200/243
+  attack pass 1: 225/243
+  attack pass 1: 243/243
+  pass 1 took 137s
+  attack pass 2: 25/243
+  attack pass 2: 50/243
+  attack pass 2: 75/243
+  attack pass 2: 100/243
+  attack pass 2: 125/243
+  attack pass 2: 150/243
+  attack pass 2: 175/243
+  attack pass 2: 200/243
+  attack pass 2: 225/243
+  attack pass 2: 243/243
+  pass 2 took 140s
+  attack pass 3: 25/243
+  attack pass 3: 50/243
+  attack pass 3: 75/243
+  attack pass 3: 100/243
+  attack pass 3: 125/243
+  attack pass 3: 150/243
+  attack pass 3: 175/243
+  attack pass 3: 200/243
+  attack pass 3: 225/243
+  attack pass 3: 243/243
+  pass 3 took 131s
+  attack_value_recovery_rate       0.1% ± 0.1
+  attack_quasi_reid_rate           18.0% ± 2.0
+  attack_intent_inference_rate     29.6% ± 0.0
+  attack_identity_recovery_rate    4.4% ± 0.0
+  situation_inference_rate         71.6% ± 2.8
+  linkable_disclosure_rate         7.5% ± 0.6
+attack results: eval/results/final-20260915T023627Z/baseline-eb311ed-gliner-placeholder/attack
+utility estimate for baseline-eb311ed-gliner-placeholder: 0 reference + 0 system-answer + 622 judge calls, ~1,421,826 prompt tokens, ~155,500 completion tokens typical (<= 311,000)
+  0 of 630 rows reused by payload hash
+  answer source: recorded; judge nvidia/Nemotron-3-Ultra-550b-a55b, distortion confirmation nvidia/Nemotron-3-Ultra-550b-a55b
+  utility pass 1: judged 203, utility 4.18 vs reference 4.39, distortion 11.8% (127s)
+  utility pass 2: judged 208, utility 4.11 vs reference 4.40, distortion 17.8% (124s)
+  utility pass 3: judged 207, utility 4.16 vs reference 4.34, distortion 15.0% (134s)
+  baseline-eb311ed-gliner-placeholder: utility ratio 0.95, distortion 14.9% (reference 10.0%)
+== scoring baseline-gliner_pii
+attack estimate for baseline-gliner_pii: 0 attacker + 0 grader calls, ~0 prompt tokens, <= 0 completion tokens (attacker nvidia/Nemotron-3-Ultra-550b-a55b, graders nvidia/Nemotron-3-Ultra-550b-a55b); 729 of 729 rows reused by payload hash
+  attack pass 1: 25/243
+  attack pass 1: 50/243
+  attack pass 1: 75/243
+  attack pass 1: 100/243
+  attack pass 1: 125/243
+  attack pass 1: 150/243
+  attack pass 1: 175/243
+  attack pass 1: 200/243
+  attack pass 1: 225/243
+  attack pass 1: 243/243
+  pass 1 took 0s
+  attack pass 2: 25/243
+  attack pass 2: 50/243
+  attack pass 2: 75/243
+  attack pass 2: 100/243
+  attack pass 2: 125/243
+  attack pass 2: 150/243
+  attack pass 2: 175/243
+  attack pass 2: 200/243
+  attack pass 2: 225/243
+  attack pass 2: 243/243
+  pass 2 took 0s
+  attack pass 3: 25/243
+  attack pass 3: 50/243
+  attack pass 3: 75/243
+  attack pass 3: 100/243
+  attack pass 3: 125/243
+  attack pass 3: 150/243
+  attack pass 3: 175/243
+  attack pass 3: 200/243
+  attack pass 3: 225/243
+  attack pass 3: 243/243
+  pass 3 took 0s
+  attack_value_recovery_rate       6.2% ± 0.0
+  attack_quasi_reid_rate           22.0% ± 0.0
+  attack_intent_inference_rate     37.0% ± 0.0
+  attack_identity_recovery_rate    19.4% ± 0.0
+  situation_inference_rate         63.0% ± 0.0
+  linkable_disclosure_rate         9.2% ± 0.0
+attack results: eval/results/final-20260915T023627Z/baseline-gliner_pii/attack
+utility estimate for baseline-gliner_pii: 0 reference + 2 system-answer + 2 judge calls, ~4,999 prompt tokens, ~2,100 completion tokens typical (<= 9,192)
+  628 of 630 rows reused by payload hash
+  answer source: upstream; judge nvidia/Nemotron-3-Ultra-550b-a55b, distortion confirmation nvidia/Nemotron-3-Ultra-550b-a55b
+  utility pass 1: judged 208, utility 2.69 vs reference 4.57, distortion 24.5% (2s)
+  utility pass 2: judged 208, utility 2.69 vs reference 4.57, distortion 24.5% (2s)
+  utility pass 3: judged 208, utility 2.69 vs reference 4.57, distortion 24.5% (2s)
+  baseline-gliner_pii: utility ratio 0.59, distortion 24.5% (reference 4.8%)
+== scoring baseline-presidio_ko
+attack estimate for baseline-presidio_ko: 0 attacker + 0 grader calls, ~0 prompt tokens, <= 0 completion tokens (attacker nvidia/Nemotron-3-Ultra-550b-a55b, graders nvidia/Nemotron-3-Ultra-550b-a55b); 729 of 729 rows reused by payload hash
+  attack pass 1: 25/243
+  attack pass 1: 50/243
+  attack pass 1: 75/243
+  attack pass 1: 100/243
+  attack pass 1: 125/243
+  attack pass 1: 150/243
+  attack pass 1: 175/243
+  attack pass 1: 200/243
+  attack pass 1: 225/243
+  attack pass 1: 243/243
+  pass 1 took 0s
+  attack pass 2: 25/243
+  attack pass 2: 50/243
+  attack pass 2: 75/243
+  attack pass 2: 100/243
+  attack pass 2: 125/243
+  attack pass 2: 150/243
+  attack pass 2: 175/243
+  attack pass 2: 200/243
+  attack pass 2: 225/243
+  attack pass 2: 243/243
+  pass 2 took 0s
+  attack pass 3: 25/243
+  attack pass 3: 50/243
+  attack pass 3: 75/243
+  attack pass 3: 100/243
+  attack pass 3: 125/243
+  attack pass 3: 150/243
+  attack pass 3: 175/243
+  attack pass 3: 200/243
+  attack pass 3: 225/243
+  attack pass 3: 243/243
+  pass 3 took 0s
+  attack_value_recovery_rate       31.4% ± 0.0
+  attack_quasi_reid_rate           48.0% ± 0.0
+  attack_intent_inference_rate     63.0% ± 0.0
+  attack_identity_recovery_rate    73.8% ± 0.0
+  situation_inference_rate         77.8% ± 0.0
+  linkable_disclosure_rate         53.1% ± 0.0
+attack results: eval/results/final-20260915T023627Z/baseline-presidio_ko/attack
+utility estimate for baseline-presidio_ko: 0 reference + 2 system-answer + 2 judge calls, ~4,991 prompt tokens, ~2,100 completion tokens typical (<= 9,192)
+  628 of 630 rows reused by payload hash
+  answer source: upstream; judge nvidia/Nemotron-3-Ultra-550b-a55b, distortion confirmation nvidia/Nemotron-3-Ultra-550b-a55b
+  utility pass 1: judged 208, utility 3.01 vs reference 4.54, distortion 33.7% (2s)
+  utility pass 2: judged 208, utility 3.01 vs reference 4.54, distortion 33.7% (2s)
+  utility pass 3: judged 208, utility 3.01 vs reference 4.54, distortion 33.7% (2s)
+  baseline-presidio_ko: utility ratio 0.66, distortion 33.7% (reference 6.7%)
+== scoring baseline-raw
+attack estimate for baseline-raw: 0 attacker + 0 grader calls, ~0 prompt tokens, <= 0 completion tokens (attacker nvidia/Nemotron-3-Ultra-550b-a55b, graders nvidia/Nemotron-3-Ultra-550b-a55b); 729 of 729 rows reused by payload hash
+  attack pass 1: 25/243
+  attack pass 1: 50/243
+  attack pass 1: 75/243
+  attack pass 1: 100/243
+  attack pass 1: 125/243
+  attack pass 1: 150/243
+  attack pass 1: 175/243
+  attack pass 1: 200/243
+  attack pass 1: 225/243
+  attack pass 1: 243/243
+  pass 1 took 0s
+  attack pass 2: 25/243
+  attack pass 2: 50/243
+  attack pass 2: 75/243
+  attack pass 2: 100/243
+  attack pass 2: 125/243
+  attack pass 2: 150/243
+  attack pass 2: 175/243
+  attack pass 2: 200/243
+  attack pass 2: 225/243
+  attack pass 2: 243/243
+  pass 2 took 0s
+  attack pass 3: 25/243
+  attack pass 3: 50/243
+  attack pass 3: 75/243
+  attack pass 3: 100/243
+  attack pass 3: 125/243
+  attack pass 3: 150/243
+  attack pass 3: 175/243
+  attack pass 3: 200/243
+  attack pass 3: 225/243
+  attack pass 3: 243/243
+  pass 3 took 0s
+  attack_value_recovery_rate       95.7% ± 0.0
+  attack_quasi_reid_rate           92.0% ± 0.0
+  attack_intent_inference_rate     88.9% ± 0.0
+  attack_identity_recovery_rate    94.7% ± 0.0
+  situation_inference_rate         86.1% ± 0.0
+  linkable_disclosure_rate         84.7% ± 0.0
+attack results: eval/results/final-20260915T023627Z/baseline-raw/attack
+utility estimate for baseline-raw: 0 reference + 2 system-answer + 2 judge calls, ~5,005 prompt tokens, ~2,100 completion tokens typical (<= 9,192)
+  628 of 630 rows reused by payload hash
+  answer source: upstream; judge nvidia/Nemotron-3-Ultra-550b-a55b, distortion confirmation nvidia/Nemotron-3-Ultra-550b-a55b
+  utility pass 1: judged 208, utility 4.52 vs reference 4.33, distortion 7.7% (2s)
+  utility pass 2: judged 208, utility 4.52 vs reference 4.33, distortion 7.7% (1s)
+  utility pass 3: judged 208, utility 4.52 vs reference 4.33, distortion 7.7% (1s)
+  baseline-raw: utility ratio 1.05, distortion 7.7% (reference 10.6%)
+== scoring baseline-regex
+attack estimate for baseline-regex: 0 attacker + 0 grader calls, ~0 prompt tokens, <= 0 completion tokens (attacker nvidia/Nemotron-3-Ultra-550b-a55b, graders nvidia/Nemotron-3-Ultra-550b-a55b); 729 of 729 rows reused by payload hash
+  attack pass 1: 25/243
+  attack pass 1: 50/243
+  attack pass 1: 75/243
+  attack pass 1: 100/243
+  attack pass 1: 125/243
+  attack pass 1: 150/243
+  attack pass 1: 175/243
+  attack pass 1: 200/243
+  attack pass 1: 225/243
+  attack pass 1: 243/243
+  pass 1 took 0s
+  attack pass 2: 25/243
+  attack pass 2: 50/243
+  attack pass 2: 75/243
+  attack pass 2: 100/243
+  attack pass 2: 125/243
+  attack pass 2: 150/243
+  attack pass 2: 175/243
+  attack pass 2: 200/243
+  attack pass 2: 225/243
+  attack pass 2: 243/243
+  pass 2 took 0s
+  attack pass 3: 25/243
+  attack pass 3: 50/243
+  attack pass 3: 75/243
+  attack pass 3: 100/243
+  attack pass 3: 125/243
+  attack pass 3: 150/243
+  attack pass 3: 175/243
+  attack pass 3: 200/243
+  attack pass 3: 225/243
+  attack pass 3: 243/243
+  pass 3 took 0s
+  attack_value_recovery_rate       58.1% ± 0.0
+  attack_quasi_reid_rate           92.0% ± 0.0
+  attack_intent_inference_rate     85.2% ± 0.0
+  attack_identity_recovery_rate    88.8% ± 0.0
+  situation_inference_rate         80.6% ± 0.0
+  linkable_disclosure_rate         79.6% ± 0.0
+attack results: eval/results/final-20260915T023627Z/baseline-regex/attack
+utility estimate for baseline-regex: 0 reference + 3 system-answer + 3 judge calls, ~7,308 prompt tokens, ~3,150 completion tokens typical (<= 13,788)
+  627 of 630 rows reused by payload hash
+  answer source: upstream; judge nvidia/Nemotron-3-Ultra-550b-a55b, distortion confirmation nvidia/Nemotron-3-Ultra-550b-a55b
+  utility pass 1: judged 208, utility 3.91 vs reference 4.49, distortion 13.9% (11s)
+  utility pass 2: judged 208, utility 3.91 vs reference 4.49, distortion 13.9% (2s)
+  utility pass 3: judged 208, utility 3.91 vs reference 4.49, distortion 13.9% (2s)
+  baseline-regex: utility ratio 0.87, distortion 13.9% (reference 10.1%)
+baseline-eb311ed-gliner-placeholder: identity leak 3.1%, identity recovered 4.4%, situation 71.6%, linkable 7.5%, distortion 14.9%
+baseline-gliner_pii: identity leak 18.9%, identity recovered 19.4%, situation 63.0%, linkable 9.2%, distortion 24.5%
+baseline-presidio_ko: identity leak 76.7%, identity recovered 73.8%, situation 77.8%, linkable 53.1%, distortion 33.7%
+baseline-raw: identity leak 98.5%, identity recovered 94.7%, situation 86.1%, linkable 84.7%, distortion 7.7%
+baseline-regex: identity leak 92.7%, identity recovered 88.8%, situation 80.6%, linkable 79.6%, distortion 13.9%
+wrote eval/results/final-20260915T023627Z/COMPARISON.md
+wrote eval/results/COMPARISON.md
+done: eval/results/final-20260915T023627Z/COMPARISON.md
