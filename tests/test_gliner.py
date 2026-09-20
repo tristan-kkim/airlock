@@ -3,6 +3,7 @@ startup. The GLiNER model object is a fake; nothing is downloaded or loaded."""
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from dataclasses import dataclass, field
 from typing import Any
@@ -394,7 +395,13 @@ def test_settings_from_environment(monkeypatch):
 def test_missing_weights_fail_closed_at_startup_and_in_doctor(tmp_path, monkeypatch, capsys):
     settings = make_settings(gliner=True, gliner_model=str(tmp_path))
     problem = gliner.availability_problem(settings)
-    assert problem and "gliner_config.json" in problem
+    # Which problem is reported depends on the environment: without `uv sync --extra gliner`
+    # the missing package is found before the empty weights directory. Everything below holds
+    # either way, and that is the point: GLiNER refuses to start rather than run without weights.
+    if all(importlib.util.find_spec(name) is not None for name in ("gliner", "torch")):
+        assert problem and "gliner_config.json" in problem
+    else:
+        assert problem and "not installed" in problem
 
     with pytest.raises(GlinerUnavailable):
         build_ensemble(settings, local=None)  # type: ignore[arg-type]
