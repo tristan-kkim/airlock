@@ -669,7 +669,7 @@ eval/agent/           agent-mode scenarios and the unguarded vs Airlock egress e
 tests/                offline test suite
 ```
 
-All examples and evaluation data are synthetic.
+All examples and evaluation data are synthetic. The credentials they contain — JWTs, API keys, database passwords in `eval/cases/`, `eval/results/`, `scripts/local_model/`, the demo presets and the tests — are random strings produced by `canary()` in [`eval/generate.py`](eval/generate.py), and exist so the detector has something to find. **None of them is live**, and a secret scanner pointed at this repository will report them; [`.gitguardian.yaml`](.gitguardian.yaml) lists those paths for ggshield. Real credentials are never committed: local ones live in `.env` (gitignored, see [`.env.example`](.env.example)) and the hosted demo reads them from the platform secret store ([`deploy/nebius/deploy.sh`](deploy/nebius/deploy.sh)).
 
 ## License
 

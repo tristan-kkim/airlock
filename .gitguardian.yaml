@@ -1,0 +1,28 @@
+# ggshield configuration. Airlock is a PII/secret redaction gateway, so parts of the
+# repository contain deliberately fabricated credentials: they are the inputs the
+# detector is measured against. None of them is live.
+#
+#   eval/**                    synthetic cases from eval/generate.py (canary() random
+#                              strings: JWTs, API keys, DB passwords) and the recorded
+#                              run outputs that quote them
+#   scripts/local_model/**     detector probe cases and their recorded outputs
+#   airlock/demo/recorded/**   recorded demo answers that quote the preset inputs
+#   airlock/demo/presets.py    demo preset inputs
+#   airlock/static/index.html  the same preset inputs, in the demo page
+#   tests/**                   fixtures for the pattern and gate tests
+#
+# Real credentials are never committed: local ones live in .env (gitignored) and the
+# hosted demo reads them from the platform secret store (deploy/nebius/deploy.sh).
+#
+# This file only affects ggshield (CLI / pre-commit / CI). Incidents already raised on
+# the GitGuardian dashboard by its GitHub integration have to be closed there by hand.
+version: 2
+
+secret:
+  ignored-paths:
+    - "eval/**"
+    - "scripts/local_model/**"
+    - "airlock/demo/recorded/**"
+    - "airlock/demo/presets.py"
+    - "airlock/static/index.html"
+    - "tests/**"
