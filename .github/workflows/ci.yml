@@ -1,0 +1,26 @@
+# Lint and the offline test suite. Nothing here reaches a model server, Token Factory or
+# Tavily: pytest's default addopts deselect the `live` marker (see pyproject.toml), so CI
+# needs no API key and no secret.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      # Python version comes from .python-version; dependencies are pinned by uv.lock,
+      # and --frozen fails the run if the lock file is out of date.
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen pytest -q
