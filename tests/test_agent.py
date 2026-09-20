@@ -427,6 +427,11 @@ def test_unguarded_requires_explicit_opt_in(make_agent_client, agent) -> None:
     assert AgentSettings().allow_unguarded is False
     assert load_agent_settings({}).allow_unguarded is False
     assert load_agent_settings({"AIRLOCK_ALLOW_UNGUARDED": "1"}).allow_unguarded is True
+    # Demo mode overrides the opt-in: the hosted demo is public.
+    demo = {"AIRLOCK_ALLOW_UNGUARDED": "1", "AIRLOCK_DEMO": "1"}
+    assert load_agent_settings(demo).allow_unguarded is False
+    assert load_agent_settings({**demo, "AIRLOCK_DEMO": "true"}).allow_unguarded is False
+    assert load_agent_settings({**demo, "AIRLOCK_DEMO": "0"}).allow_unguarded is True
 
     agent.h.upstream_reply = script(*STANDARD)
     client = make_agent_client()

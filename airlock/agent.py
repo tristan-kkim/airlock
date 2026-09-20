@@ -30,7 +30,8 @@ The gate runs on the result either way. A chat request keeps failing closed on b
 
 `guard=False` exists only to measure what an unprotected agent leaks (eval/agent). It sends raw
 documents and raw queries, still records every hop, and refuses to run unless
-`AIRLOCK_ALLOW_UNGUARDED=1`. The HTTP endpoint and the CLI never expose it.
+`AIRLOCK_ALLOW_UNGUARDED=1`. The HTTP endpoint and the CLI never expose it, and demo
+mode ignores the variable.
 """
 
 from __future__ import annotations

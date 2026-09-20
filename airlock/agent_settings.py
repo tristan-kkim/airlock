@@ -35,6 +35,7 @@ class AgentSettings:
     safety_model: str = DEFAULT_SAFETY_MODEL
     safety_timeout_s: float = 20.0
     # Evaluation only: allows `guard=False` runs that send raw documents and queries.
+    # Never true under AIRLOCK_DEMO=1, see load_agent_settings.
     allow_unguarded: bool = False
 
     def with_overrides(self, **kwargs: object) -> AgentSettings:
@@ -57,5 +58,11 @@ def load_agent_settings(env: Mapping[str, str] | None = None) -> AgentSettings:
         search_judge=judge,  # type: ignore[arg-type]
         safety_base_url=(env.get("AIRLOCK_SAFETY_BASE_URL") or DEFAULT_SAFETY_BASE_URL).rstrip("/"),
         safety_model=env.get("AIRLOCK_SAFETY_MODEL") or DEFAULT_SAFETY_MODEL,
-        allow_unguarded=_truthy(env.get("AIRLOCK_ALLOW_UNGUARDED")),
+        # Demo mode never allows unguarded runs, whatever AIRLOCK_ALLOW_UNGUARDED says, the
+        # way local mode never answers to a non-loopback Host (airlock.demo.config). The
+        # hosted demo is public and an unguarded run sends raw documents and raw queries
+        # upstream. HTTP and the CLI never expose `guard=False` in any mode either.
+        allow_unguarded=(
+            _truthy(env.get("AIRLOCK_ALLOW_UNGUARDED")) and not _truthy(env.get("AIRLOCK_DEMO"))
+        ),
     )

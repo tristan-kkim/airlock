@@ -467,7 +467,7 @@ All settings are environment variables. Airlock also reads `.env`; see [`.env.ex
 | `AIRLOCK_AGENT_REASONING_EFFORT` | `none` | `reasoning_effort` sent with agent turns; empty omits it |
 | `AIRLOCK_SEARCH_JUDGE` | `nano` | Intent judge for agent searches: `nano`, `safety` or `both` |
 | `AIRLOCK_SAFETY_BASE_URL` / `AIRLOCK_SAFETY_MODEL` | `http://127.0.0.1:8086/v1` / `nemotron-3.5-content-safety` | Nemotron 3.5 Content Safety server for `safety` and `both` |
-| `AIRLOCK_ALLOW_UNGUARDED` | unset | Evaluation only: allows in-process `guard=False` agent runs (never over HTTP or the CLI) |
+| `AIRLOCK_ALLOW_UNGUARDED` | unset | Evaluation only: allows in-process `guard=False` agent runs (never over HTTP or the CLI, and ignored under `AIRLOCK_DEMO=1`) |
 
 Protection levels:
 
