@@ -16,7 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      # Pinned exactly: setup-uv publishes no floating major tag (no `v10`).
+      # .github/dependabot.yml keeps it current.
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
       # Python version comes from .python-version; dependencies are pinned by uv.lock,

@@ -1,0 +1,8 @@
+# Security updates for the Python dependencies are enabled in the repository settings.
+# This file covers the workflow actions, which are pinned to exact versions in ci.yml.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
