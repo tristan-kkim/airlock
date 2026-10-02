@@ -260,32 +260,87 @@ inference (54.0% vs 72.8%). At `eb311ed` placeholders link 7.5%, below the surro
 Placeholder stays the default; `AIRLOCK_SUBSTITUTION=surrogate` remains available and would need
 its own independent run before any claim about the current detector.
 
-## Agent mode (same commit)
+## Agent mode
 
-The agent-mode evaluation (`eval/agent/run_agent_eval.py`, 16 scenarios × 2 modes × 3 passes)
-was rerun at `eb311ed` on 2026-09-15 with one `llama-server` alone on the GPU, and reframed
-with `eval/reframe.py agent`. Full tables: `eval/agent/results/demo/` (the `d2ff994` run is
-kept in `eval/agent/results/demo-pre-s6/`); the reframed table is also in `COMPARISON.md`.
+The agent-mode evaluation (`eval/agent/run_agent_eval.py`, 16 scenarios × 2 modes × 3 passes,
+reframed with `eval/reframe.py agent`) has been run four times. The current table is the run of
+2026-10-02 at `8b1157e` with the GLiNER-PII ensemble on (`AIRLOCK_GLINER=on`), one `llama-server`
+alone on the GPU: `eval/agent/results/demo/`. The reframed table is also in `COMPARISON.md`.
 
-| Metric | unguarded | Airlock `eb311ed` | Airlock `d2ff994` |
-|---|---:|---:|---:|
-| Private facts recovered, all hops | 82.3% ± 2.8 | **23.6% ± 3.2** | 41.3% ± 4.2 |
-| Identity leak (scanner) | 95.8% ± 3.6 | 33.3% ± 9.5 | 77.1% ± 3.6 |
-| Linkable disclosure | 83.3% ± 3.6 | **17.2% ± 8.2** | 68.8% ± 6.2 |
-| Situation inferred (no anchor needed) | 87.5% ± 6.2 | 87.1% ± 6.9 | 93.8% ± 6.2 |
-| Utility, rubric grader (1-5) | 4.38 ± 0.29 | 4.50 ± 0.49 | 4.71 ± 0.18 |
-| Utility ratio, pairwise judge | | 1.09 ± 0.12 | 1.10 ± 0.05 |
-| Runs finished | 100% | 93.8% ± 6.2 | 100% |
-| Latency per run, median | 24 s | 216 s | 367 s (GPU shared) |
+| Metric | unguarded | Airlock, ensemble on (`8b1157e`) |
+|---|---:|---:|
+| Private facts recovered, all hops | 79.2% ± 1.0 | **20.5% ± 2.6** |
+| Identity leak (scanner) | 100.0% ± 0.0 | **16.7% ± 3.6** |
+| Linkable disclosure | 81.2% ± 0.0 | **8.3% ± 3.6** |
+| Situation inferred (no anchor needed) | 85.4% ± 3.6 | 79.2% ± 3.6 |
+| Utility, rubric grader (1-5) | 4.38 ± 0.17 | 4.58 ± 0.19 |
+| Utility ratio, pairwise judge | | 1.08 ± 0.11 |
+| Runs that ended with an answer | 48 of 48 | 47 of 48 |
+| Latency per run, median | 18 s | 388 s |
 
-The unguarded column is from the same run (the `d2ff994` unguarded numbers were 87.2%, 97.9%,
-89.6%, 93.8%, 4.44). Three guarded runs ended `blocked` without an answer (two `pregnancy-en`:
-a search result page contained vaulted health words; one `debt-en`: local detector repetition
-loop), which is where the English utility deficit (4.50 vs 5.00) comes from. Cost: attacker and
-graders 979,519 + 154,279 tokens ($1.44), reframe 427,791 + 26,110 ($0.51), plus the agent's
-own Ultra calls, not token-logged (610 calls, 287 Tavily searches; about 1.36M prompt and
-0.19M answer tokens by the token heuristic, about $1.9 without the tool-call completions).
-Duration 54 min (04:56 to 05:50 UTC), of which 49 min agent runs.
+### The four runs
+
+Each row compares the two modes inside one run. The unguarded mode has no detector in its path,
+and its numbers still move between runs, because the attacker and the graders are a sampled
+LLM: compare columns inside a run, not runs with each other.
+
+| Run | Ensemble | Linkable, unguarded → Airlock | Identity leak (scanner), Airlock | Facts recovered, Airlock | Rubric utility, unguarded / Airlock | Guarded runs without an answer |
+|---|---|---:|---:|---:|---:|---:|
+| `8b1157e`, 2026-10-02 (`demo/`) | on | 81.2% → 8.3% ± 3.6 | 16.7% ± 3.6 | 20.5% ± 2.6 | 4.38 / 4.58 | 1 of 48 |
+| `2812f75`, 2026-10-02 (`demo-gliner-off/`) | off | 93.8% → 31.2% ± 6.2 | 43.8% ± 10.8 | 27.8% ± 3.3 | 4.62 / 4.35 | 3 of 48 |
+| `eb311ed`, 2026-09-15 (`demo-eb311ed/`) | off | 83.3% → 17.2% ± 8.2 | 33.3% ± 9.5 | 23.6% ± 3.2 | 4.38 / 4.50 | 3 of 48 |
+| `d2ff994`, 2026-09-13 (`demo-pre-s6/`) | not built yet | 89.6% → 68.8% ± 6.2 | 77.1% ± 3.6 | 41.3% ± 4.2 | 4.44 / 4.71 | 0 of 48 |
+
+Whether the ensemble was on was not recorded before `8b1157e`. For the `eb311ed` and `2812f75`
+runs it is established from their audit records, which hold no detection with source `gliner`;
+`d2ff994` predates the ensemble.
+
+### What the two runs of 2026-10-02 show
+
+- **Ensemble off, the result depends on how the 4B model samples names in documents.** The
+  local model's span proposal (prompt and call) did not change between `eb311ed` and `2812f75`,
+  yet the scanner found an
+  identity fact in 21 of 48 guarded runs instead of 16, and linkable disclosure was 31.2%
+  instead of 17.2%. The difference is in two English scenarios: the addressee's name in the
+  `pregnancy-en` offer letter went out in 3 of 3 passes (1 of the 2 passes that reached it at
+  `eb311ed`), and the unit number in `lawsuit-en` in 3 of 3 (1 of 3). Sampled 10 times on that
+  offer letter alone, the local detector proposed the name in 2 and returned no span at all in
+  8. Three passes over 16 scenarios do not separate 17% from 31%.
+- **Ensemble on, the scanner found an identity fact in 8 of 48 guarded runs** and the attacker
+  linked 4. What went out: the deal code name in both M&A memos in every pass (`Project
+  Bluefin`, `프로젝트 해오름`; it is in the document title), one Korean name in one pass
+  (`hr-warning-ko`) and one neighbourhood in one pass (`lawsuit-ko`).
+- **The English blocks of `eb311ed` are gone.** There, 3 of 48 guarded runs ended `blocked` (two
+  `pregnancy-en`: a search result page contained vaulted health words; one `debt-en`: a local
+  detector repetition loop). In both runs of 2026-10-02, 0 of 24 English guarded runs were
+  blocked and English rubric utility is 5.00 in both modes.
+- **Runs without an answer are now Korean.** Ensemble on: `lawsuit-ko` pass 1 ended `blocked`
+  on `vault_original:QUASI_IDENTIFIER` after 4 search results had been withheld; what remained
+  in the turn was the model's own search query, which still fails closed. Ensemble off: the
+  same kind of block (`lawsuit-ko` pass 3; the detector had vaulted the common nouns of the
+  query as quasi-identifiers), one run that used all 8 steps (`mna-ko` pass 1), and one that
+  ended on an empty `finish` after the one repair (`hr-warning-ko` pass 2). That last run was
+  recorded as `finished`, so the summary of the ensemble-off run says 95.8% finished while
+  93.8% had an answer; since `abd8cfd` such a run ends as `error`.
+- **Korean answers are noisy in both modes.** Ensemble on, Korean rubric utility is 4.17
+  guarded and 3.75 unguarded; ensemble off, 3.71 and 4.25. Low scores come from answers that
+  repeat one clause hundreds of times, misstate a statute or a date, or answer a generic case.
+- **Latency.** Ensemble on: 388 s median per guarded run (GLiNER-PII on the CPU, one batched
+  adjudication call per request). Ensemble off: 242 s. Unguarded: 18 to 20 s.
+
+### How the ensemble-on run was produced
+
+The run started at 02:57 UTC. At about 03:47 UTC the laptop went to sleep, the network dropped,
+and the process was stopped at its time limit with pass 1 complete (32 runs) and 26 runs of
+pass 2 written. Five more runs of pass 2 had ended with `upstream unreachable: ConnectError`;
+those rows record the outage, not the system, and were removed. The harness was then resumed on
+the same output directory with the same settings and ran the 6 missing runs of pass 2 and all
+of pass 3 (06:00 to 06:40 UTC). Passes stay independent: services are built fresh per process
+and per pass. `config.json` reports the Tavily count of the resumed process only (116 calls).
+
+Cost of the two runs of 2026-10-02: attacker and graders 1,033,935 + 168,113 tokens ($1.54) and
+1,044,485 + 164,752 ($1.54); reframe 390,199 + 25,752 ($0.47) and 420,978 + 26,102 ($0.50);
+plus the agent's own Ultra calls, which are not token-logged.
 
 ## Tokens, cost and duration (`eb311ed` run)
 
