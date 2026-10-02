@@ -8,7 +8,7 @@ Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request 
 
 ## Try the demo
 
-**Hosted demo: TBD** (goes live in October 2026 and stays free and open until judging ends on 2026-12-15).
+**Hosted demo: https://airlock-egress.fly.dev** (free and open until judging ends on 2026-12-15).
 
 Click any of the five fictional scenarios (chat, private web search, research agent; English and Korean) to see what you typed, what the cloud saw, and the answer. The hosted demo differs from real use in a few ways:
 

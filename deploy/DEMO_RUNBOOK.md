@@ -1,6 +1,6 @@
 # Airlock public demo runbook
 
-This runbook covers the hosted demo that judges use. The demo must stay free and unrestricted until the end of judging on **2026-12-15 12:00 PT**, and it should be live from **2026-11-02**, the earlier of the two judging start dates. The image, demo mode and `smoke_test.sh` were built and tested locally on 2026-09-14. The Nebius and Fly.io commands were checked against current docs, and `deploy.sh` against a stub CLI, but none has run against a real account. No cloud resource exists yet. In early October you create the accounts, set the secrets, and run the commands below.
+This runbook covers the hosted demo that judges use. The demo must stay free and unrestricted until the end of judging on **2026-12-15 12:00 PT**, and it should be live from **2026-11-02**, the earlier of the two judging start dates. The image, demo mode and `smoke_test.sh` were built and tested locally on 2026-09-14. The Nebius commands were checked against current docs, and `deploy.sh` against a stub CLI, but have not run against a real account. **Option B is deployed:** `https://airlock-egress.fly.dev` (Fly.io app `airlock-egress`, one `shared-cpu-1x` 1 GB machine in `ams`, first deployed 2026-10-02; see the deployment record at the end).
 
 ## What gets deployed
 
@@ -76,7 +76,7 @@ Sources, all checked 2026-09-14:
 
 ### 0. Before deploying (in the repo)
 
-- [ ] Merge the S10 detector branch, then rerun `uv run pytest -q` and `uv run ruff check`.
+- [x] Detector work merged to `main`; `uv run pytest -q` and `uv run ruff check` pass (2026-10-02).
 - [ ] **Re-record the presets.** Recordings must reflect the detector you ship, and detection varies between runs: a first run of `chat-medical-en` missed a name that a re-run masked. Recording costs about 5 live runs.
   ```bash
   docker build -t airlock-demo:local .
@@ -109,8 +109,8 @@ Sources, all checked 2026-09-14:
 - [ ] Option B: **Fly.io**
   - [ ] Account with a card.
   - [ ] `flyctl` installed and logged in (`fly auth login`).
-  - [ ] App created with `fly apps create <unique-name>`.
-  - [ ] That name set in `deploy/fly/fly.toml` for both `app` and `AIRLOCK_ALLOWED_HOSTS` (`<name>.fly.dev`).
+  - [x] App created with `fly apps create <unique-name>`: `airlock-egress` (`airlock-demo` was taken).
+  - [x] That name set in `deploy/fly/fly.toml` for both `app` and `AIRLOCK_ALLOWED_HOSTS` (`<name>.fly.dev`).
 
 ### 2. Secrets
 
@@ -183,7 +183,7 @@ curl -s https://ifconfig.me                          # must equal "client_ip" pr
 
 ### 7. Judge-facing URL
 
-- [ ] Replace `TBD` in the README section "Try the demo" with the URL, and commit.
+- [x] Replace `TBD` in the README section "Try the demo" with the URL, and commit.
 - [ ] Put the same URL in the Devpost "Try it out" field and the video description.
 - [ ] Write down the deploy date, commit, option and URL in `FRICTION_LOG.md` / PLAN.
 
@@ -255,7 +255,7 @@ curl -s https://<url>/demo/status | jq .budget             # requests / cloud_ca
 3. Whether a stopped endpoint's container disk is billed.
 4. Nebius `restart`, `mysterybox secret delete` and `registry delete` flags.
 5. That Token Factory has no spend cap or alert, and when the Devpost promo credit expires.
-6. Fly.io: whether a shared IPv4 is included at no cost for `<app>.fly.dev`, and whether `Fly-Client-IP` overwrites a value sent by the client.
+6. ~~Fly.io client IP and shared IPv4.~~ Verified on the deployed app 2026-10-02: `/demo/status` reports the caller's public IP, a client-sent `Fly-Client-IP: 203.0.113.9` header is overwritten by Fly Proxy, and the app got a shared IPv4 at no cost (a dedicated one is $2/mo, https://docs.fly.io/about/pricing).
 7. Per-run token cost (estimate above). Measure it with the October smoke test.
 
 ## Local verification record (2026-09-14)
@@ -270,3 +270,11 @@ curl -s https://<url>/demo/status | jq .budget             # requests / cloud_ca
 | Browser | Headless Chrome rendered the banner and the JS-built preset list under the hash-based CSP |
 | Sidecar option (a) | `--target sidecar` image is 303 MB, plus the GGUF mounted read-only. Limited to `--cpus 2` in Docker Desktop's arm64 VM: llama-server ready, one chat masked name and email, gate allowed. Detection took **61 s** (first request) and memory reached 2.7 GiB. On that evidence the sidecar is too slow for a judge-facing demo unless Nebius `cpu-d3` measures much faster (**UNVERIFIED**) |
 | Live usage in total | 8 preset runs, 1 sidecar chat, 1 adapter check, 1 latency diagnostic call |
+
+## Deployment record (Option B, Fly.io)
+
+| Date | What | Result |
+|---|---|---|
+| 2026-10-02 | First deploy of `airlock-egress` from the working tree at `2812f75` plus the app name in `fly.toml`; no secrets set yet | `https://airlock-egress.fly.dev`, 1 machine in `ams`, `/readyz` check passing. `smoke_test.sh`: all free checks pass except `readyz live configured` (expected without `NEBIUS_API_KEY`). Presets serve their recorded runs (`fallback_reason: live_error`); free text is blocked with `local_detector_unavailable:CloudDetectorNotConfigured` |
+
+Still open: set `NEBIUS_API_KEY` and `TAVILY_API_KEY` (demo-only keys, section 2), then run `smoke_test.sh --live`; redeploy after the presets are re-recorded; cost alarms (section 6).

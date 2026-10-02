@@ -3,7 +3,7 @@
 #   fly deploy --config deploy/fly/fly.toml --dockerfile Dockerfile --ha=false
 # Non-secret settings mirror deploy/demo.env; keep the two in sync.
 
-app = "airlock-demo"          # TODO(October): must be globally unique on Fly.io
+app = "airlock-egress"
 primary_region = "ams"        # near Token Factory eu-north1, where the detector model runs
 
 [build]
@@ -17,7 +17,7 @@ primary_region = "ams"        # near Token Factory eu-north1, where the detector
   AIRLOCK_UPSTREAM_FALLBACK_MODEL = "nvidia/nemotron-3-super-120b-a12b"
   AIRLOCK_PROTECTION_LEVEL = "balanced"
   AIRLOCK_AGENT_MAX_STEPS = "6"
-  AIRLOCK_ALLOWED_HOSTS = "airlock-demo.fly.dev"   # TODO(October): <app>.fly.dev
+  AIRLOCK_ALLOWED_HOSTS = "airlock-egress.fly.dev"
   # Fly Proxy sets Fly-Client-IP; its X-Forwarded-For ends with the app's own IP.
   AIRLOCK_DEMO_CLIENT_IP_HEADER = "fly-client-ip"
   AIRLOCK_DEMO_IP_LIMIT = "20"
