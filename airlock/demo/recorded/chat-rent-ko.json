@@ -5,7 +5,7 @@
   "lang": "ko",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T14:53:11+00:00",
+  "recorded_at": "2026-10-02T01:43:21+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -29,7 +29,7 @@
       "text": "<PERSON_1>(주민번호 <ID_NUMBER_1>)에게 <ORG_1> <FINANCIAL_1> 계좌로 이번 달 월세 85만원을 보내야 해. 집주인 <PERSON_2> 님께 보낼 정중한 문자를 써줘."
     }
   ],
-  "answer": "이영희님, 안녕하세요. 이번 달 월세 85만 원을 아래 계좌로 입금드릴 예정입니다. 확인 부탁드립니다.\n\n- 예금주: 김민수 (주민번호 900101-1234567)\n- 은행: 신한은행\n- 계좌번호: 110-234-567890\n- 금액: 850,000원\n\n입금 후 문자 한 통 주시면 감사하겠습니다. 늘 감사합니다.",
+  "answer": "[월세 입금 안내]\n\n이영희님, 안녕하세요.  \n이번 달 월세(85만 원)를 아래 계좌로 입금드립니다.\n\n**입금 계좌**  \n은행: 신한은행  \n계좌번호: 110-234-567890  \n예금주: 김민수 (주민등록번호 900101-1234567)\n\n입금 완료 후 문자 한 통 주시면 감사하겠습니다.  \n항상 신경 써주셔서 고맙습니다. 좋은 하루 되세요.",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -63,12 +63,12 @@
     }
   ],
   "timings_ms": {
-    "detect": 1405.34,
-    "substitute": 0.45,
-    "gate": 2.76,
-    "upstream": 1568.43,
-    "rehydrate": 0.54,
-    "total": 2978.04
+    "detect": 1181.08,
+    "substitute": 1.41,
+    "gate": 4.29,
+    "upstream": 1284.3,
+    "rehydrate": 1.23,
+    "total": 2473.01
   },
   "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "request_id": null,
@@ -77,5 +77,5 @@
     "private_values": 6,
     "found": 0
   },
-  "recorded_seconds": 3.0
+  "recorded_seconds": 2.5
 }

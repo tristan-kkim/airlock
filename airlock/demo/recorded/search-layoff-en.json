@@ -5,7 +5,7 @@
   "lang": "en",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-14T14:53:22+00:00",
+  "recorded_at": "2026-10-02T01:43:30+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -25,34 +25,34 @@
     {
       "destination": "tavily",
       "label": "search query",
-      "text": "Can an employer terminate a position without severance pay?"
+      "text": "Can an employer terminate a position without severance"
     }
   ],
   "answer": null,
   "results": [
     {
       "rank": 1,
+      "title": "I got laid off. Does my employer have to offer severance pay? - Alan Lescht",
+      "url": "https://www.dcemploymentattorney.com/resources/blog/i-got-laid-off-does-my-employer-have-to-offer-severance-pay",
+      "snippet": "Generally, a private-sector employer must pay severance only if they signed a contract agreeing to do so.  For example, a corporate executive may have an employment agreement that says the employer will pay six months of severance if it decides to terminate the executive’s employ\n… (1217 more characters)"
+    },
+    {
+      "rank": 2,
       "title": "Severance Pay | U.S. Department of Labor",
       "url": "https://www.dol.gov/general/topic/wages/severancepay",
       "snippet": "Severance pay is often granted to employees upon termination of employment. It is usually based on length of employment for which an employee is eligible upon termination. There is no requirement in the Fair Labor Standards Act (FLSA) for severance pay. Severance pay is a matter \n… (355 more characters)"
     },
     {
-      "rank": 2,
-      "title": "I got laid off. Does my employer have to offer severance pay? - Alan Lescht",
-      "url": "https://www.dcemploymentattorney.com/resources/blog/i-got-laid-off-does-my-employer-have-to-offer-severance-pay",
-      "snippet": "Generally, a private-sector employer must pay severance only if they signed a contract agreeing to do so.  For example, a corporate executive may have an employment agreement that says the employer will pay six months of severance if it decides to terminate the executive’s employ\n… (1123 more characters)"
-    },
-    {
       "rank": 3,
       "title": "Severance packages: What employers need to know | Thomson Reuters",
       "url": "https://legal.thomsonreuters.com/en/insights/articles/what-employers-need-to-know-about-severance-packages",
-      "snippet": "Brand and reputation management. To let go of employees without providing any kind of severance package at all might outwardly appear impulsive and heartless. That is not good for morale among remaining employees and might cause investors to question the judgment of a company’s d\n… (724 more characters)"
+      "snippet": "Brand and reputation management. To let go of employees without providing any kind of severance package at all might outwardly appear impulsive and heartless. That is not good for morale among remaining employees and might cause investors to question the judgment of a company’s d\n… (758 more characters)"
     },
     {
       "rank": 4,
       "title": "Fired with No Reason, No Warning, No Severance: The Case for Replacing At-Will Employment with a Just Cause Standard - National Employment Law Project",
       "url": "https://www.nelp.org/insights-research/fired-with-no-reason-no-warning-no-severance-the-case-for-replacing-at-will-employment-with-a-just-cause-standard",
-      "snippet": "The context for the new survey is the reality that almost everywhere in the United States, employees may be fired without a good reason, advance notice, or severance pay. This default rule, known as “at will” employment, can wreak havoc on the lives of workers and their families,\n… (1020 more characters)"
+      "snippet": "More than two out of three workers who have been discharged received no reason or an unfair reason for the termination, and three out of four received no warning before discharge.\n Just one in three discharged workers receives severance pay. At the same time, more than 40 percent\n… (849 more characters)"
     },
     {
       "rank": 5,
@@ -84,12 +84,12 @@
     }
   ],
   "timings_ms": {
-    "detect": 1747.04,
-    "rewrite": 789.96,
-    "gate": 1.64,
-    "tavily": 2414.74,
-    "rerank": 637.26,
-    "total": 5590.88
+    "detect": 1438.01,
+    "rewrite": 600.4,
+    "gate": 4.51,
+    "tavily": 2616.69,
+    "rerank": 738.92,
+    "total": 5399.07
   },
   "request_id": null,
   "leak_check": {
@@ -97,5 +97,5 @@
     "private_values": 7,
     "found": 0
   },
-  "recorded_seconds": 5.6
+  "recorded_seconds": 5.4
 }
