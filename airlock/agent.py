@@ -550,7 +550,8 @@ class AgentRunner:
                         output = f"error: unknown tool {name!r}"
                     messages.append({"role": "tool", "tool_call_id": call["id"], "content": output})
                 if finished:
-                    status = "finished"
+                    # A finish that is still empty after the one repair is not an answer.
+                    status = "finished" if answer else "error"
                     break
             else:
                 status = "max_steps"
