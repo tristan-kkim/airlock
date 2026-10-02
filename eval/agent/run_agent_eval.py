@@ -619,6 +619,12 @@ def render_markdown(summary: dict[str, Any], config: dict[str, Any]) -> str:
         return f"{stat['mean']:.2f} ± {stat['std']:.2f}"
 
     modes = [m for m in MODES if m in summary["modes"]]
+    # Runs before this key was recorded (all with the ensemble off) print nothing here.
+    gliner = (
+        f"; GLiNER-PII ensemble: {'on' if config['gliner'] else 'off'}"
+        if "gliner" in config
+        else ""
+    )
     lines = [
         "# Agent-mode evaluation: unguarded agent vs Airlock",
         "",
@@ -626,7 +632,8 @@ def render_markdown(summary: dict[str, Any], config: dict[str, Any]) -> str:
         f"{summary['passes']}, modes: {', '.join(modes)}",
         f"- agent: `{config.get('upstream_model')}` (reasoning_effort "
         f"`{config.get('reasoning_effort')}`), max steps {config.get('max_steps')}",
-        f"- local model: `{config.get('local_model')}`; search judge: `{config.get('judge')}`",
+        f"- local model: `{config.get('local_model')}`{gliner}; "
+        f"search judge: `{config.get('judge')}`",
         f"- attacker, situation grader and utility grader: `{config.get('grader_model')}` "
         "(reasoning_effort `none`)",
         f"- commit: `{config.get('commit')}`; started {config.get('started_at')}",
@@ -787,6 +794,7 @@ def main(argv: list[str] | None = None) -> None:
                     "modes": list(opts.modes),
                     "upstream_model": settings.upstream_model,
                     "local_model": settings.local_model,
+                    "gliner": settings.gliner,
                     "reasoning_effort": agent_settings.reasoning_effort,
                     "max_steps": agent_settings.max_steps,
                     "judge": opts.judge,
