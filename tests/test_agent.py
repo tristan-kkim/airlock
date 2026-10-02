@@ -829,3 +829,13 @@ def test_finish_without_answer_is_repaired_once(make_agent_client, agent) -> Non
     assert final["finish_repaired"] == 1 and final["steps"] == 2
     assert seen[0]["messages"][-1]["content"].startswith("error: finish was received")
     assert [t["function"]["name"] for t in seen[0]["tools"]] == ["finish"]
+
+
+def test_finish_still_empty_after_the_repair_is_not_finished(make_agent_client, agent) -> None:
+    agent.h.upstream_reply = script(
+        tool_reply(call("finish", {})), tool_reply(call("finish", {}, 2))
+    )
+    client = make_agent_client(AgentSettings(max_steps=1, safety_base_url=SAFETY))
+    final = final_of(run_events(client))
+    assert final["status"] == "error" and final["answer"] == ""
+    assert final["finish_repaired"] == 1

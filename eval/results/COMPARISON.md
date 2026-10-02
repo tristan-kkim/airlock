@@ -32,18 +32,20 @@ Airlock's claim is unlinkability: the cloud may learn the problem, but not who h
 
 ## Agent mode (`eval/agent`, reframed by `eval/reframe.py agent`)
 
-3 passes over 16 research-agent scenarios. The same attacker reads every outbound hop of a run. A run is a linkable disclosure when the attacker names at least one identity fact (classified in each `scenario.json` `fact_classes`) and infers the situation. Utility is judged blind and pairwise, with the unguarded answer as the reference: utility ratio airlock / unguarded = 1.09 ± 0.12.
+3 passes over 16 research-agent scenarios. The same attacker reads every outbound hop of a run. A run is a linkable disclosure when the attacker names at least one identity fact (classified in each `scenario.json` `fact_classes`) and infers the situation. Utility is judged blind and pairwise, with the unguarded answer as the reference: utility ratio airlock / unguarded = 1.08 ± 0.11.
 
 | Metric | unguarded | airlock |
 |---|---:|---:|
-| Identity leak (scanner) | 95.8% ± 3.6 | 33.3% ± 9.5 |
-| **Linkable disclosure** | 83.3% ± 3.6 | 17.2% ± 8.2 |
-| Identity recovered (attacker) | 83.3% ± 3.6 | 18.8% ± 10.8 |
-| Identity facts recovered (share) | 84.2% ± 4.6 | 6.7% ± 3.8 |
-| Situation facts recovered (share) | 79.7% ± 3.7 | 46.3% ± 4.2 |
-| Situation inferred (no anchor needed) | 87.5% ± 6.2 | 87.1% ± 6.9 |
-| Utility, blind pairwise judge (1-5) | 4.10 ± 0.25 | 4.46 ± 0.45 |
-| Distortion | 27.1% ± 9.5 | 14.6% ± 7.2 |
+| Identity leak (scanner) | 100.0% ± 0.0 | 16.7% ± 3.6 |
+| **Linkable disclosure** | 81.2% ± 0.0 | 8.3% ± 3.6 |
+| Identity recovered (attacker) | 81.2% ± 0.0 | 8.3% ± 3.6 |
+| Identity facts recovered (share) | 82.4% ± 2.1 | 2.4% ± 1.0 |
+| Situation facts recovered (share) | 74.8% ± 1.4 | 44.7% ± 5.1 |
+| Situation inferred (no anchor needed) | 85.4% ± 3.6 | 79.2% ± 3.6 |
+| Utility, blind pairwise judge (1-5) | 4.19 ± 0.23 | 4.52 ± 0.20 |
+| Distortion | 27.1% ± 9.5 | 16.7% ± 7.2 |
+
+Run at `8b1157e` on 2026-10-02 with the GLiNER-PII ensemble on (`eval/agent/results/demo/`). The same evaluation with the ensemble off measured linkable disclosure 31.2% ± 6.2 and identity leak 43.8% ± 10.8 on the same day (`demo-gliner-off/`), and 17.2% ± 8.2 and 33.3% ± 9.5 at `eb311ed` (`demo-eb311ed/`); `FINAL.md` compares the three runs.
 
 ## String-matching leak rates
 

@@ -5,7 +5,7 @@
   "lang": "en",
   "source": "recorded",
   "fallback_reason": null,
-  "recorded_at": "2026-09-15T02:18:35+00:00",
+  "recorded_at": "2026-10-02T01:43:19+00:00",
   "models": {
     "detector": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     "detector_backend": "cloud",
@@ -29,7 +29,7 @@
       "text": "Hi, I'm <PERSON_1> (<CONTACT_1>, <CONTACT_2>). I'm in my 30s and was just diagnosed with type 1 diabetes at <ORG_1>. Draft a short note to my manager, <PERSON_2>, asking for adjustable schedule for the next two months."
     }
   ],
-  "answer": "Subject: Request for Adjusted Schedule – Medical Accommodation\n\nDear Tom Reyes,\n\nI am writing to inform you that I have recently been diagnosed with type 1 diabetes at Hanbit Clinic. As I begin treatment and establish a management routine, I will need a more flexible work schedule over the next two months to attend medical appointments, monitor blood‑glucose levels, and adjust to new medication timing.\n\nI would like to propose the following temporary adjustments, effective immediately and lasting through the next eight weeks:\n\n* Core hours: 10:00 am – 3:00 pm (available for meetings and collaboration)\n* Flexible start/end times outside core hours to accommodate appointments\n* Option to work remotely on days when clinic visits run longer than expected\n\nI will keep you updated on any changes and ensure that all deliverables remain on track. Please let me know a convenient time to discuss this further.\n\nThank you for your understanding and support.\n\nBest regards,  \nJane Park  \njane.park@example.com | 010-5555-0142",
+  "answer": "Subject: Schedule Adjustment Request – Medical Accommodation  \n\nHi Tom Reyes,\n\nI’m writing to let you know that I was recently diagnosed with type 1 diabetes at Hanbit Clinic. As I work with my care team to stabilize my treatment plan over the next two months, I would appreciate an adjustable schedule (e.g., flexible start/end times, occasional remote work, or modified break periods) to accommodate medical appointments and monitoring needs.\n\nI remain fully committed to my responsibilities and will ensure coverage for any shifted hours. Could we set up a brief time this week to discuss a practical arrangement? I’m available at jane.park@example.com or 010-5555-0142 to coordinate.\n\nThank you for your understanding and support.\n\nBest regards,  \nJane Park",
   "error": null,
   "gate": {
     "decision": "allow",
@@ -83,12 +83,12 @@
     }
   ],
   "timings_ms": {
-    "detect": 2844.74,
-    "substitute": 0.52,
-    "gate": 2.52,
-    "upstream": 1942.21,
-    "rehydrate": 0.11,
-    "total": 4790.53
+    "detect": 3158.12,
+    "substitute": 1.55,
+    "gate": 4.54,
+    "upstream": 1595.68,
+    "rehydrate": 0.59,
+    "total": 4761.15
   },
   "model_used": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "request_id": null,

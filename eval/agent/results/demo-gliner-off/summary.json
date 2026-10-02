@@ -1,0 +1,1815 @@
+{
+  "passes": 3,
+  "modes": {
+    "unguarded": {
+      "overall": {
+        "fact_recovery": {
+          "n": 3,
+          "mean": 0.9097222222222222,
+          "std": 0.06777507394424698,
+          "min": 0.84375,
+          "max": 0.9791666666666666
+        },
+        "fact_recovery_partial": {
+          "n": 3,
+          "mean": 0.9340277777777778,
+          "std": 0.06364688465216443,
+          "min": 0.8645833333333334,
+          "max": 0.9895833333333334
+        },
+        "situation_inference": {
+          "n": 3,
+          "mean": 0.9375,
+          "std": 0.0625,
+          "min": 0.875,
+          "max": 1.0
+        },
+        "search_only_fact_recovery": {
+          "n": 3,
+          "mean": 0.052083333333333336,
+          "std": 0.0,
+          "min": 0.052083333333333336,
+          "max": 0.052083333333333336
+        },
+        "search_only_fact_recovery_partial": {
+          "n": 3,
+          "mean": 0.09722222222222222,
+          "std": 0.0060140653040586045,
+          "min": 0.09375,
+          "max": 0.10416666666666667
+        },
+        "search_only_situation_inference": {
+          "n": 3,
+          "mean": 0.14583333333333334,
+          "std": 0.07216878364870322,
+          "min": 0.0625,
+          "max": 0.1875
+        },
+        "utility_mean": {
+          "n": 3,
+          "mean": 4.625,
+          "std": 0.10825317547305482,
+          "min": 4.5,
+          "max": 4.6875
+        },
+        "finished_rate": {
+          "n": 3,
+          "mean": 1.0,
+          "std": 0.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "searches_per_run": {
+          "n": 3,
+          "mean": 3.1666666666666665,
+          "std": 0.21949278651776538,
+          "min": 2.9375,
+          "max": 3.375
+        },
+        "search_rewritten_rate": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "search_blocked_rate": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "steps_mean": {
+          "n": 3,
+          "mean": 6.5,
+          "std": 0.10825317547305482,
+          "min": 6.375,
+          "max": 6.5625
+        },
+        "latency_s_mean": {
+          "n": 3,
+          "mean": 20.207916666666666,
+          "std": 0.4647413315042404,
+          "min": 19.7,
+          "max": 20.611875
+        },
+        "latency_s_p50": {
+          "n": 3,
+          "mean": 19.958333333333332,
+          "std": 0.7107449143914663,
+          "min": 19.29,
+          "max": 20.705
+        }
+      },
+      "by_lang": {
+        "ko": {
+          "fact_recovery": {
+            "n": 3,
+            "mean": 0.8888888888888888,
+            "std": 0.13871516913498738,
+            "min": 0.7291666666666666,
+            "max": 0.9791666666666666
+          },
+          "fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.9166666666666666,
+            "std": 0.1267242193812129,
+            "min": 0.7708333333333334,
+            "max": 1.0
+          },
+          "situation_inference": {
+            "n": 3,
+            "mean": 0.9166666666666666,
+            "std": 0.14433756729740643,
+            "min": 0.75,
+            "max": 1.0
+          },
+          "search_only_fact_recovery": {
+            "n": 3,
+            "mean": 0.06944444444444443,
+            "std": 0.0120281306081172,
+            "min": 0.0625,
+            "max": 0.08333333333333333
+          },
+          "search_only_fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.1527777777777778,
+            "std": 0.012028130608117193,
+            "min": 0.14583333333333334,
+            "max": 0.16666666666666666
+          },
+          "search_only_situation_inference": {
+            "n": 3,
+            "mean": 0.20833333333333334,
+            "std": 0.07216878364870322,
+            "min": 0.125,
+            "max": 0.25
+          },
+          "utility_mean": {
+            "n": 3,
+            "mean": 4.25,
+            "std": 0.21650635094610965,
+            "min": 4.0,
+            "max": 4.375
+          },
+          "finished_rate": {
+            "n": 3,
+            "mean": 1.0,
+            "std": 0.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "searches_per_run": {
+            "n": 3,
+            "mean": 3.0416666666666665,
+            "std": 0.4018187817080398,
+            "min": 2.75,
+            "max": 3.5
+          },
+          "search_rewritten_rate": {
+            "n": 3,
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "search_blocked_rate": {
+            "n": 3,
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "steps_mean": {
+            "n": 3,
+            "mean": 6.333333333333333,
+            "std": 0.14433756729740643,
+            "min": 6.25,
+            "max": 6.5
+          },
+          "latency_s_mean": {
+            "n": 3,
+            "mean": 22.23125,
+            "std": 0.554142073389126,
+            "min": 21.65875,
+            "max": 22.765
+          },
+          "latency_s_p50": {
+            "n": 3,
+            "mean": 21.548333333333332,
+            "std": 1.1958295586467715,
+            "min": 20.58,
+            "max": 22.884999999999998
+          }
+        },
+        "en": {
+          "fact_recovery": {
+            "n": 3,
+            "mean": 0.9305555555555557,
+            "std": 0.08673608331108885,
+            "min": 0.8333333333333334,
+            "max": 1.0
+          },
+          "fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.951388888888889,
+            "std": 0.052429405800491304,
+            "min": 0.8958333333333334,
+            "max": 1.0
+          },
+          "situation_inference": {
+            "n": 3,
+            "mean": 0.9583333333333334,
+            "std": 0.07216878364870322,
+            "min": 0.875,
+            "max": 1.0
+          },
+          "search_only_fact_recovery": {
+            "n": 3,
+            "mean": 0.03472222222222222,
+            "std": 0.012028130608117202,
+            "min": 0.020833333333333332,
+            "max": 0.041666666666666664
+          },
+          "search_only_fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.041666666666666664,
+            "std": 0.0,
+            "min": 0.041666666666666664,
+            "max": 0.041666666666666664
+          },
+          "search_only_situation_inference": {
+            "n": 3,
+            "mean": 0.08333333333333333,
+            "std": 0.07216878364870322,
+            "min": 0.0,
+            "max": 0.125
+          },
+          "utility_mean": {
+            "n": 3,
+            "mean": 5.0,
+            "std": 0.0,
+            "min": 5.0,
+            "max": 5.0
+          },
+          "finished_rate": {
+            "n": 3,
+            "mean": 1.0,
+            "std": 0.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "searches_per_run": {
+            "n": 3,
+            "mean": 3.2916666666666665,
+            "std": 0.3145764348029479,
+            "min": 3.0,
+            "max": 3.625
+          },
+          "search_rewritten_rate": {
+            "n": 3,
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "search_blocked_rate": {
+            "n": 3,
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "steps_mean": {
+            "n": 3,
+            "mean": 6.666666666666667,
+            "std": 0.19094065395649334,
+            "min": 6.5,
+            "max": 6.875
+          },
+          "latency_s_mean": {
+            "n": 3,
+            "mean": 18.184583333333332,
+            "std": 1.2497726876649733,
+            "min": 17.13,
+            "max": 19.564999999999998
+          },
+          "latency_s_p50": {
+            "n": 3,
+            "mean": 18.078333333333333,
+            "std": 1.1425227933539608,
+            "min": 16.939999999999998,
+            "max": 19.225
+          }
+        }
+      },
+      "per_pass": [
+        {
+          "runs": 16,
+          "finished_rate": 1.0,
+          "fact_recovery": 0.90625,
+          "fact_recovery_partial": 0.9479166666666666,
+          "situation_inference": 0.9375,
+          "search_only_fact_recovery": 0.052083333333333336,
+          "search_only_fact_recovery_partial": 0.09375,
+          "search_only_situation_inference": 0.1875,
+          "utility_mean": 4.6875,
+          "searches_per_run": 3.375,
+          "search_sent_rate": 1.0,
+          "search_rewritten_rate": 0.0,
+          "search_blocked_rate": 0.0,
+          "steps_mean": 6.5625,
+          "latency_s_mean": 19.7,
+          "latency_s_p50": 19.29
+        },
+        {
+          "runs": 16,
+          "finished_rate": 1.0,
+          "fact_recovery": 0.84375,
+          "fact_recovery_partial": 0.8645833333333334,
+          "situation_inference": 0.875,
+          "search_only_fact_recovery": 0.052083333333333336,
+          "search_only_fact_recovery_partial": 0.10416666666666667,
+          "search_only_situation_inference": 0.0625,
+          "utility_mean": 4.5,
+          "searches_per_run": 2.9375,
+          "search_sent_rate": 1.0,
+          "search_rewritten_rate": 0.0,
+          "search_blocked_rate": 0.0,
+          "steps_mean": 6.375,
+          "latency_s_mean": 20.311875,
+          "latency_s_p50": 20.705
+        },
+        {
+          "runs": 16,
+          "finished_rate": 1.0,
+          "fact_recovery": 0.9791666666666666,
+          "fact_recovery_partial": 0.9895833333333334,
+          "situation_inference": 1.0,
+          "search_only_fact_recovery": 0.052083333333333336,
+          "search_only_fact_recovery_partial": 0.09375,
+          "search_only_situation_inference": 0.1875,
+          "utility_mean": 4.6875,
+          "searches_per_run": 3.1875,
+          "search_sent_rate": 1.0,
+          "search_rewritten_rate": 0.0,
+          "search_blocked_rate": 0.0,
+          "steps_mean": 6.5625,
+          "latency_s_mean": 20.611875,
+          "latency_s_p50": 19.88
+        }
+      ]
+    },
+    "airlock": {
+      "overall": {
+        "fact_recovery": {
+          "n": 3,
+          "mean": 0.2777777777777778,
+          "std": 0.033484898475669975,
+          "min": 0.23958333333333334,
+          "max": 0.3020833333333333
+        },
+        "fact_recovery_partial": {
+          "n": 3,
+          "mean": 0.3506944444444444,
+          "std": 0.015911721163041116,
+          "min": 0.3333333333333333,
+          "max": 0.3645833333333333
+        },
+        "situation_inference": {
+          "n": 3,
+          "mean": 0.75,
+          "std": 0.0625,
+          "min": 0.6875,
+          "max": 0.8125
+        },
+        "search_only_fact_recovery": {
+          "n": 3,
+          "mean": 0.010416666666666666,
+          "std": 0.0,
+          "min": 0.010416666666666666,
+          "max": 0.010416666666666666
+        },
+        "search_only_fact_recovery_partial": {
+          "n": 3,
+          "mean": 0.027777777777777776,
+          "std": 0.006014065304058603,
+          "min": 0.020833333333333332,
+          "max": 0.03125
+        },
+        "search_only_situation_inference": {
+          "n": 3,
+          "mean": 0.020833333333333332,
+          "std": 0.03608439182435161,
+          "min": 0.0,
+          "max": 0.0625
+        },
+        "utility_mean": {
+          "n": 3,
+          "mean": 4.354166666666667,
+          "std": 0.15728821740147395,
+          "min": 4.1875,
+          "max": 4.5
+        },
+        "finished_rate": {
+          "n": 3,
+          "mean": 0.9583333333333334,
+          "std": 0.03608439182435161,
+          "min": 0.9375,
+          "max": 1.0
+        },
+        "searches_per_run": {
+          "n": 3,
+          "mean": 3.25,
+          "std": 0.10825317547305482,
+          "min": 3.125,
+          "max": 3.3125
+        },
+        "search_rewritten_rate": {
+          "n": 3,
+          "mean": 0.9233962264150944,
+          "std": 0.04931282868564433,
+          "min": 0.8679245283018868,
+          "max": 0.9622641509433962
+        },
+        "search_blocked_rate": {
+          "n": 3,
+          "mean": 0.07031446540880502,
+          "std": 0.03877867263748027,
+          "min": 0.03773584905660377,
+          "max": 0.11320754716981132
+        },
+        "steps_mean": {
+          "n": 3,
+          "mean": 6.708333333333333,
+          "std": 0.09547032697824667,
+          "min": 6.625,
+          "max": 6.8125
+        },
+        "latency_s_mean": {
+          "n": 3,
+          "mean": 250.213125,
+          "std": 27.027298381682535,
+          "min": 228.394375,
+          "max": 280.446875
+        },
+        "latency_s_p50": {
+          "n": 3,
+          "mean": 242.07166666666663,
+          "std": 39.27798567051691,
+          "min": 218.36,
+          "max": 287.40999999999997
+        }
+      },
+      "by_lang": {
+        "ko": {
+          "fact_recovery": {
+            "n": 3,
+            "mean": 0.27777777777777773,
+            "std": 0.05242940580049131,
+            "min": 0.22916666666666666,
+            "max": 0.3333333333333333
+          },
+          "fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.3194444444444445,
+            "std": 0.031823442326082224,
+            "min": 0.2916666666666667,
+            "max": 0.3541666666666667
+          },
+          "situation_inference": {
+            "n": 3,
+            "mean": 0.6666666666666666,
+            "std": 0.07216878364870322,
+            "min": 0.625,
+            "max": 0.75
+          },
+          "search_only_fact_recovery": {
+            "n": 3,
+            "mean": 0.013888888888888888,
+            "std": 0.012028130608117202,
+            "min": 0.0,
+            "max": 0.020833333333333332
+          },
+          "search_only_fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.03472222222222222,
+            "std": 0.012028130608117202,
+            "min": 0.020833333333333332,
+            "max": 0.041666666666666664
+          },
+          "search_only_situation_inference": {
+            "n": 3,
+            "mean": 0.041666666666666664,
+            "std": 0.07216878364870322,
+            "min": 0.0,
+            "max": 0.125
+          },
+          "utility_mean": {
+            "n": 3,
+            "mean": 3.7083333333333335,
+            "std": 0.3145764348029479,
+            "min": 3.375,
+            "max": 4.0
+          },
+          "finished_rate": {
+            "n": 3,
+            "mean": 0.9166666666666666,
+            "std": 0.07216878364870322,
+            "min": 0.875,
+            "max": 1.0
+          },
+          "searches_per_run": {
+            "n": 3,
+            "mean": 3.2916666666666665,
+            "std": 0.2602082499332666,
+            "min": 3.0,
+            "max": 3.5
+          },
+          "search_rewritten_rate": {
+            "n": 3,
+            "mean": 0.9629629629629629,
+            "std": 0.06415002990995845,
+            "min": 0.8888888888888888,
+            "max": 1.0
+          },
+          "search_blocked_rate": {
+            "n": 3,
+            "mean": 0.024691358024691357,
+            "std": 0.042766686606638946,
+            "min": 0.0,
+            "max": 0.07407407407407407
+          },
+          "steps_mean": {
+            "n": 3,
+            "mean": 6.75,
+            "std": 0.125,
+            "min": 6.625,
+            "max": 6.875
+          },
+          "latency_s_mean": {
+            "n": 3,
+            "mean": 266.06041666666664,
+            "std": 42.16503369079447,
+            "min": 230.1275,
+            "max": 312.47875
+          },
+          "latency_s_p50": {
+            "n": 3,
+            "mean": 255.39666666666668,
+            "std": 56.670489748486666,
+            "min": 218.36,
+            "max": 320.635
+          }
+        },
+        "en": {
+          "fact_recovery": {
+            "n": 3,
+            "mean": 0.27777777777777773,
+            "std": 0.031823442326082224,
+            "min": 0.25,
+            "max": 0.3125
+          },
+          "fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.3819444444444444,
+            "std": 0.012028130608117193,
+            "min": 0.375,
+            "max": 0.3958333333333333
+          },
+          "situation_inference": {
+            "n": 3,
+            "mean": 0.8333333333333334,
+            "std": 0.07216878364870322,
+            "min": 0.75,
+            "max": 0.875
+          },
+          "search_only_fact_recovery": {
+            "n": 3,
+            "mean": 0.006944444444444444,
+            "std": 0.012028130608117202,
+            "min": 0.0,
+            "max": 0.020833333333333332
+          },
+          "search_only_fact_recovery_partial": {
+            "n": 3,
+            "mean": 0.020833333333333332,
+            "std": 0.0,
+            "min": 0.020833333333333332,
+            "max": 0.020833333333333332
+          },
+          "search_only_situation_inference": {
+            "n": 3,
+            "mean": 0.0,
+            "std": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "utility_mean": {
+            "n": 3,
+            "mean": 5.0,
+            "std": 0.0,
+            "min": 5.0,
+            "max": 5.0
+          },
+          "finished_rate": {
+            "n": 3,
+            "mean": 1.0,
+            "std": 0.0,
+            "min": 1.0,
+            "max": 1.0
+          },
+          "searches_per_run": {
+            "n": 3,
+            "mean": 3.2083333333333335,
+            "std": 0.07216878364870322,
+            "min": 3.125,
+            "max": 3.25
+          },
+          "search_rewritten_rate": {
+            "n": 3,
+            "mean": 0.8835897435897436,
+            "std": 0.03693375913852482,
+            "min": 0.8461538461538461,
+            "max": 0.92
+          },
+          "search_blocked_rate": {
+            "n": 3,
+            "mean": 0.11641025641025642,
+            "std": 0.0369337591385248,
+            "min": 0.08,
+            "max": 0.15384615384615385
+          },
+          "steps_mean": {
+            "n": 3,
+            "mean": 6.666666666666667,
+            "std": 0.2602082499332666,
+            "min": 6.375,
+            "max": 6.875
+          },
+          "latency_s_mean": {
+            "n": 3,
+            "mean": 234.3658333333333,
+            "std": 12.18592273981881,
+            "min": 226.66125,
+            "max": 248.415
+          },
+          "latency_s_p50": {
+            "n": 3,
+            "mean": 219.20333333333335,
+            "std": 27.311611694173852,
+            "min": 202.75,
+            "max": 250.73000000000002
+          }
+        }
+      },
+      "per_pass": [
+        {
+          "runs": 16,
+          "finished_rate": 0.9375,
+          "fact_recovery": 0.3020833333333333,
+          "fact_recovery_partial": 0.3645833333333333,
+          "situation_inference": 0.6875,
+          "search_only_fact_recovery": 0.010416666666666666,
+          "search_only_fact_recovery_partial": 0.03125,
+          "search_only_situation_inference": 0.0625,
+          "utility_mean": 4.5,
+          "searches_per_run": 3.3125,
+          "search_sent_rate": 0.9622641509433962,
+          "search_rewritten_rate": 0.9622641509433962,
+          "search_blocked_rate": 0.03773584905660377,
+          "steps_mean": 6.625,
+          "latency_s_mean": 280.446875,
+          "latency_s_p50": 287.40999999999997
+        },
+        {
+          "runs": 16,
+          "finished_rate": 1.0,
+          "fact_recovery": 0.2916666666666667,
+          "fact_recovery_partial": 0.3541666666666667,
+          "situation_inference": 0.8125,
+          "search_only_fact_recovery": 0.010416666666666666,
+          "search_only_fact_recovery_partial": 0.03125,
+          "search_only_situation_inference": 0.0,
+          "utility_mean": 4.1875,
+          "searches_per_run": 3.125,
+          "search_sent_rate": 0.94,
+          "search_rewritten_rate": 0.94,
+          "search_blocked_rate": 0.06,
+          "steps_mean": 6.6875,
+          "latency_s_mean": 228.394375,
+          "latency_s_p50": 220.445
+        },
+        {
+          "runs": 16,
+          "finished_rate": 0.9375,
+          "fact_recovery": 0.23958333333333334,
+          "fact_recovery_partial": 0.3333333333333333,
+          "situation_inference": 0.75,
+          "search_only_fact_recovery": 0.010416666666666666,
+          "search_only_fact_recovery_partial": 0.020833333333333332,
+          "search_only_situation_inference": 0.0,
+          "utility_mean": 4.375,
+          "searches_per_run": 3.3125,
+          "search_sent_rate": 0.8867924528301887,
+          "search_rewritten_rate": 0.8679245283018868,
+          "search_blocked_rate": 0.11320754716981132,
+          "steps_mean": 6.8125,
+          "latency_s_mean": 241.798125,
+          "latency_s_p50": 218.36
+        }
+      ]
+    }
+  },
+  "per_scenario": {
+    "debt-en": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "1/6",
+          "2/6",
+          "0/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "health-en": {
+      "unguarded": {
+        "facts": [
+          "5/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          1,
+          1,
+          1
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "0/6",
+          "1/6",
+          "2/6"
+        ],
+        "situation": [
+          false,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          1,
+          1,
+          1
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "debt-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          2,
+          5
+        ],
+        "searches": [
+          4,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "2/6",
+          "1/6",
+          "1/6"
+        ],
+        "situation": [
+          true,
+          false,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          1,
+          3,
+          2
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "health-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          1,
+          1,
+          1
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "2/6",
+          "2/6",
+          "2/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          2,
+          1,
+          1
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "hr-warning-en": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "5/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "0/6",
+          "1/6",
+          "0/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "hr-warning-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "1/6",
+          "1/6",
+          "0/6"
+        ],
+        "situation": [
+          true,
+          true,
+          false
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          1,
+          5
+        ],
+        "searches": [
+          4,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "lawsuit-en": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          2,
+          5
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "2/6",
+          "2/6",
+          "3/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          2,
+          3,
+          5
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "lawsuit-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          true,
+          false,
+          true
+        ],
+        "utility": [
+          3,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          2
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "2/6",
+          "2/6",
+          "2/6"
+        ],
+        "situation": [
+          false,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          1
+        ],
+        "searches": [
+          4,
+          3,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "layoff-en": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "5/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          4,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "0/6",
+          "0/6",
+          "1/6"
+        ],
+        "situation": [
+          false,
+          false,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          5,
+          5,
+          4
+        ],
+        "blocked": [
+          2,
+          2,
+          4
+        ]
+      }
+    },
+    "layoff-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          3,
+          2
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "2/6",
+          "2/6",
+          "1/6"
+        ],
+        "situation": [
+          false,
+          true,
+          false
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          4,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "mna-en": {
+      "unguarded": {
+        "facts": [
+          "0/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          false,
+          true,
+          true
+        ],
+        "search_situation": [
+          true,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          5,
+          5,
+          5
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "1/6",
+          "4/6",
+          "1/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          5,
+          4,
+          5
+        ],
+        "blocked": [
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "mna-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "0/6",
+          "5/6"
+        ],
+        "situation": [
+          true,
+          false,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          2,
+          5,
+          3
+        ],
+        "searches": [
+          6,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "4/6",
+          "0/6",
+          "0/6"
+        ],
+        "situation": [
+          true,
+          false,
+          false
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          1,
+          1,
+          2
+        ],
+        "searches": [
+          6,
+          4,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "pregnancy-en": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          4,
+          5
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "4/6",
+          "4/6",
+          "4/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          5,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "pregnancy-ko": {
+      "unguarded": {
+        "facts": [
+          "6/6",
+          "0/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          false,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          2,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "0/6",
+          "3/6",
+          "3/6"
+        ],
+        "situation": [
+          false,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          2,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "visa-en": {
+      "unguarded": {
+        "facts": [
+          "5/6",
+          "6/6",
+          "6/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          false,
+          false,
+          true
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          2,
+          2,
+          3
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "5/6",
+          "1/6",
+          "1/6"
+        ],
+        "situation": [
+          true,
+          true,
+          false
+        ],
+        "search_situation": [
+          false,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          2,
+          2,
+          2
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "visa-ko": {
+      "unguarded": {
+        "facts": [
+          "5/6",
+          "5/6",
+          "5/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          true,
+          true,
+          true
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          4,
+          4,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          0
+        ]
+      },
+      "airlock": {
+        "facts": [
+          "3/6",
+          "2/6",
+          "2/6"
+        ],
+        "situation": [
+          true,
+          true,
+          true
+        ],
+        "search_situation": [
+          true,
+          false,
+          false
+        ],
+        "utility": [
+          5,
+          5,
+          5
+        ],
+        "searches": [
+          3,
+          3,
+          4
+        ],
+        "blocked": [
+          0,
+          0,
+          2
+        ]
+      }
+    }
+  },
+  "config": {
+    "eval_version": "1.0.0",
+    "commit": "2812f75",
+    "started_at": "2026-10-02T00:33:29.520380+00:00",
+    "scenarios": 16,
+    "scenario_langs": "ko 8, en 8",
+    "passes": 3,
+    "modes": [
+      "unguarded",
+      "airlock"
+    ],
+    "upstream_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "local_model": "nemotron-3-nano-4b",
+    "gliner": false,
+    "reasoning_effort": "none",
+    "max_steps": 8,
+    "judge": "nano",
+    "grader_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "estimate": {
+      "runs": 96,
+      "agent_prompt_tokens_est": 1503672,
+      "agent_completion_tokens_est": 224640,
+      "grading_prompt_tokens_est": 742362,
+      "grading_completion_tokens_max": 355200,
+      "tavily_searches_max": 384
+    },
+    "tavily": {
+      "calls": 297,
+      "cache_hits": 0
+    },
+    "runs_finished_at": "2026-10-02T01:30:55.224174+00:00"
+  }
+}

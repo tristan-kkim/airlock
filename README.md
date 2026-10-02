@@ -8,7 +8,7 @@ Point any OpenAI-compatible app at `http://127.0.0.1:8787/v1`. Before a request 
 
 ## Try the demo
 
-**Hosted demo: TBD** (goes live in October 2026 and stays free and open until judging ends on 2026-12-15).
+**Hosted demo: https://airlock-egress.fly.dev** (free and open until judging ends on 2026-12-15).
 
 Click any of the five fictional scenarios (chat, private web search, research agent; English and Korean) to see what you typed, what the cloud saw, and the answer. The hosted demo differs from real use in a few ways:
 
@@ -318,32 +318,43 @@ Two failure modes of the first measured runs are now handled inside the turn ins
 
 The attacker is Nemotron 3 Ultra with the [`eval/attack.py`](eval/attack.py) prompt, which sees only what left the machine. Each run is attacked twice: once over all hops, and once over the Tavily queries alone (the MosaicLeaks threat model). Private facts are matched deterministically in the attacker's output, and a strict grader decides whether the attacker inferred the private situation. A blind grader scores the final answer against the rubric from 1 to 5.
 
-Results: 16 scenarios × 2 modes × 3 passes on the current `main` (`eb311ed`, 2026-09-15), Nemotron-3-Nano-4B judge, one `llama-server` alone on the GPU ([`eval/agent/results/demo/`](eval/agent/results/demo/) has the full summary, per-scenario table, sample traces and the reframed metrics; the earlier run at `d2ff994` is kept in [`demo-pre-s6/`](eval/agent/results/demo-pre-s6/)):
+Results: 16 scenarios × 2 modes × 3 passes at `8b1157e` (2026-10-02), with the [GLiNER-PII ensemble](#optional-nvidia-gliner-pii-ensemble) on (`AIRLOCK_GLINER=on`), Nemotron-3-Nano-4B judge, one `llama-server` alone on the GPU. [`eval/agent/results/demo/`](eval/agent/results/demo/) has the full summary, per-scenario table, sample traces and the reframed metrics.
 
 | Metric | Unguarded agent | Airlock |
 |---|---:|---:|
-| Private facts recovered, all hops | 82.3% ± 2.8 | **23.6% ± 3.2** |
-| Identity leak, any identity fact in the outbound payloads (scanner) | 95.8% ± 3.6 | **33.3% ± 9.5** |
-| **Linkable disclosure** (attacker names an identity fact AND infers the situation) | 83.3% ± 3.6 | **17.2% ± 8.2** |
-| Private situation inferred, all hops (grader, no anchor needed) | 87.5% ± 6.2 | 87.1% ± 6.9 |
-| Private situation inferred, all hops (strict grader, named anchor required) | 83.3% ± 3.6 | 64.6% ± 9.5 |
-| Private facts recovered, search queries only | 4.9% ± 0.6 | **1.7% ± 0.6** |
-| Private situation inferred, search queries only | 16.7% ± 13.0 | 0.0% ± 0.0 |
-| Answer utility (1-5, blind rubric grader) | 4.38 ± 0.29 | 4.50 ± 0.49 |
-| Answer utility (1-5, blind pairwise judge) / distortion | 4.10 ± 0.25 / 27.1% | 4.46 ± 0.45 / 14.6% |
-| Runs finished | 100% | 93.8% ± 6.2 |
-| Searches rewritten / blocked | 0% / 0% | 93.2% / 6.0% |
-| Steps per run | 6.4 | 6.4 |
-| Latency per run, median | 24 s | 216 s |
+| Private facts recovered, all hops | 79.2% ± 1.0 | **20.5% ± 2.6** |
+| Identity leak, any identity fact in the outbound payloads (scanner) | 100.0% ± 0.0 | **16.7% ± 3.6** |
+| **Linkable disclosure** (attacker names an identity fact AND infers the situation) | 81.2% ± 0.0 | **8.3% ± 3.6** |
+| Private situation inferred, all hops (grader, no anchor needed) | 85.4% ± 3.6 | 79.2% ± 3.6 |
+| Private situation inferred, all hops (strict grader, named anchor required) | 81.2% ± 0.0 | 68.8% ± 6.2 |
+| Private facts recovered, search queries only | 5.6% ± 1.2 | **2.1% ± 2.1** |
+| Private situation inferred, search queries only | 10.4% ± 3.6 | 0.0% ± 0.0 |
+| Answer utility (1-5, blind rubric grader) | 4.38 ± 0.17 | 4.58 ± 0.19 |
+| Answer utility (1-5, blind pairwise judge) / distortion | 4.19 ± 0.23 / 27.1% | 4.52 ± 0.20 / 16.7% |
+| Runs that ended with an answer | 48 of 48 | 47 of 48 |
+| Searches rewritten / blocked | 0% / 0% | 89.5% / 9.9% |
+| Steps per run | 6.4 | 6.5 |
+| Latency per run, median | 18 s | 388 s |
 
-Mean ± sample sd across passes. How to read it:
+Mean ± sample sd across passes. The same evaluation was run three times in different configurations. Each row compares the two modes inside one run:
 
-- **Documents are where agents leak most, and masking now removes three quarters of it.** Unguarded, the attacker recovered 82% of the private facts (names, organizations, case and account numbers, amounts, dates). Through Airlock, 24% remain (41% in the `d2ff994` run), and those are detector misses: 30% in Korean, 17% in English. The Korean M&A memo is the worst case (3-4 of 6 facts in every pass); the English M&A memo, where every fact reached the cloud in 2 of 3 passes before, leaked none.
-- **Identity is what Airlock removes; the situation stays visible.** The scanner finds an identity fact in 33% of guarded runs (77% before) and the attacker links who to what in 17% (69% before). The situation itself is inferred in 87% of runs in both modes: the planning model has to read "a layoff notice with a 21-day release" to help. The strict grader's 64.6% is lower only because it demands a named anchor, which is now usually gone.
-- **Search queries.** With a neutral system prompt, Nemotron 3 Ultra's own queries were already fairly generic (5% of facts, 17% of situations; 7% and 25% in Korean). Airlock rewrote 93% of queries, blocked 6%, and cut fact recovery from queries to 1.7% and situation inference from queries to 0. This scenario set does not reproduce a MosaicLeaks-scale query leak: the search guard removed a small leak, it did not close a large one.
-- **Utility: no cost from rewriting, a cost from fail-closed blocks.** Rubric utility is 4.50 vs 4.38 and the pairwise judge prefers the guarded answer (ratio 1.09, distortion 14.6% vs 27.1%; many unguarded answers state wrong dates, amounts or jurisdictions). The whole guarded deficit is in English (4.50 vs 5.00): 3 of 48 guarded runs ended `blocked` without an answer and scored 1. Two were `pregnancy-en`, where a web search result page contained the health words the detector had vaulted from the personal note, so the gate refused to send that tool result; one was `debt-en`, where the local detector fell into a repetition loop and the turn failed closed. In the `d2ff994` run no guarded run was blocked. Both are the gate doing what it is designed to do, and both are a utility bug to fix: a public page about pregnancy is not a leak.
-- **Latency is clean this time.** One local server (Q4_K_M, 2 slots, 4 agent runs in parallel) and nothing else on the GPU: 216 s median per guarded run against 24 s unguarded. Guarded runs spend most of their time detecting spans in whole documents on every turn. The earlier run's 367 s was measured with two other servers on the GPU.
-- **The attacker is a lower bound.** On 7 unguarded runs whose outbound payloads contained every private fact verbatim (`mna-en`, `mna-ko`, `pregnancy-en`, `hr-warning-ko`), it recovered none or one: it summarized the public search results instead, or continued the agent's tool calls.
+| Run | GLiNER-PII ensemble | Linkable disclosure, unguarded → Airlock | Identity leak (scanner), Airlock | Private facts recovered, Airlock | Rubric utility, unguarded / Airlock | Guarded runs without an answer |
+|---|---|---:|---:|---:|---:|---:|
+| `8b1157e`, 2026-10-02 ([`demo/`](eval/agent/results/demo/)) | on | 81.2% → **8.3% ± 3.6** | 16.7% ± 3.6 | 20.5% ± 2.6 | 4.38 / 4.58 | 1 of 48 |
+| `2812f75`, 2026-10-02 ([`demo-gliner-off/`](eval/agent/results/demo-gliner-off/)) | off (the default) | 93.8% → 31.2% ± 6.2 | 43.8% ± 10.8 | 27.8% ± 3.3 | 4.62 / 4.35 | 3 of 48 |
+| `eb311ed`, 2026-09-15 ([`demo-eb311ed/`](eval/agent/results/demo-eb311ed/)) | off (the default) | 83.3% → 17.2% ± 8.2 | 33.3% ± 9.5 | 23.6% ± 3.2 | 4.38 / 4.50 | 3 of 48 |
+
+The earliest run, at `d2ff994`, is kept in [`demo-pre-s6/`](eval/agent/results/demo-pre-s6/). How to read it:
+
+- **Run agent mode with the GLiNER-PII ensemble on.** Without it, names inside formal documents depend on the 4B model alone, and that is a sampling outcome: asked 10 times about the English offer letter of one scenario, the model proposed the addressee's name in 2. The two runs without the ensemble measured 17.2% and 31.2% linkable disclosure, and the local model's span proposal (prompt and call) did not change between them; 3 passes over 16 scenarios do not separate those two numbers. With the ensemble on, the scanner found an identity fact in 8 of 48 guarded runs and the attacker linked who to what in 4.
+- **What still leaks with the ensemble on.** The code name of the deal in both M&A memos (`Project Bluefin`, `프로젝트 해오름`) went out in every pass: it sits in the document title and was not masked in any pass. One Korean name and one neighbourhood went out in one pass each. Situation facts (amounts, dates, the other party) are recovered at 44.7%, against 74.8% unguarded.
+- **Identity is what Airlock removes; the situation stays visible.** The private situation is inferred in 79.2% of guarded runs and 85.4% of unguarded runs: the planning model has to read "a layoff notice with a 21-day release" to help.
+- **Compare columns inside a run, not runs with each other.** The unguarded column has no detector in its path, and its linkable disclosure still moved between 81.2% and 93.8% across the three runs, because the attacker and the graders are a sampled LLM.
+- **Search queries.** With a neutral system prompt, Nemotron 3 Ultra's own queries were already fairly generic (5.6% of facts, 10.4% of situations). Airlock rewrote 89.5% of queries, blocked 9.9%, and cut fact recovery from queries to 2.1% and situation inference from queries to 0. This scenario set does not reproduce a MosaicLeaks-scale query leak: the search guard removed a small leak, it did not close a large one.
+- **Utility.** Rubric utility is 4.58 guarded against 4.38 unguarded, and the pairwise judge prefers the guarded answer (ratio 1.08 ± 0.11, distortion 16.7% vs 27.1%). English scored 5.00 in both modes; Korean scored 4.17 guarded and 3.75 unguarded. Korean answers from Nemotron 3 Ultra vary a lot in both modes: 10 unguarded and 5 guarded Korean answers scored 1 to 3 (not counting the blocked run), because the answer repeated one clause hundreds of times, misstated a statute or a date, or ignored the documents and answered a generic case.
+- **Runs without an answer.** At `eb311ed`, 3 of 48 guarded runs ended `blocked`, all in English: a public search result contained a word the detector had vaulted, or the local detector fell into a repetition loop. Inbound search results are now masked or withheld instead of blocking the turn, and a malformed detector answer is resampled. In both runs of 2026-10-02 no English guarded run was blocked (0 of 24 each). What remains is Korean: with the ensemble on, 1 of 48 runs (`lawsuit-ko`) ended `blocked` because the model's own search query repeated a phrase the detector had vaulted as a quasi-identifier, and the model's own text still fails closed. With the ensemble off there were 3: the same kind of block, one run that used all 8 steps, and one that ended on an empty `finish` (that run is now reported as `error`, not `finished`).
+- **Latency.** 388 s median per guarded run against 18 s unguarded, with one local server (Q4_K_M, 2 slots, 4 agent runs in parallel) and GLiNER-PII on the CPU. With the ensemble off the median was 242 s. Guarded runs spend most of their time detecting spans in whole documents on every turn.
+- **The attacker is a lower bound.** In all three unguarded passes of `mna-en` the outbound payloads contained every private fact and the attacker named none: it summarized the public search results instead.
 
 
 ### Threat model for agent mode

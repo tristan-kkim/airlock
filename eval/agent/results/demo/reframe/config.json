@@ -1,21 +1,21 @@
 {
   "reframe_version": "1.0.0",
-  "source_run": "eval/agent/results/20260915T045611Z",
+  "source_run": "eval/agent/results/20261002-gliner",
   "grader_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "judge_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "confirm_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
   "runs": [
     {
-      "at": "2026-09-15T05:52:00.382627+00:00",
+      "at": "2026-10-02T06:45:57.900917+00:00",
       "estimate": {
         "situation_calls": 96,
         "utility_judge_calls": 48,
-        "prompt_tokens_est": 325982,
+        "prompt_tokens_est": 330735,
         "completion_tokens_max": 43200
       },
       "usage": {
-        "prompt_tokens": 427791,
-        "completion_tokens": 26110
+        "prompt_tokens": 420978,
+        "completion_tokens": 26102
       }
     }
   ]

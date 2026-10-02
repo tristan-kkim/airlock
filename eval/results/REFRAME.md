@@ -68,7 +68,7 @@ en 0.91, distortion ko 31.4% / en 27.2%.
 
 Stored attacker outputs were reused; the new situation grader and a blind pairwise
 utility/distortion judge (the unguarded answer is the reference) were added
-(`eval/agent/results/demo-pre-s6/reframe/`, the `d2ff994` run; the current run at `eb311ed` is in `eval/agent/results/demo/reframe/` and summarized in `COMPARISON.md`).
+(`eval/agent/results/demo-pre-s6/reframe/`, the `d2ff994` run; the run at `eb311ed` is in `eval/agent/results/demo-eb311ed/reframe/`, and the current run, at `8b1157e` with the GLiNER-PII ensemble on, is in `eval/agent/results/demo/reframe/` and summarized in `COMPARISON.md` and `FINAL.md`).
 
 | Metric | unguarded | Airlock |
 |---|---:|---:|
