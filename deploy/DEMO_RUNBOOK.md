@@ -77,7 +77,7 @@ Sources, all checked 2026-09-14:
 ### 0. Before deploying (in the repo)
 
 - [x] Detector work merged to `main`; `uv run pytest -q` and `uv run ruff check` pass (2026-10-02).
-- [ ] **Re-record the presets.** Recordings must reflect the detector you ship, and detection varies between runs: a first run of `chat-medical-en` missed a name that a re-run masked. Recording costs about 5 live runs.
+- [x] **Re-record the presets** (2026-10-02). Recordings must reflect the detector you ship, and detection varies between runs: a first run of `chat-medical-en` missed a name that a re-run masked. Recording costs about 5 live runs.
   ```bash
   docker build -t airlock-demo:local .
   docker run -d --name airlock-demo-rec --env-file .env --env-file deploy/demo.env \
@@ -86,7 +86,7 @@ Sources, all checked 2026-09-14:
   git diff --stat airlock/demo/recorded/     # review every "cloud_saw" before committing
   deploy/smoke_test.sh http://127.0.0.1:8801 && docker rm -f airlock-demo-rec
   ```
-- [ ] Commit the recordings and tag the deployed commit (for example `demo-2026-10`).
+- [x] Commit the recordings and tag the deployed commit (`demo-2026-10`).
 
 ### 1. Accounts (you, in a browser)
 
@@ -276,5 +276,6 @@ curl -s https://<url>/demo/status | jq .budget             # requests / cloud_ca
 | Date | What | Result |
 |---|---|---|
 | 2026-10-02 | First deploy of `airlock-egress` from the working tree at `2812f75` plus the app name in `fly.toml`; no secrets set yet | `https://airlock-egress.fly.dev`, 1 machine in `ams`, `/readyz` check passing. `smoke_test.sh`: all free checks pass except `readyz live configured` (expected without `NEBIUS_API_KEY`). Presets serve their recorded runs (`fallback_reason: live_error`); free text is blocked with `local_detector_unavailable:CloudDetectorNotConfigured` |
+| 2026-10-02 | Redeploy (machine version 2) with the five presets re-recorded on the current code and the empty-`finish` fix | `/readyz` passing, `recorded_presets 5/5`; the agent preset serves the recording of 2026-10-02T01:44Z. Still no secrets: recorded runs only |
 
-Still open: set `NEBIUS_API_KEY` and `TAVILY_API_KEY` (demo-only keys, section 2), then run `smoke_test.sh --live`; redeploy after the presets are re-recorded; cost alarms (section 6).
+The deployed code is tagged `demo-2026-10`. Still open: set `NEBIUS_API_KEY` and `TAVILY_API_KEY` (demo-only keys, section 2), then run `smoke_test.sh --live`; cost alarms (section 6).
